@@ -1,0 +1,22 @@
+{
+  "name": "elegance-beauty-website",
+  "version": "1.0.0",
+  "description": "Custom website for makeup artist services and classes",
+  "main": "backend/server.js",
+  "scripts": {
+    "dev": "node backend/server.js",
+    "start": "node backend/server.js",
+    "build-css": "node scripts/build-css.js"
+  },
+  "keywords": ["beauty", "makeup", "booking", "classes"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glam Salon & Academy</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="logo">Glam Salon & Academy</div>
+      <nav id="navMenu">
+        <a href="#home">Home</a>
+        <a href="#services">Services</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#appointment">Appointment</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div class="burger" onclick="toggleMenu()">☰</div>
+    </header>
+
+    <section class="hero" id="home">
+      <h1 class="fade-in">Look Glamorous, Feel Confident</h1>
+      <p class="fade-in-delay">Professional Salon & Beauty Academy</p>
+      <button class="fade-in-delay2" onclick="scrollToAppointment()">
+        Book Appointment
+      </button>
+    </section>
+
+    <section class="services" id="services">
+      <h2>Our Services</h2>
+      <div class="service-list">
+        <div class="service-card">Hair Cut</div>
+        <div class="service-card">Hair Wash</div>
+        <div class="service-card">Facial</div>
+        <div class="service-card">Waxing</div>
+        <div class="service-card">Threading</div>
+        <div class="service-card">Bridal Makeup</div>
+      </div>
+    </section>
+
+    <section class="pricing" id="pricing">
+      <h2>Price List (GST 5% Included)</h2>
+      <table>
+        <tr>
+          <th>Service</th>
+          <th>Price (₹)</th>
+        </tr>
+        <tr>
+          <td>Hair Cut</td>
+          <td>₹210</td>
+        </tr>
+        <tr>
+          <td>Hair Wash</td>
+          <td>₹105</td>
+        </tr>
+        <tr>
+          <td>Facial</td>
+          <td>₹525</td>
+        </tr>
+        <tr>
+          <td>Waxing (Full Hand)</td>
+          <td>₹315</td>
+        </tr>
+        <tr>
+          <td>Threading</td>
+          <td>₹52</td>
+        </tr>
+        <tr>
+          <td>Bridal Makeup</td>
+          <td>₹3150</td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="gallery" id="gallery">
+      <h2>Our Gallery</h2>
+      <div class="gallery-grid">
+        <img
+          src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9"
+          alt="Salon 1"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1522337660859-02fbefca4702"
+          alt="Salon 2"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1522336572468-97b0cb3f5258"
+          alt="Salon 3"
+        />
+      </div>
+    </section>
+
+    <section class="appointment" id="appointment">
+      <h2>Book Appointment</h2>
+      <form id="appointmentForm">
+        <input type="text" placeholder="Your Name" required />
+        <input type="number" placeholder="Phone Number" required />
+        <input type="text" placeholder="Service" required />
+        <input type="date" required />
+        <button type="submit">Submit</button>
+      </form>
+    </section>
+
+    <section class="contact" id="contact">
+      <h2>Contact Us</h2>
+
+      <div class="contact-grid">
+        <div>
+          <p>📍 Koramangala, Bangalore</p>
+          <p>📞 +91 63854 74330</p>
+          <p>📧 glamacademy@email.com</p>
+        </div>
+
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31426.881664620396!2d78.78175415!3d10.069542499999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b005d8b08de4f3b%3A0x1f24fc0ab84584f8!2sKaraikudi%2C%20Tamil%20Nadu!5e0!3m2!1sen!2sin!4v1763223969991!5m2!1sen!2sin"
+          width="100%"
+          height="250"
+          style="border: 0"
+          loading="lazy"
+        >
+        </iframe>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2025 Glam Salon & Academy. All Rights Reserved.</p>
+    </footer>
+
+    <script src="/js/script.js"></script>
+  </body>
+</html>
