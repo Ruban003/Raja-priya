@@ -10,7 +10,6 @@
 }
 
 /* HEADER */
-
 @media (max-width: 768px) {
   header {
     display: flex;
@@ -45,6 +44,50 @@
   }
 }
 
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 30px;
+  background: #000;
+  border-bottom: 1px solid var(--gold);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 0 12px rgba(212,175,55,0.3);
+}
+
+.logo img {
+  height: 80px;
+  width: auto;
+}
+
+/* NAVIGATION */
+nav {
+  display: flex;
+  gap: 25px;
+}
+
+nav a {
+  color: var(--gold);
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  transition: 0.3s;
+  font-size: 16px;
+}
+
+nav a:hover {
+  color: white;
+  text-shadow: var(--shadow-gold);
+}
+
+.burger {
+  display: none;
+  font-size: 30px;
+  cursor: pointer;
+  color: var(--gold);
+}
 
 /* HERO */
 .hero {
