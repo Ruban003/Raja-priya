@@ -13,3 +13,17 @@ document
     e.preventDefault();
     alert("Appointment submitted successfully!");
   });
+
+
+
+<script>
+function toggleMenu() {
+  const nav = document.querySelector("nav");
+
+  if (nav.style.display === "flex") {
+    nav.style.display = "none";
+  } else {
+    nav.style.display = "flex";
+  }
+}
+</script>

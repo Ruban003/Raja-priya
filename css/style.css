@@ -1,10 +1,4 @@
-/* GLOBAL */
-body {
-  margin: 0;
-  font-family: 'Poppins', Arial, sans-serif;
-  background: #0a0a0a; /* deep black */
-  color: #e5e5e5;       /* soft platinum white */
-}
+
 
 /* GOLD COLOR */
 :root {
@@ -16,63 +10,74 @@ body {
 }
 
 /* HEADER */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 30px;
-  background: #000;
-  border-bottom: 1px solid var(--gold);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  box-shadow: 0 0 12px rgba(212,175,55,0.3);
+
+@media (max-width: 768px) {
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    flex-wrap: nowrap;        /* IMPORTANT — prevents wrapping */
+  }
+
+  .logo img {
+    height: 55px;             /* smaller for mobile */
+    width: auto;
+  }
+
+  .burger {
+    display: block;
+    font-size: 30px;
+    color: var(--gold);
+  }
+
+  nav {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #000;
+    height: 100vh;
+    padding: 30px 20px;
+    z-index: 999;
+  }
 }
 
-.logo img {
-  height: 80px;
-  width: auto;
-}
-
-/* NAVIGATION */
-nav {
-  display: flex;
-  gap: 25px;
-}
-
-nav a {
-  color: var(--gold);
-  text-decoration: none;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  transition: 0.3s;
-  font-size: 16px;
-}
-
-nav a:hover {
-  color: white;
-  text-shadow: var(--shadow-gold);
-}
-
-.burger {
-  display: none;
-  font-size: 30px;
-  cursor: pointer;
-  color: var(--gold);
-}
 
 /* HERO */
 .hero {
-  padding: 140px 20px;
+  padding: 130px 20px;
   text-align: center;
-  background: linear-gradient(to right, #1a1a1a, #000000);
   color: var(--gold);
-  animation: fadeIn 1.2s ease;
-  border-bottom: 1px solid rgba(212,175,55,0.4);
+  position: relative;
+  overflow: hidden;
 }
 
-.hero h1 {
-  text-shadow: 0 0 12px rgba(212,175,55,0.5);
+/* Background Image + Angled Effect */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -40px;          /* expands image up for clean angle */
+  left: 0;
+  width: 100%;
+  height: calc(100% + 80px);
+
+  background: url("/img/3030.jpg") center/cover no-repeat;
+
+  transform: skewY(-4deg); /* ANGLE */
+  transform-origin: top left;
+  z-index: -2;
+}
+
+/* Dark premium overlay */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);  /* dark overlay for gold text */
+  z-index: -1;
 }
 
 /* ANIMATIONS */
