@@ -1,0 +1,44 @@
+/* ADMIN LOGIN PAGE */
+.admin-login-body {
+  background: #000;
+  color: var(--gold);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.admin-login-box {
+  background: #111;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 15px rgba(212,175,55,0.4);
+  width: 300px;
+  text-align: center;
+}
+
+.admin-login-box input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  background: #000;
+  border: 1px solid var(--gold);
+  color: white;
+  border-radius: 8px;
+}
+
+.admin-login-box button {
+  width: 100%;
+  padding: 12px;
+  background: var(--gold);
+  color: #000;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}

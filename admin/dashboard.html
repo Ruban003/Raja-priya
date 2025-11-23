@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Glam Salon</title>
+  <link rel="stylesheet" href="/admin/dashboard.css">
+</head>
+
+<body class="admin-body">
+
+  <header class="admin-header">
+    <h2>Glam Salon – Admin Dashboard</h2>
+    <button onclick="logout()" class="logout-btn">Logout</button>
+  </header>
+
+  <main class="admin-container">
+    <h3>Total Appointments</h3>
+
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Service</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="appointmentList"></tbody>
+    </table>
+
+    <button class="clear-btn" onclick="clearAll()">Clear All Appointments</button>
+  </main>
+
+  <script src="/admin/dashboard.js"></script>
+
+</body>
+</html>
