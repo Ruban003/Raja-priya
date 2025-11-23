@@ -14,6 +14,7 @@ document
     alert("Appointment submitted successfully!");
   });
 
+  
 
 
 <script>
