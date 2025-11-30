@@ -4,17 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="img/logo.png" sizes="40x40" />
-        <title>Glam Salon & Academy</title>
+    <title>Glam Salon & Academy</title>
     <link rel="stylesheet" href="/css/style.css" />
   </head>
+
   <body>
+    <!-- HEADER -->
     <header>
       <div class="logo">
-         <a href="/" class="logo">
-    <img src="/img/logo.png" alt="GLAM Salon & Academy">
-  </a>
-  
+        <a href="/">
+          <img src="/img/logo.png" alt="GLAM Salon & Academy" />
+        </a>
       </div>
+
+      <!-- Burger Menu Only For Mobile -->
+      <div class="burger" onclick="toggleMenu()">
+        <span class="line1"></span>
+        <span class="line2"></span>
+        <span class="line3"></span>
+      </div>
+
+      <!-- Navigation -->
       <nav id="navMenu">
         <a href="#home">Home</a>
         <a href="#services">Services</a>
@@ -23,9 +33,9 @@
         <a href="#appointment">Appointment</a>
         <a href="#contact">Contact</a>
       </nav>
-      <div class="burger" onclick="toggleMenu()">☰</div>
     </header>
 
+    <!-- HERO SECTION -->
     <section class="hero" id="home">
       <h1 class="fade-in">Look Glamorous, Feel Confident</h1>
       <p class="fade-in-delay">Professional Salon & Beauty Academy</p>
@@ -34,6 +44,7 @@
       </button>
     </section>
 
+    <!-- SERVICES -->
     <section class="services" id="services">
       <h2>Our Services</h2>
       <div class="service-list">
@@ -46,6 +57,7 @@
       </div>
     </section>
 
+    <!-- PRICING -->
     <section class="pricing" id="pricing">
       <h2>Price List (GST 5% Included)</h2>
       <table>
@@ -53,65 +65,58 @@
           <th>Service</th>
           <th>Price (₹)</th>
         </tr>
-        <tr>
-          <td>Hair Cut</td>
-          <td>₹210</td>
-        </tr>
-        <tr>
-          <td>Hair Wash</td>
-          <td>₹105</td>
-        </tr>
-        <tr>
-          <td>Facial</td>
-          <td>₹525</td>
-        </tr>
-        <tr>
-          <td>Waxing (Full Hand)</td>
-          <td>₹315</td>
-        </tr>
-        <tr>
-          <td>Threading</td>
-          <td>₹52</td>
-        </tr>
-        <tr>
-          <td>Bridal Makeup</td>
-          <td>₹3150</td>
-        </tr>
+        <tr><td>Hair Cut</td><td style="text-align: center;">₹210</td></tr>
+        <tr><td>Hair Wash</td><td style="text-align: center;">₹105</td></tr>
+        <tr><td>Facial</td><td style="text-align: center;">₹525</td></tr>
+        <tr><td>Waxing (Full Hand)</td><td style="text-align: center;">₹315</td></tr>
+        <tr><td>Threading</td><td style="text-align: center;">₹52</td></tr>
+        <tr><td>Bridal Makeup</td><td style="text-align: center;">₹3150</td></tr>
       </table>
     </section>
 
+    <!-- GALLERY -->
     <section class="gallery" id="gallery">
       <h2>Our Gallery</h2>
       <div class="gallery-grid">
-        <img
-          src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9"
-          alt="Salon 1"
-        />
-        <img
-          src="https://images.unsplash.com/photo-1522337660859-02fbefca4702"
-          alt="Salon 2"
-        />
-        <img
-          src="https://images.unsplash.com/photo-1522336572468-97b0cb3f5258"
-          alt="Salon 3"
-        />
+        <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9" />
+        <img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702" />
+        <img src="https://images.unsplash.com/photo-1522336572468-97b0cb3f5258" />
       </div>
     </section>
 
+    <!-- APPOINTMENT FORM -->
     <section class="appointment" id="appointment">
-      <h2>Book Appointment</h2>
-      <form id="appointmentForm">
-        <input type="text" placeholder="Your Name" required />
-        <input type="number" placeholder="Phone Number" required />
-        <input type="text" placeholder="Service" required />
-        <input type="date" required />
-        <button type="submit">Submit</button>
-      </form>
-    </section>
+  <h2>Book Appointment</h2>
 
+  <form id="appointmentForm">
+    <input type="text" id="name" placeholder="Your Name" required />
+
+    <input type="number" id="phone" placeholder="Phone Number" required />
+
+    <select id="service" required>
+      <option value="">Select Service</option>
+      <option>Hair Cut</option>
+      <option>Hair Wash</option>
+      <option>Facial</option>
+      <option>Waxing</option>
+      <option>Threading</option>
+      <option>Bridal Makeup</option>
+    </select>
+
+    <input type="date" id="date" required />
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <!-- SUCCESS POPUP -->
+  <div id="popup" class="popup">
+    Appointment Booked Successfully 🎉
+  </div>
+</section>
+
+    <!-- CONTACT -->
     <section class="contact" id="contact">
       <h2>Contact Us</h2>
-
       <div class="contact-grid">
         <div>
           <p>📍 Koramangala, Bangalore</p>
@@ -125,16 +130,15 @@
           height="250"
           style="border: 0"
           loading="lazy"
-        >
-        </iframe>
+        ></iframe>
       </div>
     </section>
 
+    <!-- FOOTER -->
     <footer>
       <p>© 2025 Glam Salon & Academy. All Rights Reserved.</p>
     </footer>
 
     <script src="/js/script.js"></script>
-
   </body>
 </html>
