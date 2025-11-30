@@ -1,79 +1,89 @@
-/* ------------------------------
-   BURGER MENU
------------------------------- */
-function toggleMenu() {
-  const nav = document.getElementById("navMenu");
-  const burger = document.querySelector(".burger");
-
-  burger.classList.toggle("active");
-  nav.classList.toggle("open");
-}
-
-// Close menu when clicking outside
-document.addEventListener("click", function (e) {
-  const nav = document.getElementById("navMenu");
-  const burger = document.querySelector(".burger");
-
-  if (
-    nav.classList.contains("open") &&
-    !nav.contains(e.target) &&
-    !burger.contains(e.target)
-  ) {
-    nav.classList.remove("open");
-    burger.classList.remove("active");
+document.addEventListener("DOMContentLoaded", function () {
+  
+  // 1. PRELOADER FADE OUT
+  const preloader = document.getElementById("preloader");
+  if(preloader) {
+    window.addEventListener("load", () => {
+      preloader.style.opacity = "0";
+      setTimeout(() => { preloader.style.display = "none"; }, 500);
+    });
   }
-});
 
+  // 2. MOBILE BURGER MENU
+  const burger = document.getElementById("burgerBtn");
+  const nav = document.getElementById("navMenu");
 
-function scrollToAppointment() {
-  document.getElementById("appointment").scrollIntoView({
-    behavior: "smooth"
+  if (burger && nav) {
+    burger.addEventListener("click", () => {
+      burger.classList.toggle("active");
+      nav.classList.toggle("open");
+    });
+    
+    // Close menu when clicking links
+    document.querySelectorAll('#navMenu a').forEach(link => {
+      link.addEventListener('click', () => {
+        burger.classList.remove("active");
+        nav.classList.remove("open");
+      });
+    });
+  }
+
+  // 3. SCROLL TO BOOKING
+  const bookBtn = document.getElementById("bookBtn");
+  if (bookBtn) {
+    bookBtn.addEventListener("click", () => {
+      document.getElementById("appointment").scrollIntoView({ behavior: "smooth" });
+    });
+  }
+
+  // 4. BACK TO TOP BUTTON
+  const backToTop = document.getElementById("backToTop");
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+      backToTop.classList.add("visible");
+    } else {
+      backToTop.classList.remove("visible");
+    }
   });
-}
-
-
-/* ------------------------------
-   APPOINTMENT FORM
------------------------------- */
-
-// Attach submit event to correct form
-document.getElementById("appointmentForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-
-  let name = document.getElementById("name").value.trim();
-  let phone = document.getElementById("phone").value.trim();
-  let service = document.getElementById("service").value.trim();
-  let date = document.getElementById("date").value.trim();
-
-  if (name === "" || phone.length < 10 || service === "" || date === "") {
-    alert("Please fill all fields correctly.");
-    return;
-  }
-
-  // CREATE APPOINTMENT OBJECT
-  const appointment = {
-    name,
-    phone,
-    service,
-    date,
-    time: new Date().toLocaleTimeString()
+  window.scrollToTop = function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // SAVE TO LOCAL STORAGE
-  let appointments = JSON.parse(localStorage.getItem("appointments")) || [];
-  appointments.push(appointment);
-  localStorage.setItem("appointments", JSON.stringify(appointments));
+  // 5. SMART DATE PICKER (No Past Dates)
+  const dateInput = document.getElementById("date");
+  if (dateInput) {
+    dateInput.setAttribute("min", new Date().toISOString().split("T")[0]);
+  }
 
-  // SHOW POPUP
-  const popup = document.getElementById("popup");
-  popup.style.display = "block";
+  // 6. FORM VALIDATION & MOCK SUBMIT
+  const form = document.getElementById("appointmentForm");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById("name").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const date = document.getElementById("date").value;
+      const service = document.getElementById("service").value;
 
-  // HIDE POPUP AFTER 3 SECONDS
-  setTimeout(() => {
-    popup.style.display = "none";
-  }, 3000);
+      if (phone.length !== 10 || isNaN(phone)) {
+        alert("Please enter a valid 10-digit phone number.");
+        return;
+      }
 
-  // RESET FORM
-  this.reset();
+      // Save to LocalStorage
+      const appointment = { name, phone, service, date, time: new Date().toLocaleTimeString() };
+      let apps = JSON.parse(localStorage.getItem("appointments")) || [];
+      apps.push(appointment);
+      localStorage.setItem("appointments", JSON.stringify(apps));
+
+      // Show Success UI
+      const popup = document.getElementById("popup");
+      if(popup) {
+        popup.style.display = "block";
+        setTimeout(() => { popup.style.display = "none"; }, 3000);
+      }
+      form.reset();
+    });
+  }
 });
-
