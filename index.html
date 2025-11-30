@@ -3,142 +3,177 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="img/logo.png" sizes="40x40" />
-    <title>Glam Salon & Academy</title>
+    <title>Glam Salon & Academy | Premium Beauty Experience</title>
+    
+    <link rel="icon" type="image/png" href="img/logo.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
     <link rel="stylesheet" href="/css/style.css" />
   </head>
 
   <body>
-    <!-- HEADER -->
+
+    <div id="preloader">
+      <div class="loader-logo">GLAM</div>
+    </div>
+
     <header>
       <div class="logo">
         <a href="/">
-          <img src="/img/logo.png" alt="GLAM Salon & Academy" />
+          <img src="/img/logo.png" alt="GLAM" /> 
         </a>
       </div>
 
-      <!-- Burger Menu Only For Mobile -->
-      <div class="burger" onclick="toggleMenu()">
-        <span class="line1"></span>
-        <span class="line2"></span>
-        <span class="line3"></span>
+      <div class="burger" id="burgerBtn">
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
 
-      <!-- Navigation -->
       <nav id="navMenu">
         <a href="#home">Home</a>
         <a href="#services">Services</a>
         <a href="#pricing">Pricing</a>
         <a href="#gallery">Gallery</a>
-        <a href="#appointment">Appointment</a>
+        <a href="#reviews">Reviews</a>
         <a href="#contact">Contact</a>
+        <a href="#appointment" class="nav-btn">Book Now</a>
       </nav>
     </header>
 
-    <!-- HERO SECTION -->
     <section class="hero" id="home">
-      <h1 class="fade-in">Look Glamorous, Feel Confident</h1>
-      <p class="fade-in-delay">Professional Salon & Beauty Academy</p>
-      <button class="fade-in-delay2" onclick="scrollToAppointment()">
-        Book Appointment
-      </button>
-    </section>
-
-    <!-- SERVICES -->
-    <section class="services" id="services">
-      <h2>Our Services</h2>
-      <div class="service-list">
-        <div class="service-card">Hair Cut</div>
-        <div class="service-card">Hair Wash</div>
-        <div class="service-card">Facial</div>
-        <div class="service-card">Waxing</div>
-        <div class="service-card">Threading</div>
-        <div class="service-card">Bridal Makeup</div>
+      <div class="hero-content" data-aos="fade-up">
+        <h1>Redefine Your <br><span class="gold-text">Elegance</span></h1>
+        <p>Experience world-class beauty services & professional training.</p>
+        <button id="bookBtn">Book Appointment</button>
       </div>
     </section>
 
-    <!-- PRICING -->
+    <section class="services" id="services">
+      <h2 data-aos="fade-up">Signature Services</h2>
+      <div class="service-list">
+        <div class="service-card" data-aos="fade-up" data-aos-delay="100">
+          <h3>Hair Styling</h3>
+          <p>Cuts, coloring, and treatments.</p>
+        </div>
+        <div class="service-card" data-aos="fade-up" data-aos-delay="200">
+          <h3>Bridal Makeup</h3>
+          <p>Flawless looks for your big day.</p>
+        </div>
+        <div class="service-card" data-aos="fade-up" data-aos-delay="300">
+          <h3>Advanced Facials</h3>
+          <p>Rejuvenate your skin instantly.</p>
+        </div>
+        <div class="service-card" data-aos="fade-up" data-aos-delay="400">
+          <h3>Nail Artistry</h3>
+          <p>Manicures, pedicures, and gel art.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="pricing" id="pricing">
-      <h2>Price List (GST 5% Included)</h2>
-      <table>
+      <h2 data-aos="fade-up">Service Menu</h2>
+      <table data-aos="zoom-in">
         <tr>
-          <th>Service</th>
-          <th>Price (₹)</th>
+          <th>Treatment</th>
+          <th>Investment</th>
         </tr>
-        <tr><td>Hair Cut</td><td style="text-align: center;">₹210</td></tr>
-        <tr><td>Hair Wash</td><td style="text-align: center;">₹105</td></tr>
-        <tr><td>Facial</td><td style="text-align: center;">₹525</td></tr>
-        <tr><td>Waxing (Full Hand)</td><td style="text-align: center;">₹315</td></tr>
-        <tr><td>Threading</td><td style="text-align: center;">₹52</td></tr>
-        <tr><td>Bridal Makeup</td><td style="text-align: center;">₹3150</td></tr>
+        <tr><td>Signature Hair Cut</td><td>₹210</td></tr>
+        <tr><td>Luxury Hair Spa</td><td>₹550</td></tr>
+        <tr><td>Gold Facial</td><td>₹1,200</td></tr>
+        <tr><td>Full Hand Waxing</td><td>₹315</td></tr>
+        <tr><td>Bridal Makeover</td><td>₹3,150</td></tr>
       </table>
     </section>
 
-    <!-- GALLERY -->
     <section class="gallery" id="gallery">
-      <h2>Our Gallery</h2>
+      <h2 data-aos="fade-up">Our Masterpieces</h2>
       <div class="gallery-grid">
-        <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9" />
-        <img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702" />
-        <img src="https://images.unsplash.com/photo-1522336572468-97b0cb3f5258" />
-      </div>
-    </section>
-
-    <!-- APPOINTMENT FORM -->
-    <section class="appointment" id="appointment">
-  <h2>Book Appointment</h2>
-
-  <form id="appointmentForm">
-    <input type="text" id="name" placeholder="Your Name" required />
-
-    <input type="number" id="phone" placeholder="Phone Number" required />
-
-    <select id="service" required>
-      <option value="">Select Service</option>
-      <option>Hair Cut</option>
-      <option>Hair Wash</option>
-      <option>Facial</option>
-      <option>Waxing</option>
-      <option>Threading</option>
-      <option>Bridal Makeup</option>
-    </select>
-
-    <input type="date" id="date" required />
-
-    <button type="submit">Submit</button>
-  </form>
-
-  <!-- SUCCESS POPUP -->
-  <div id="popup" class="popup">
-    Appointment Booked Successfully 🎉
-  </div>
-</section>
-
-    <!-- CONTACT -->
-    <section class="contact" id="contact">
-      <h2>Contact Us</h2>
-      <div class="contact-grid">
-        <div>
-          <p>📍 Koramangala, Bangalore</p>
-          <p>📞 +91 63854 74330</p>
-          <p>📧 glamacademy@email.com</p>
+        <div class="gallery-item" data-aos="fade-right">
+          <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9" alt="Makeup" />
         </div>
-
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31426.881664620396!2d78.78175415!3d10.069542499999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b005d8b08de4f3b%3A0x1f24fc0ab84584f8!2sKaraikudi%2C%20Tamil%20Nadu!5e0!3m2!1sen!2sin!4v1763223969991!5m2!1sen!2sin"
-          width="100%"
-          height="250"
-          style="border: 0"
-          loading="lazy"
-        ></iframe>
+        <div class="gallery-item" data-aos="fade-up">
+          <img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702" alt="Salon" />
+        </div>
+        <div class="gallery-item" data-aos="fade-left">
+          <img src="https://images.unsplash.com/photo-1522336572468-97b0cb3f5258" alt="Styling" />
+        </div>
       </div>
     </section>
 
-    <!-- FOOTER -->
+    <section class="testimonials" id="reviews">
+      <h2 data-aos="fade-up">Client Love</h2>
+      <div class="testimonial-grid">
+        <div class="review-card" data-aos="flip-left">
+          <p>"Absolutely stunning experience. The bridal makeup was flawless."</p>
+          <span>- Sarah J.</span>
+        </div>
+        <div class="review-card" data-aos="flip-left" data-aos-delay="200">
+          <p>"The staff treated me like royalty. Best facial I've had in Bangalore."</p>
+          <span>- Priya R.</span>
+        </div>
+        <div class="review-card" data-aos="flip-left" data-aos-delay="400">
+          <p>"Professional, clean, and incredibly talented stylists."</p>
+          <span>- Anjali M.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="appointment" id="appointment">
+      <h2 data-aos="fade-down">Book Your Visit</h2>
+      
+      <form id="appointmentForm" data-aos="zoom-in-up">
+        <input type="text" id="name" placeholder="Your Name" required />
+        <input type="tel" id="phone" placeholder="Phone Number (10 digits)" required />
+        
+        <select id="service" required>
+          <option value="">Select Experience</option>
+          <option>Hair Styling</option>
+          <option>Bridal Makeup</option>
+          <option>Facial Therapy</option>
+          <option>Nail Art</option>
+        </select>
+        
+        <input type="date" id="date" required />
+        
+        <button type="submit">Confirm Reservation</button>
+      </form>
+
+      <div id="popup">Booking Confirmed! See you soon. ✨</div>
+    </section>
+
+    <section class="contact" id="contact">
+      <h2 data-aos="fade-up">Visit Us</h2>
+      <div class="contact-grid">
+        <div class="contact-info" data-aos="fade-right">
+          <p><strong>GLAM Salon & Academy</strong></p>
+          <p>📍 Koramangala 4th Block, Bangalore</p>
+          <p>📞 +91 63854 74330</p>
+          <p>✉️ hello@glamsalon.com</p>
+        </div>
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31426.881664620396!2d78.78175415!3d10.069542499999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b005d8b08de4f3b%3A0x1f24fc0ab84584f8!2sKaraikudi%2C%20Tamil%20Nadu!5e0!3m2!1sen!2sin!4v1763223969991!5m2!1sen!2sin" data-aos="fade-left"></iframe>
+      </div>
+    </section>
+
     <footer>
       <p>© 2025 Glam Salon & Academy. All Rights Reserved.</p>
     </footer>
 
+    <div id="backToTop" onclick="scrollToTop()">↑</div>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+      AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 80
+      });
+    </script>
     <script src="/js/script.js"></script>
   </body>
 </html>
