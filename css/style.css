@@ -1,132 +1,302 @@
 /* =========================================
-   THEME: PINK & WHITE GLAM
+   THEME: PREMIUM PINK & WHITE GLAM
    ========================================= */
 
 :root {
-  /* Pink Palette */
-  --pink-primary: #ff5e78;       /* Vibrant Rose Pink (Buttons/Accents) */
-  --pink-light: #fff0f5;         /* Lavender Blush (Section Backgrounds) */
-  --pink-dark: #d81b60;          /* Darker Pink (Hover states) */
+  /* --- Color Palette --- */
+  --pink-primary: #ff5e78;       /* Hot Pink (Buttons, Icons) */
+  --pink-soft: #ffc2cd;          /* Soft Pink (Borders, Hovers) */
+  --pink-bg: #fff0f5;            /* Lavender Blush (Section BG) */
   --white: #ffffff;
   
-  /* Text Colors (Dark for readability on white) */
-  --text-main: #333333;          /* Charcoal Black */
-  --text-muted: #666666;         /* Grey */
+  /* --- Text Colors --- */
+  --text-dark: #333333;          /* Main Text (Charcoal) */
+  --text-light: #666666;         /* Muted Text */
   
-  /* Theme Variables Mapped */
-  --gold-gradient: linear-gradient(135deg, #ff9a9e, #fecfef, #ff5e78); /* Pink Gradient */
-  --bg-dark: #ffffff;            /* Main Background is now White */
-  --bg-panel: #fff5f7;           /* Alternating sections are Pale Pink */
-  --glass-bg: rgba(255, 255, 255, 0.9); /* White Glass effect */
+  /* --- Gradients --- */
+  --pink-gradient: linear-gradient(135deg, #ff9a9e, #ff5e78);
   
-  /* Fonts */
+  /* --- Functional Variables --- */
+  --bg-body: #ffffff;
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --shadow-pink: 0 10px 30px rgba(255, 94, 120, 0.15);
+  
+  /* --- Fonts --- */
   --font-heading: 'Playfair Display', serif;
   --font-body: 'Poppins', sans-serif;
-  
-  /* Borders & Shadows */
-  --border-color: rgba(255, 94, 120, 0.3);
-  --shadow-pink: 0 10px 30px rgba(255, 94, 120, 0.2);
 }
 
-/* GLOBAL RESET FOR LIGHT MODE */
+/* =========================================
+   GLOBAL RESET
+   ========================================= */
+
 html, body {
-  background-color: var(--white);
-  color: var(--text-main);
+  margin: 0; padding: 0; width: 100%; overflow-x: hidden;
+  background-color: var(--bg-body);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  scroll-behavior: smooth;
 }
 
-/* Update Headers to be Dark Grey instead of White */
 h1, h2, h3 {
-  color: var(--text-main);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: var(--text-dark);
 }
 
-/* Pink Gradient Text Effect */
+/* Gradient Text Effect */
 .gold-text, h1 span {
-  background: var(--gold-gradient);
+  background: var(--pink-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   color: var(--pink-primary);
 }
 
 /* =========================================
-   COMPONENT UPDATES FOR LIGHT THEME
+   PRELOADER (Pink)
    ========================================= */
+#preloader {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: var(--white);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
 
-/* 1. Header Navigation */
+.loader-logo {
+  font-family: var(--font-heading);
+  font-size: 3rem; font-weight: bold;
+  background: var(--pink-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pulsePink 2s infinite;
+}
+
+@keyframes pulsePink {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; text-shadow: 0 0 20px rgba(255, 94, 120, 0.4); }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* =========================================
+   HEADER (White Glass)
+   ========================================= */
 header {
-  background: rgba(255, 255, 255, 0.95); /* White Header */
-  border-bottom: 1px solid var(--pink-light);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 15px 40px;
+  position: sticky; top: 0; z-index: 1000;
+  background: rgba(255, 255, 255, 0.95); /* White Translucent */
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--pink-soft);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.03);
 }
-nav a { color: var(--text-main); } 
+
+.logo img { height: 50px; }
+
+nav { display: flex; gap: 30px; align-items: center; }
+
+nav a {
+  color: var(--text-dark); text-decoration: none; font-size: 14px;
+  text-transform: uppercase; letter-spacing: 1px;
+  transition: 0.3s; position: relative; font-weight: 500;
+}
+
+nav a::after {
+  content: ''; position: absolute; width: 0; height: 2px;
+  bottom: -5px; left: 0; background: var(--pink-primary);
+  transition: width 0.3s;
+}
+nav a:hover::after { width: 100%; }
 nav a:hover { color: var(--pink-primary); }
-nav a::after { background: var(--pink-primary); }
 
-/* 2. Buttons */
+/* Mobile Burger */
+.burger { display: none; cursor: pointer; flex-direction: column; gap: 5px; }
+.burger span { width: 25px; height: 3px; background: var(--pink-primary); border-radius: 2px; transition: 0.3s; }
+.burger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 6px); }
+.burger.active span:nth-child(2) { opacity: 0; }
+.burger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -6px); }
+
+@media(max-width:768px){
+  .burger { display: flex; }
+  nav {
+    display: none; position: absolute; top: 100%; left: 0; width: 100%;
+    background: var(--white); flex-direction: column; padding: 30px 0;
+    text-align: center; border-bottom: 1px solid var(--pink-soft);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+  }
+  nav.open { display: flex !important; }
+}
+
+/* =========================================
+   HERO SECTION (Light Overlay)
+   ========================================= */
+.hero {
+  min-height: 90vh;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  /* White/Pink overlay so dark text is readable */
+  background: 
+    linear-gradient(rgba(255,255,255,0.8), rgba(255,240,245,0.7)), 
+    url('/img/3030.jpg') center/cover fixed;
+}
+.hero h1 { font-size: 4rem; line-height: 1.1; margin-bottom: 20px; color: var(--text-dark); }
+.hero p { font-size: 1.3rem; color: var(--text-light); margin-bottom: 40px; font-weight: 400; }
+
 button {
-  background: var(--pink-primary);
-  color: white;
-  box-shadow: var(--shadow-pink);
+  padding: 15px 40px; background: var(--pink-primary);
+  border: none; color: white; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; cursor: pointer; border-radius: 50px; /* Soft Rounded Button */
+  transition: 0.3s; box-shadow: var(--shadow-pink);
 }
-button:hover {
-  background: var(--pink-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(216, 27, 96, 0.3);
+button:hover { 
+  background: #d81b60; 
+  transform: translateY(-3px); 
+  box-shadow: 0 15px 30px rgba(255, 94, 120, 0.4); 
 }
 
-/* 3. Cards (Services, Pricing) */
-.service-card, .review-card {
-  background: var(--white);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 5px 20px rgba(0,0,0,0.05); /* Soft shadow */
+/* =========================================
+   SECTIONS
+   ========================================= */
+.services, .pricing, .gallery, .testimonials, .appointment, .contact {
+  padding: 100px 20px; text-align: center;
 }
-.service-card:hover {
-  background: var(--pink-light);
-  transform: translateY(-10px);
-}
-.service-card::before { background: var(--pink-primary); }
-.service-card p, .review-card p { color: var(--text-muted); }
-.service-card h3, .review-card span { color: var(--pink-dark); }
+/* Alternate Background Colors */
+.services, .gallery, .contact { background: var(--pink-bg); }
 
-/* 4. Pricing Table */
+/* Service Cards */
+.service-list {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px; max-width: 1200px; margin: 50px auto 0;
+}
+.service-card {
+  background: var(--white); padding: 40px 20px;
+  border: 1px solid var(--pink-soft); border-radius: 12px;
+  transition: 0.4s; position: relative; overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+}
+.service-card:hover { transform: translateY(-10px); background: #fffbfd; }
+.service-card::before {
+  content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+  background: var(--pink-primary); transform: scaleX(0); transition: 0.4s;
+}
+.service-card:hover::before { transform: scaleX(1); }
+.service-card h3 { color: var(--pink-primary); }
+.service-card p { color: var(--text-light); }
+
+/* Pricing Table */
 table {
-  background: var(--white);
-  border: 1px solid var(--border-color);
+  width: 100%; max-width: 700px; margin: 50px auto; border-collapse: collapse;
+  background: var(--white); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
-th {
-  background: var(--pink-light);
-  color: var(--pink-dark);
-  border-bottom: 2px solid var(--pink-primary);
+th { 
+  background: var(--pink-soft); color: var(--text-dark); 
+  padding: 20px; font-size: 1.2rem; 
 }
-td {
-  color: var(--text-main);
-  border-bottom: 1px solid #eee;
+td { 
+  padding: 20px; border-bottom: 1px solid #f0f0f0; 
+  font-size: 1.1rem; color: var(--text-light); 
 }
-tr:hover td { background: #fffbfd; }
-td:last-child { color: var(--pink-primary); }
+td:last-child { text-align: right; font-weight: bold; color: var(--pink-primary); }
+tr:hover td { background: #fff5f7; }
 
-/* 5. Forms (Appointment) */
+/* Gallery */
+.gallery-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px; max-width: 1200px; margin: 40px auto;
+}
+.gallery-item img {
+  width: 100%; height: 300px; object-fit: cover; transition: 0.6s;
+  border-radius: 12px;
+}
+.gallery-item:hover img { transform: scale(1.05); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+/* Testimonials */
+.testimonial-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px; max-width: 1000px; margin: 50px auto;
+}
+.review-card {
+  background: var(--white); border: 1px solid var(--pink-soft);
+  padding: 30px; border-radius: 12px; box-shadow: var(--shadow-pink);
+}
+.review-card p { font-style: italic; color: var(--text-light); }
+.review-card span { display: block; margin-top: 15px; color: var(--pink-primary); font-weight: bold; }
+
+/* =========================================
+   APPOINTMENT FORM (Fixed Inputs)
+   ========================================= */
 form {
+  max-width: 500px; margin: 40px auto; 
   background: var(--white);
-  border: 1px solid var(--pink-primary);
+  padding: 40px; border: 1px solid var(--pink-soft);
+  border-radius: 15px;
   box-shadow: var(--shadow-pink);
 }
+
 input, select {
-  color: var(--text-main);
-  border-bottom: 1px solid #ccc;
-}
-input:focus, select:focus {
-  border-bottom: 2px solid var(--pink-primary);
-}
-/* Update Calendar/Dropdown Icons to Pink */
-select {
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ff5e78%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-}
-input[type="date"]::-webkit-calendar-picker-indicator {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="15" viewBox="0 0 24 24"><path fill="%23ff5e78" d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>');
+  width: 100%; padding: 15px 10px; margin-bottom: 25px;
+  background: #fffcfd; /* Very light pink/white tint */
+  border: none; border-bottom: 1px solid #ddd; 
+  color: var(--text-dark); font-family: var(--font-body);
+  transition: 0.3s; border-radius: 0;
 }
 
-/* 6. Footer */
-footer {
-  background: var(--pink-light);
-  color: var(--text-muted);
-  border-top: 1px solid var(--border-color);
+input:focus, select:focus { 
+  outline: none; border-bottom: 2px solid var(--pink-primary); 
+  background: #fff;
+}
+
+/* --- CUSTOM PINK DROPDOWN ARROW --- */
+select {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ff5e78%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 30px;
+}
+
+/* --- CUSTOM PINK CALENDAR ICON --- */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="15" viewBox="0 0 24 24"><path fill="%23ff5e78" d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>'); 
+  width: 20px; height: 20px; cursor: pointer; opacity: 1;
+}
+
+/* =========================================
+   CONTACT & FOOTER
+   ========================================= */
+.contact-grid {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 50px;
+  max-width: 1000px; margin: 50px auto;
+}
+.contact-info p { color: var(--text-dark); margin: 10px 0; font-size: 1.1rem; }
+
+iframe { 
+  width: 100%; max-width: 500px; height: 300px; border: 4px solid var(--white);
+  box-shadow: var(--shadow-pink); border-radius: 12px;
+}
+
+footer { 
+  background: var(--pink-bg); padding: 30px; text-align: center; 
+  border-top: 1px solid var(--pink-soft); color: var(--text-light); 
+}
+
+/* Back to Top */
+#backToTop {
+  position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px;
+  background: var(--pink-primary); color: white; display: flex;
+  justify-content: center; align-items: center; font-size: 24px; border-radius: 50%;
+  cursor: pointer; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 100;
+  box-shadow: 0 5px 15px rgba(255, 94, 120, 0.4);
+}
+#backToTop.visible { opacity: 1; pointer-events: all; }
+#backToTop:hover { transform: translateY(-5px); }
+
+/* Popup */
+#popup {
+  display: none; margin: 20px auto; padding: 15px; 
+  background: #2ecc71; color: white; 
+  font-weight: bold; border-radius: 8px; width: fit-content;
+  box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
 }
