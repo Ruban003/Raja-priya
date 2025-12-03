@@ -65,4 +65,4 @@ style.innerHTML = `
     100% { transform: translateX(0); }
   }
 `;
-document.head.appendChild(style);
+document.head.appendChild(style); 

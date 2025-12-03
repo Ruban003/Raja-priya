@@ -295,7 +295,7 @@ iframe {
 
 footer { 
   background: var(--rose-bg); padding: 40px; text-align: center; 
-  border-top: 1px solid var(--rose-soft); color: var(--text-light); 
+  border-top: 1px solid var(--rose-soft); color: var(--text-light);  
   letter-spacing: 1px;
 }
 
