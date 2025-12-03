@@ -1,6 +1,17 @@
 document.addEventListener("DOMContentLoaded", function () {
   
-  // 1. PRELOADER FADE OUT
+  // 1. FILL SERVICES DROPDOWN FROM DB
+  const select = document.getElementById("service");
+  if(select && typeof DB !== 'undefined') {
+    const services = DB.getServices();
+    // Clear existing options except the first placeholder
+    select.innerHTML = '<option value="" disabled selected>Select Experience</option>';
+    services.forEach(s => {
+      select.innerHTML += `<option value="${s.name}">${s.name} - ₹${s.price}</option>`;
+    });
+  }
+
+  // 2. PRELOADER FADE OUT
   const preloader = document.getElementById("preloader");
   if(preloader) {
     window.addEventListener("load", () => {
@@ -9,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 2. MOBILE BURGER MENU
+  // 3. MOBILE BURGER MENU
   const burger = document.getElementById("burgerBtn");
   const nav = document.getElementById("navMenu");
 
@@ -28,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 3. SCROLL TO BOOKING
+  // 4. SCROLL TO BOOKING
   const bookBtn = document.getElementById("bookBtn");
   if (bookBtn) {
     bookBtn.addEventListener("click", () => {
@@ -36,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 4. BACK TO TOP BUTTON
+  // 5. BACK TO TOP BUTTON
   const backToTop = document.getElementById("backToTop");
   window.addEventListener("scroll", () => {
     if (window.scrollY > 300) {
@@ -49,13 +60,13 @@ document.addEventListener("DOMContentLoaded", function () {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 5. SMART DATE PICKER (No Past Dates)
+  // 6. SMART DATE PICKER (No Past Dates)
   const dateInput = document.getElementById("date");
   if (dateInput) {
     dateInput.setAttribute("min", new Date().toISOString().split("T")[0]);
   }
 
-  // 6. FORM VALIDATION & MOCK SUBMIT
+  // 7. FORM SUBMISSION WITH DB
   const form = document.getElementById("appointmentForm");
   if (form) {
     form.addEventListener("submit", (e) => {
@@ -64,6 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const name = document.getElementById("name").value.trim();
       const phone = document.getElementById("phone").value.trim();
       const date = document.getElementById("date").value;
+      const time = document.getElementById("time").value; // Capture time
       const service = document.getElementById("service").value;
 
       if (phone.length !== 10 || isNaN(phone)) {
@@ -71,11 +83,28 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // Save to LocalStorage
-      const appointment = { name, phone, service, date, time: new Date().toLocaleTimeString() };
-      let apps = JSON.parse(localStorage.getItem("appointments")) || [];
-      apps.push(appointment);
-      localStorage.setItem("appointments", JSON.stringify(apps));
+      // Convert time to 12hr format for display
+      const displayTime = convertToAMPM(time);
+
+      // Save to Database using DB Engine
+      if (typeof DB !== 'undefined') {
+        DB.createBooking({
+          name: name,
+          phone: phone,
+          serviceId: service,
+          date: date,
+          time: displayTime,
+          type: "Online Booking",
+          status: "Pending"
+        });
+      } else {
+         // Fallback if DB not loaded (should not happen if index.html is correct)
+         console.error("Database Engine not loaded!");
+         const appointment = { name, phone, service, date, time: displayTime };
+         let apps = JSON.parse(localStorage.getItem("appointments")) || [];
+         apps.push(appointment);
+         localStorage.setItem("appointments", JSON.stringify(apps));
+      }
 
       // Show Success UI
       const popup = document.getElementById("popup");
@@ -87,3 +116,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+
+// Helper Function for Time Format
+function convertToAMPM(time) {
+  if (!time) return "Flexible";
+  let [h, m] = time.split(':');
+  let ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+}

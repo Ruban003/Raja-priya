@@ -14,6 +14,22 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
     <link rel="stylesheet" href="/css/style.css" />
+    
+    <script src="/js/db.js"></script>
+
+    <style>
+      .date-time-group {
+        display: flex;
+        gap: 15px;
+      }
+      .date-time-group input {
+        width: 50%;
+      }
+      @media (max-width: 480px) {
+        .date-time-group { flex-direction: column; gap: 0; }
+        .date-time-group input { width: 100%; }
+      }
+    </style>
   </head>
 
   <body>
@@ -129,17 +145,17 @@
       
       <form id="appointmentForm" data-aos="zoom-in-up">
         <input type="text" id="name" placeholder="Your Name" required />
+        
         <input type="tel" id="phone" placeholder="Phone Number (10 digits)" required />
         
         <select id="service" required>
-          <option value="">Select Experience</option>
-          <option>Hair Styling</option>
-          <option>Bridal Makeup</option>
-          <option>Facial Therapy</option>
-          <option>Nail Art</option>
-        </select>
+          <option value="" disabled selected>Select Experience</option>
+          </select>
         
-        <input type="date" id="date" required />
+        <div class="date-time-group">
+          <input type="date" id="date" required />
+          <input type="time" id="time" required />
+        </div>
         
         <button type="submit">Confirm Reservation</button>
       </form>
@@ -152,7 +168,7 @@
       <div class="contact-grid">
         <div class="contact-info" data-aos="fade-right">
           <p><strong>GLAM Salon & Academy</strong></p>
-          <p>📍 Karaikudi </p>
+          <p>📍 Koramangala 4th Block, Bangalore</p>
           <p>📞 +91 63854 74330</p>
           <p>✉️ myglamsalonacademy@gmail.com</p>
         </div>
@@ -174,6 +190,7 @@
         offset: 80
       });
     </script>
+    
     <script src="/js/script.js"></script>
   </body>
 </html>

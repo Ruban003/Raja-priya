@@ -2,39 +2,214 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Glam Salon</title>
-  <link rel="stylesheet" href="/admin/dashboard.css">
+  <title>Glam Admin Portal</title>
+  
+  <!-- 1. Shared Theme -->
+  <link rel="stylesheet" href="/css/style.css">
+  <!-- 2. Admin Specific Styles -->
+  <link rel="stylesheet" href="dashboard.css">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+  
+  <!-- 3. Load Database Engine -->
+  <script src="/js/db.js"></script>
 </head>
 
-<body class="admin-body">
+<body class="admin-app">
 
-  <header class="admin-header">
-    <h2>Glam Salon – Admin Dashboard</h2>
-    <button onclick="logout()" class="logout-btn">Logout</button>
-  </header>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">GLAM<span style="color:var(--rose-primary)">PRO</span></div>
+    
+    <nav class="menu">
+      <a href="#" class="menu-item active" onclick="switchTab('dashboard')">
+        <i class="fas fa-th-large"></i> Dashboard
+      </a>
+      <a href="#" class="menu-item" onclick="switchTab('appointments')">
+        <i class="fas fa-calendar-alt"></i> Appointments
+      </a>
+      <a href="#" class="menu-item" onclick="switchTab('billing')">
+        <i class="fas fa-cash-register"></i> Billing / POS
+      </a>
+      <a href="#" class="menu-item" onclick="switchTab('reports')"> <!-- New Tab -->
+        <i class="fas fa-chart-line"></i> Reports
+      </a>
+    </nav>
 
-  <main class="admin-container">
-    <h3>Total Appointments</h3>
+    <div class="user-profile">
+      <small onclick="logout()">Logout <i class="fas fa-sign-out-alt"></i></small>
+    </div>
+  </aside>
 
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Service</th>
-          <th>Date</th>
-          <th>Time</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="appointmentList"></tbody>
-    </table>
+  <!-- MAIN CONTENT -->
+  <main class="content-area">
+    
+    <header class="top-bar">
+      <h2 id="pageTitle">Overview</h2>
+      <button class="btn-walkin" onclick="openWalkinModal()">
+        <i class="fas fa-plus"></i> New Booking
+      </button>
+    </header>
 
-    <button class="clear-btn" onclick="clearAll()">Clear All Appointments</button>
+    <!-- VIEW 1: DASHBOARD STATS -->
+    <section id="view-dashboard" class="view-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Today's Revenue</h3>
+          <p class="stat-num">₹<span id="todayRev">0</span></p>
+        </div>
+        <div class="stat-card">
+          <h3>Active Appointments</h3>
+          <p class="stat-num" id="activeCount">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Pending Bills</h3>
+          <p class="stat-num" id="pendingBillsCount">0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: APPOINTMENTS LIST -->
+    <section id="view-appointments" class="view-section" style="display:none;">
+      <div class="table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Client</th>
+              <th>Service</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="apptListBody">
+            <!-- JS Fills This -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VIEW 3: BILLING POS -->
+    <section id="view-billing" class="view-section" style="display:none;">
+      <div class="pos-container">
+        
+        <!-- Queue (Left) -->
+        <div class="pos-queue">
+          <h3>Unpaid Queue</h3>
+          <div id="billingQueue"></div>
+        </div>
+
+        <!-- Invoice (Right) -->
+        <div class="pos-invoice">
+          <div id="invoiceEmpty" class="empty-state">
+            <p>Select a client to generate bill</p>
+          </div>
+
+          <div id="invoiceActive" style="display:none;">
+            <div class="inv-header">
+              <h3>INVOICE</h3>
+              <p>#<span id="invId">000</span></p>
+            </div>
+            
+            <div class="inv-client">
+              <h4 id="invName">Client Name</h4>
+              <p id="invPhone">Phone</p>
+            </div>
+
+            <div class="inv-items">
+              <div class="row">
+                <span id="invService">Service</span>
+                <span id="invPrice">0.00</span>
+              </div>
+            </div>
+
+            <div class="inv-totals">
+              <div class="row"><span>Subtotal</span> <span id="invSub">0</span></div>
+              <div class="row"><span>Tax (18%)</span> <span id="invTax">0</span></div>
+              <div class="row total"><span>Total</span> <span>₹<span id="invTotal">0</span></span></div>
+            </div>
+
+            <button class="btn-pay" onclick="completePayment('Cash')">
+              Mark as Paid (Cash/UPI)
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: REPORTS (New Section) -->
+    <section id="view-reports" class="view-section" style="display:none;">
+        <div class="report-controls">
+            <input type="date" id="reportDate" onchange="renderReport()" class="date-picker-styled">
+            <button onclick="renderReport()" class="btn-walkin" style="padding: 8px 15px; font-size: 0.8rem;">Generate Report</button>
+        </div>
+        
+        <div class="stats-grid" style="margin-top: 20px;">
+            <div class="stat-card">
+                <h3>Total Daily Revenue</h3>
+                <p class="stat-num">₹<span id="reportRevenue">0</span></p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Clients Served</h3>
+                <p class="stat-num" id="reportCount">0</p>
+            </div>
+        </div>
+
+        <div class="table-card" style="margin-top: 30px;">
+            <h3>Client Visit Details</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Client Name</th>
+                        <th>Service</th>
+                        <th>Amount Paid</th>
+                        <th>Payment Method</th>
+                    </tr>
+                </thead>
+                <tbody id="reportListBody">
+                    <!-- Report Data Here -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
   </main>
 
-  <script src="/admin/dashboard.js"></script>
+  <!-- SMART BOOKING MODAL -->
+  <div id="walkinModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeWalkinModal()">&times;</span>
+      <h2>New Booking</h2>
+      
+      <form onsubmit="handleBookingSubmit(event)">
+        <!-- Client -->
+        <div class="form-group">
+          <input type="text" id="wName" placeholder="Client Name" required>
+        </div>
+        <div class="form-group">
+          <!-- Added max length and oninput validation for 10 digits -->
+          <input type="tel" id="wPhone" placeholder="Phone Number (10 digits)" required maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+        </div>
+        
+        <!-- Service -->
+        <div class="form-group">
+          <select id="wService" required>
+            <!-- JS Fills This -->
+          </select>
+        </div>
 
+        <!-- Date & Time -->
+        <div class="form-row">
+          <input type="date" id="wDate" required>
+          <input type="time" id="wTime" required>
+        </div>
+
+        <button type="submit" style="width:100%; margin-top:20px;">Confirm</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
 </body>
 </html>

@@ -1,30 +1,28 @@
 /* =========================================
    THEME: DUSTY ROSE & CHAMPAGNE LUXURY
-   (Based on your reference image)
    ========================================= */
 
 :root {
-  /* --- New Color Palette from Image --- */
-  --rose-primary: #c48a8a;       /* The Dusty Pink from the desk slats */
+  /* --- Color Palette --- */
+  --rose-primary: #c48a8a;       /* Dusty Pink (Icons/Buttons) */
   --rose-deep: #a66d6d;          /* Darker shade for hovers */
-  --rose-soft: #e3caca;          /* Lighter wall tone */
-  --rose-bg: #f9f4f4;            /* Very light blush background */
+  --rose-soft: #e3caca;          /* Borders/Light backgrounds */
+  --rose-bg: #f9f4f4;            /* Section Backgrounds */
   
-  --gold-accent: #d4af37;        /* Champagne Gold (Matches the lights in photo) */
+  --gold-accent: #d4af37;        /* Champagne Gold */
   --white: #ffffff;
   
   /* --- Text Colors --- */
-  --text-dark: #4a4444;          /* Warm Charcoal (Softer than black) */
+  --text-dark: #4a4444;          /* Warm Charcoal */
   --text-light: #888080;         /* Muted Warm Grey */
   
   /* --- Gradients --- */
-  /* Elegant gradient matching the wall lighting */
   --rose-gradient: linear-gradient(135deg, #dcb5b5, #c48a8a);
   
-  /* --- Functional Variables --- */
+  /* --- Functional --- */
   --bg-body: #ffffff;
   --glass-bg: rgba(255, 255, 255, 0.95);
-  --shadow-soft: 0 10px 40px rgba(196, 138, 138, 0.15); /* Pink tinted shadow */
+  --shadow-soft: 0 10px 40px rgba(196, 138, 138, 0.15);
   
   /* --- Fonts --- */
   --font-heading: 'Playfair Display', serif;
@@ -51,7 +49,7 @@ h1, h2, h3 {
   letter-spacing: 0.5px;
 }
 
-/* Gradient Text Effect (Luxury) */
+/* Gradient Text Effect */
 .gold-text, h1 span {
   background: var(--rose-gradient);
   -webkit-background-clip: text;
@@ -60,7 +58,7 @@ h1, h2, h3 {
 }
 
 /* =========================================
-   PRELOADER (Rose Theme)
+   PRELOADER
    ========================================= */
 #preloader {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -84,7 +82,7 @@ h1, h2, h3 {
 }
 
 /* =========================================
-   HEADER (Clean White)
+   HEADER
    ========================================= */
 header {
   display: flex; justify-content: space-between; align-items: center;
@@ -148,7 +146,6 @@ nav a:hover { color: var(--rose-primary); }
 .hero {
   min-height: 90vh;
   display: flex; align-items: center; justify-content: center; text-align: center;
-  /* Soft overlay to match the "Tendencia" vibe */
   background: 
     linear-gradient(rgba(255,255,255,0.7), rgba(255,245,245,0.6)), 
     url('/img/3030.jpg') center/cover fixed;
@@ -183,7 +180,7 @@ button:hover {
 }
 .service-card {
   background: var(--white); padding: 50px 30px;
-  border: 1px solid var(--rose-soft); border-radius: 8px; /* Slightly sharper edges like the desk */
+  border: 1px solid var(--rose-soft); border-radius: 8px;
   transition: 0.4s; position: relative; overflow: hidden;
   box-shadow: 0 5px 15px rgba(0,0,0,0.02);
 }
@@ -220,7 +217,7 @@ tr:hover td { background: #fffcfc; }
 }
 .gallery-item img {
   width: 100%; height: 350px; object-fit: cover; transition: 0.6s;
-  border-radius: 8px; filter: grayscale(20%); /* Artistic touch */
+  border-radius: 8px; filter: grayscale(20%);
 }
 .gallery-item:hover img { transform: scale(1.05); filter: grayscale(0%); }
 
@@ -237,7 +234,7 @@ tr:hover td { background: #fffcfc; }
 .review-card span { display: block; margin-top: 15px; color: var(--rose-primary); font-weight: bold; }
 
 /* =========================================
-   APPOINTMENT FORM (Dusty Rose Styles)
+   APPOINTMENT FORM (Updated for Time Picker)
    ========================================= */
 form {
   max-width: 500px; margin: 40px auto; 
@@ -252,18 +249,17 @@ input, select {
   background: #fdfbfb; 
   border: none; border-bottom: 1px solid #ddd; 
   color: var(--text-dark); font-family: var(--font-body);
-  transition: 0.3s; border-radius: 0;
+  transition: 0.3s; border-radius: 0; outline: none;
 }
 
 input:focus, select:focus { 
-  outline: none; border-bottom: 2px solid var(--rose-primary); 
+  border-bottom: 2px solid var(--rose-primary); 
   background: #fff;
 }
 
-/* --- CUSTOM ROSE DROPDOWN ARROW --- */
+/* Custom Dropdown Arrow */
 select {
   appearance: none; -webkit-appearance: none; -moz-appearance: none; cursor: pointer;
-  /* Updated color to #c48a8a */
   background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23c48a8a%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
@@ -271,10 +267,15 @@ select {
   padding-right: 30px;
 }
 
-/* --- CUSTOM ROSE CALENDAR ICON --- */
+/* Custom Date Icon */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  /* Updated color to #c48a8a */
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="15" viewBox="0 0 24 24"><path fill="%23c48a8a" d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/></svg>'); 
+  width: 20px; height: 20px; cursor: pointer; opacity: 1;
+}
+
+/* Custom Time Icon */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="%23c48a8a" d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path fill="%23c48a8a" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>');
   width: 20px; height: 20px; cursor: pointer; opacity: 1;
 }
 
