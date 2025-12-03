@@ -129,7 +129,7 @@ const DB = {
            const tax = Math.round(subtotal * 0.18);
            return sum + subtotal + tax;
       }, 0);
- 
+  
       return {
           date: date,
           totalAppointments: dailyApps.length,

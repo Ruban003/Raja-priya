@@ -52,7 +52,7 @@ function handleLogin(e) {
       card.style.animation = "shake 0.5s";
     }
   }, 800);
-}
+} 
 
 // Add Shake Animation Style Dynamically
 const style = document.createElement('style');

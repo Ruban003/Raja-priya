@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       form.reset();
     });
-  }
+  } 
 });
 
 // Helper Function for Time Format

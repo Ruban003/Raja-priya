@@ -270,4 +270,4 @@ function logout() {
     localStorage.removeItem("glam_session");
     window.location.href = "admin.html"; // Redirect to login
   }
-}
+} 
