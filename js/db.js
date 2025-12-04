@@ -33,6 +33,7 @@ const DB = {
   },
 
   createBooking: async function(data) {
+    // Find service details
     const services = this.getServices();
     const selectedService = services.find(s => s.name === data.serviceId || s.id === data.serviceId) 
                             || { name: data.serviceId, price: 0 };
@@ -59,16 +60,21 @@ const DB = {
   },
 
   getInvoiceDetails: async function(apptId) {
-    const res = await fetch(`${API_URL}/appointments/${apptId}`);
-    const appt = await res.json();
-    
-    if (!appt) return null;
+    try {
+      const res = await fetch(`${API_URL}/appointments/${apptId}`);
+      const appt = await res.json();
+      
+      if (!appt) return null;
 
-    const subtotal = appt.price;
-    const tax = Math.round(subtotal * 0.18);
-    const total = subtotal + tax;
+      const subtotal = appt.price;
+      const tax = Math.round(subtotal * 0.18);
+      const total = subtotal + tax;
 
-    return { ...appt, subtotal, tax, total };
+      return { ...appt, subtotal, tax, total };
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   },
 
   processPayment: async function(apptId, method) {
