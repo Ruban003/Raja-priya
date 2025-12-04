@@ -1,28 +1,22 @@
 /* =========================================
    GLAM SALON - API CLIENT (Frontend DB)
-   Connects to Node.js Backend
+   Connects to Render Backend
    ========================================= */
 
-/* js/db.js */
-// Make sure to include /api at the end!
-/* js/db.js */
-
-// REPLACE the old line with this:
-const API_URL = "https://glam-backend-nw7q.onrender.com/api";// Static Services (Menu)
-
-const DEFAULT_SERVICES = [
-  { id: "hair_cut", name: "Signature Hair Cut", price: 210, category: "Hair" },
-  { id: "hair_spa", name: "Luxury Hair Spa", price: 550, category: "Hair" },
-  { id: "facial_gold", name: "Gold Facial", price: 1200, category: "Skin" },
-  { id: "waxing_hand", name: "Full Hand Waxing", price: 315, category: "Skin" },
-  { id: "bridal_makeover", name: "Bridal Makeover", price: 3150, category: "Makeup" },
-  { id: "nail_art", name: "Nail Artistry", price: 400, category: "Nails" }
-];
+// ✅ YOUR RENDER BACKEND URL
+const API_URL = "https://glam-backend-nw7q.onrender.com/api";
 
 const DB = {
-  // Services remain static for now (simplifies migration)
+  // Static Services Menu
   getServices: function() {
-    return DEFAULT_SERVICES;
+    return [
+      { id: "hair_cut", name: "Signature Hair Cut", price: 210, category: "Hair" },
+      { id: "hair_spa", name: "Luxury Hair Spa", price: 550, category: "Hair" },
+      { id: "facial_gold", name: "Gold Facial", price: 1200, category: "Skin" },
+      { id: "waxing_hand", name: "Full Hand Waxing", price: 315, category: "Skin" },
+      { id: "bridal_makeover", name: "Bridal Makeover", price: 3150, category: "Makeup" },
+      { id: "nail_art", name: "Nail Artistry", price: 400, category: "Nails" }
+    ];
   },
 
   // --- ASYNC API CALLS ---
