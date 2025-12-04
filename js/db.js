@@ -1,16 +1,11 @@
 /* =========================================
-   GLAM SALON - CENTRAL DATABASE ENGINE
-   (Powered by LocalStorage)
+   GLAM SALON - API CLIENT (Frontend DB)
+   Connects to Node.js Backend
    ========================================= */
 
-const DB_KEYS = {
-  SERVICES: "glam_services",
-  APPOINTMENTS: "glam_appointments",
-  CLIENTS: "glam_clients",
-  REPORTS: "glam_reports" // New key for reports if needed separately
-};
+const API_URL = "http://localhost:5000/api"; // Change to your live URL when deploying
 
-/* --- SEED DATA (Default Menu) --- */
+// Static Services (Menu)
 const DEFAULT_SERVICES = [
   { id: "hair_cut", name: "Signature Hair Cut", price: 210, category: "Hair" },
   { id: "hair_spa", name: "Luxury Hair Spa", price: 550, category: "Hair" },
@@ -21,125 +16,91 @@ const DEFAULT_SERVICES = [
 ];
 
 const DB = {
-  init: function() {
-    if (!localStorage.getItem(DB_KEYS.SERVICES)) {
-      localStorage.setItem(DB_KEYS.SERVICES, JSON.stringify(DEFAULT_SERVICES));
-    }
-    if (!localStorage.getItem(DB_KEYS.APPOINTMENTS)) {
-      localStorage.setItem(DB_KEYS.APPOINTMENTS, JSON.stringify([]));
-    }
-    if (!localStorage.getItem(DB_KEYS.CLIENTS)) {
-      localStorage.setItem(DB_KEYS.CLIENTS, JSON.stringify([]));
+  // Services remain static for now (simplifies migration)
+  getServices: function() {
+    return DEFAULT_SERVICES;
+  },
+
+  // --- ASYNC API CALLS ---
+
+  getAppointments: async function() {
+    try {
+      const res = await fetch(`${API_URL}/appointments`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      return await res.json();
+    } catch (err) {
+      console.error("DB Error:", err);
+      return [];
     }
   },
 
-  /* --- GETTERS --- */
-  getServices: () => JSON.parse(localStorage.getItem(DB_KEYS.SERVICES)),
-  getAppointments: () => JSON.parse(localStorage.getItem(DB_KEYS.APPOINTMENTS)) || [],
-  getClients: () => JSON.parse(localStorage.getItem(DB_KEYS.CLIENTS)) || [],
-
-  /* --- BOOKING LOGIC --- */
-  createBooking: function(data) {
-    const apps = this.getAppointments();
+  createBooking: async function(data) {
     const services = this.getServices();
-    const selectedService = services.find(s => s.name === data.serviceId || s.id === data.serviceId) || { id: "custom", name: data.serviceId, price: 0 };
+    const selectedService = services.find(s => s.name === data.serviceId || s.id === data.serviceId) 
+                            || { name: data.serviceId, price: 0 };
     
-    const newApp = {
-      id: Date.now().toString(),
+    const payload = {
       clientName: data.name,
       clientPhone: data.phone,
-      serviceId: selectedService.id,
+      serviceId: selectedService.id || 'custom',
       serviceName: selectedService.name,
       price: selectedService.price,
       date: data.date,
       time: data.time,
-      type: data.type || "Online", 
+      type: data.type || "Online",
       status: data.status || "Pending",
-      paymentStatus: "Unpaid",
-      createdAt: new Date().toISOString()
+      paymentStatus: "Unpaid"
     };
 
-    apps.push(newApp);
-    this.save(DB_KEYS.APPOINTMENTS, apps);
-    this.saveClient(data);
-    return newApp;
+    const res = await fetch(`${API_URL}/bookings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
   },
 
-  /* --- BILLING LOGIC --- */
-  getInvoiceDetails: function(apptId) {
-    const apps = this.getAppointments();
-    const appt = apps.find(a => a.id === apptId);
+  getInvoiceDetails: async function(apptId) {
+    const res = await fetch(`${API_URL}/appointments/${apptId}`);
+    const appt = await res.json();
+    
     if (!appt) return null;
 
     const subtotal = appt.price;
-    const tax = Math.round(subtotal * 0.18); // 18% GST
+    const tax = Math.round(subtotal * 0.18);
     const total = subtotal + tax;
 
     return { ...appt, subtotal, tax, total };
   },
 
-  processPayment: function(apptId, method) {
-    const apps = this.getAppointments();
-    const index = apps.findIndex(a => a.id === apptId);
-    if (index !== -1) {
-      apps[index].paymentStatus = "Paid";
-      apps[index].paymentMethod = method;
-      apps[index].status = "Completed";
-      apps[index].paidAt = new Date().toISOString(); // Record payment time
-      this.save(DB_KEYS.APPOINTMENTS, apps);
-      return true;
-    }
-    return false;
+  processPayment: async function(apptId, method) {
+    await fetch(`${API_URL}/appointments/${apptId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        paymentStatus: "Paid",
+        paymentMethod: method,
+        status: "Completed"
+      })
+    });
+    return true;
   },
 
-  /* --- CLIENTS --- */
-  saveClient: function(data) {
-    let clients = this.getClients();
-    let existing = clients.find(c => c.phone === data.phone);
+  generateDailyReport: async function(date) {
+    const apps = await this.getAppointments();
+    const dailyApps = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
     
-    const visitInfo = {
-        date: data.date,
-        service: data.serviceId
+    const totalRevenue = dailyApps.reduce((sum, a) => {
+         const subtotal = a.price;
+         const tax = Math.round(subtotal * 0.18);
+         return sum + subtotal + tax;
+    }, 0);
+
+    return {
+        date: date,
+        totalAppointments: dailyApps.length,
+        revenue: totalRevenue,
+        details: dailyApps
     };
-
-    if (!existing) {
-      clients.push({ 
-          id: "c_" + Date.now(), 
-          name: data.name, 
-          phone: data.phone, 
-          visits: 1,
-          history: [visitInfo] // Store visit history
-      });
-    } else {
-      existing.visits++;
-      if(!existing.history) existing.history = [];
-      existing.history.push(visitInfo);
-    }
-    this.save(DB_KEYS.CLIENTS, clients);
-  },
-  
-  /* --- REPORTING --- */
-  generateDailyReport: function(date) {
-      const apps = this.getAppointments();
-      const dailyApps = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
-      
-      const totalRevenue = dailyApps.reduce((sum, a) => {
-          // Calculate total including tax for revenue report
-           const subtotal = a.price;
-           const tax = Math.round(subtotal * 0.18);
-           return sum + subtotal + tax;
-      }, 0);
-  
-      return {
-          date: date,
-          totalAppointments: dailyApps.length,
-          revenue: totalRevenue,
-          details: dailyApps
-      };
-  },
-
-  save: (key, data) => localStorage.setItem(key, JSON.stringify(data))
+  }
 };
-
-// Initialize DB on load
-DB.init();
