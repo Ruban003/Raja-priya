@@ -5,8 +5,10 @@
 
 /* js/db.js */
 // Make sure to include /api at the end!
-const API_URL = "https://glam-backend.onrender.com/api";
-// Static Services (Menu)
+/* js/db.js */
+
+// REPLACE the old line with this:
+const API_URL = "https://glam-backend-nw7q.onrender.com/api";// Static Services (Menu)
 
 const DEFAULT_SERVICES = [
   { id: "hair_cut", name: "Signature Hair Cut", price: 210, category: "Hair" },
