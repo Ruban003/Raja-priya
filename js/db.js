@@ -3,9 +3,11 @@
    Connects to Node.js Backend
    ========================================= */
 
-const API_URL = "http://localhost:5000/api"; // Change to your live URL when deploying
-
+/* js/db.js */
+// Make sure to include /api at the end!
+const API_URL = "https://glam-backend.onrender.com/api";
 // Static Services (Menu)
+
 const DEFAULT_SERVICES = [
   { id: "hair_cut", name: "Signature Hair Cut", price: 210, category: "Hair" },
   { id: "hair_spa", name: "Luxury Hair Spa", price: 550, category: "Hair" },
