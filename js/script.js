@@ -136,3 +136,85 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   } 
 });
+
+/* =========================================
+   UPDATED BOOKING LOGIC WITH ERROR HANDLING
+   ========================================= */
+
+async function handleBookingSubmit(e) {
+  e.preventDefault(); // Stop page reload
+  
+  // 1. Get Button to show "Loading..." state
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerText;
+  
+  try {
+    // Disable button to prevent double-clicks
+    submitBtn.innerText = "Processing...";
+    submitBtn.disabled = true;
+
+    // 2. Collect Form Data
+    const name = document.getElementById('wName').value;
+    const phone = document.getElementById('wPhone').value;
+    const serviceId = document.getElementById('wService').value;
+    const date = document.getElementById('wDate').value;
+    const time = document.getElementById('wTime').value;
+
+    if (!name || !phone || !serviceId || !date || !time) {
+      throw new Error("Please fill in all fields.");
+    }
+
+    // 3. Time Logic
+    const bookTime = new Date(`${date}T${time}`);
+    const now = new Date();
+    // If booking is more than 30 mins in future, it's a "Phone Booking", else "Walk-in"
+    const isFuture = bookTime > new Date(now.getTime() + 30*60000);
+
+    // Format Time (HH:MM -> 12 Hour AM/PM)
+    let [h, m] = time.split(':');
+    let ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    const displayTime = `${h}:${m} ${ampm}`;
+
+    // 4. Send to Database (Async)
+    console.log("Sending booking to DB...");
+    const newApp = await DB.createBooking({
+      name: name,
+      phone: phone,
+      serviceId: serviceId,
+      date: date,
+      time: displayTime,
+      type: isFuture ? 'Phone Booking' : 'Walk-in',
+      status: isFuture ? 'Confirmed' : 'In-Store'
+    });
+
+    console.log("Booking created:", newApp);
+
+    // 5. Success Handling
+    closeWalkinModal();
+    e.target.reset(); // Clear form
+
+    if(isFuture) {
+      alert(`✅ Appointment Confirmed for ${displayTime}`);
+      await switchTab('appointments');
+    } else {
+      // Walk-ins go straight to billing
+      const id = newApp._id || newApp.id;
+      if (id) {
+        await goToBilling(id);
+      } else {
+        await switchTab('dashboard');
+      }
+    }
+
+  } catch (error) {
+    // 6. Error Handling (Shows Alert)
+    console.error("Booking Failed:", error);
+    alert("❌ Booking Failed: " + (error.message || "Unknown Error. Check Server."));
+  } finally {
+    // Reset Button
+    submitBtn.innerText = originalText;
+    submitBtn.disabled = false;
+  }
+}
+
