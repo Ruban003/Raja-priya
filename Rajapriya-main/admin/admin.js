@@ -1,174 +1,95 @@
 /* =========================================
-   GLAM ADMIN - DASHBOARD CONTROLLER (Async)
+   GLAM ADMIN - SECURE LOGIN CONTROLLER
    ========================================= */
 
-(function checkSession() {
-  const sessionRaw = localStorage.getItem("glam_session");
-  const now = new Date().getTime();
-  if (!sessionRaw) { window.location.href = "admin.html"; return; }
-  const session = JSON.parse(sessionRaw);
-  if (!session.loggedIn || now > session.expiry) {
-    alert("Session Expired"); localStorage.removeItem("glam_session"); window.location.href = "admin.html";
-  }
-})();
+// Ensure API URL is loaded
+const API_BASE = (typeof API_URL !== 'undefined') 
+  ? API_URL 
+  : "https://glam-backend-nw7q.onrender.com/api"; // Fallback
 
-let currentInvoiceId = null;
+document.getElementById('loginForm').addEventListener('submit', handleLogin);
 
-// --- INITIALIZATION ---
-document.addEventListener("DOMContentLoaded", async () => {
-  if (typeof DB !== 'undefined') {
-    try {
-        await renderDashboard();
-        await renderAppointmentList();
-        await renderBillingQueue();
-        populateServiceDropdown();
-    } catch (e) { console.error("Init Error", e); }
-  }
-});
-
-// --- NAVIGATION ---
-async function switchTab(id) {
-  document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-  
-  const view = document.getElementById(`view-${id}`);
-  if(view) view.style.display = 'block';
-  
-  const activeLink = document.querySelector(`.menu-item[onclick="switchTab('${id}')"]`);
-  if(activeLink) activeLink.classList.add('active');
-  
-  if(id === 'appointments') await renderAppointmentList();
-  if(id === 'billing') await renderBillingQueue();
-  if(id === 'dashboard') await renderDashboard();
-  
-  const title = document.getElementById('pageTitle');
-  if(title) title.innerText = id.charAt(0).toUpperCase() + id.slice(1);
-}
-
-// --- DATA RENDERING ---
-async function renderDashboard() {
-  const apps = await DB.getAppointments();
-  const today = new Date().toISOString().split('T')[0];
-  const revenue = apps.filter(a => a.date === today && a.paymentStatus === 'Paid')
-                      .reduce((sum, a) => sum + (a.price || 0), 0);
-  
-  if(document.getElementById('todayRev')) document.getElementById('todayRev').innerText = revenue.toLocaleString();
-  if(document.getElementById('activeCount')) document.getElementById('activeCount').innerText = apps.filter(a => a.status !== 'Completed').length;
-  if(document.getElementById('pendingBillsCount')) document.getElementById('pendingBillsCount').innerText = apps.filter(a => a.paymentStatus === 'Unpaid').length;
-}
-
-async function renderAppointmentList() {
-  const tbody = document.getElementById('apptListBody');
-  if(!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
-  
-  const apps = await DB.getAppointments();
-  tbody.innerHTML = '';
-  
-  apps.forEach(a => {
-    let badgeClass = `badge-${(a.status || 'pending').toLowerCase().replace(/\s+/g, '-')}`;
-    const id = a._id || a.id; 
-    let actionBtn = a.paymentStatus === 'Unpaid' 
-      ? `<button class="btn-walkin" onclick="goToBilling('${id}')">Bill</button>`
-      : '<span style="color:#27ae60;">Paid</span>';
-
-    tbody.innerHTML += `
-      <tr>
-        <td><div>${a.date}</div><small>${a.time}</small></td>
-        <td><div>${a.clientName}</div><small>${a.clientPhone}</small></td>
-        <td>${a.serviceName}</td>
-        <td><span class="badge ${badgeClass}">${a.status}</span></td>
-        <td>${actionBtn}</td>
-      </tr>`;
-  });
-}
-
-// --- BILLING ---
-async function renderBillingQueue() {
-  const div = document.getElementById('billingQueue');
-  if(!div) return;
-  div.innerHTML = 'Loading...';
-  
-  const apps = await DB.getAppointments();
-  const unpaid = apps.filter(a => a.paymentStatus === 'Unpaid');
-  
-  div.innerHTML = '';
-  if(unpaid.length === 0) { div.innerHTML = '<div class="empty-state">No pending bills</div>'; return; }
-
-  unpaid.forEach(a => {
-    const id = a._id || a.id;
-    div.innerHTML += `<div class="queue-item" onclick="loadInvoice('${id}')"><strong>${a.clientName}</strong><br>₹${a.price}</div>`;
-  });
-}
-
-async function goToBilling(id) { await switchTab('billing'); await loadInvoice(id); }
-
-async function loadInvoice(id) {
-  currentInvoiceId = id;
-  const data = await DB.getInvoiceDetails(id);
-  if(!data) return;
-
-  document.getElementById('invoiceEmpty').style.display = 'none';
-  document.getElementById('invoiceActive').style.display = 'block';
-  document.getElementById('invName').innerText = data.clientName;
-  document.getElementById('invPhone').innerText = data.clientPhone;
-  document.getElementById('invService').innerText = data.serviceName;
-  document.getElementById('invPrice').innerText = data.subtotal;
-  document.getElementById('invTotal').innerText = data.total;
-}
-
-async function completePayment(method) {
-  if(!currentInvoiceId) return;
-  if(confirm(`Confirm ${method}?`)) {
-    await DB.processPayment(currentInvoiceId, method);
-    alert("Paid! ✅");
-    document.getElementById('invoiceActive').style.display = 'none';
-    document.getElementById('invoiceEmpty').style.display = 'flex';
-    await renderBillingQueue();
-  }
-}
-
-// --- BOOKING (Walk-in) ---
-function openWalkinModal() { document.getElementById('walkinModal').style.display = 'block'; }
-function closeWalkinModal() { document.getElementById('walkinModal').style.display = 'none'; }
-
-function populateServiceDropdown() {
-  const select = document.getElementById('wService');
-  if(select) {
-    select.innerHTML = '';
-    DB.getServices().forEach(s => select.innerHTML += `<option value="${s.id}">${s.name} - ₹${s.price}</option>`);
-  }
-}
-
-async function handleBookingSubmit(e) {
+async function handleLogin(e) {
   e.preventDefault();
-  const btn = e.target.querySelector('button');
-  btn.innerText = "Booking..."; btn.disabled = true;
+  
+  const userInput = document.getElementById("username");
+  const passInput = document.getElementById("password");
+  const errorMsg = document.getElementById("errorMsg");
+  const btn = document.querySelector(".login-btn");
+  const btnText = document.querySelector(".btn-text");
+  const loader = document.querySelector(".loader");
+  const card = document.querySelector(".login-card");
+
+  // 1. Reset UI
+  errorMsg.style.display = "none";
+  card.classList.remove("shake-animation");
+  
+  // 2. Loading State
+  btn.disabled = true;
+  btnText.textContent = "Verifying...";
+  loader.style.display = "block";
 
   try {
-      const date = document.getElementById('wDate').value;
-      const time = document.getElementById('wTime').value;
+    // 3. Send to Server (SECURE CHECK)
+    const response = await fetch(`${API_BASE}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        username: userInput.value.trim(), 
+        password: passInput.value.trim() 
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // 4. SUCCESS: Save Session & Redirect
+      const sessionData = {
+        loggedIn: true,
+        user: userInput.value,
+        token: data.token,
+        expiry: new Date().getTime() + (24 * 60 * 60 * 1000) // 24 Hours
+      };
       
-      let [h, m] = time.split(':');
-      let ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12 || 12;
-      const displayTime = `${h}:${m} ${ampm}`;
+      localStorage.setItem("glam_session", JSON.stringify(sessionData));
+      
+      btnText.textContent = "Success!";
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 500);
 
-      const newApp = await DB.createBooking({
-        name: document.getElementById('wName').value,
-        phone: document.getElementById('wPhone').value,
-        serviceId: document.getElementById('wService').value,
-        date: date,
-        time: displayTime,
-        type: 'Walk-in',
-        status: 'In-Store'
-      });
+    } else {
+      throw new Error(data.message || "Invalid Credentials");
+    }
 
-      closeWalkinModal();
-      await goToBilling(newApp._id || newApp.id);
-  } catch (err) {
-      alert("Error: " + err.message);
-  } finally {
-      btn.innerText = "Confirm"; btn.disabled = false;
+  } catch (error) {
+    // 5. FAIL: Show Error & Animation
+    errorMsg.style.display = "flex";
+    errorMsg.querySelector("span").innerText = "Incorrect Username or Password";
+    
+    // Trigger Shake Animation
+    void card.offsetWidth; // Trigger reflow
+    card.classList.add("shake-animation");
+    
+    // Reset Button
+    btn.disabled = false;
+    btnText.textContent = "Sign In";
+    loader.style.display = "none";
+  }
+}
+
+// Feature: Show/Hide Password
+function togglePassword() {
+  const passInput = document.getElementById("password");
+  const icon = document.querySelector(".toggle-pass");
+  
+  if (passInput.type === "password") {
+    passInput.type = "text";
+    icon.classList.remove("fa-eye");
+    icon.classList.add("fa-eye-slash");
+  } else {
+    passInput.type = "password";
+    icon.classList.remove("fa-eye-slash");
+    icon.classList.add("fa-eye");
   }
 }

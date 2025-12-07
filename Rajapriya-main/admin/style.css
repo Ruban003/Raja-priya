@@ -1,44 +1,157 @@
-/* ADMIN LOGIN PAGE */
-.admin-login-body {
-  background: #000;
-  color: var(--gold);
+/* =========================================
+   GLAM ADMIN - LOGIN STYLES
+   ========================================= */
+
+body {
+  margin: 0;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  /* Luxury Background Overlay */
+  background: 
+    linear-gradient(rgba(255, 255, 255, 0.85), rgba(249, 244, 244, 0.9)), 
+    url('/img/3030.jpg');
+  background-size: cover;
+  background-position: center;
+  font-family: 'Poppins', sans-serif;
 }
- 
-.admin-login-box {
-  background: #111;
-  padding: 30px;
-  border-radius: 12px;
-  border: 1px solid var(--gold);
-  box-shadow: 0 0 15px rgba(212,175,55,0.4);
-  width: 300px;
+
+.login-card {
+  width: 90%;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 50px 40px;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(196, 138, 138, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   text-align: center;
+  backdrop-filter: blur(10px);
 }
 
-.admin-login-box input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 15px;
-  background: #000;
-  border: 1px solid var(--gold);
-  color: white;
-  border-radius: 8px;
+/* Brand Header */
+.brand-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 5px;
+}
+.brand-logo span { color: #c48a8a; } /* Rose Primary */
+
+.subtitle {
+  color: #888;
+  margin-bottom: 35px;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
 }
 
-.admin-login-box button {
+/* Inputs */
+.input-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-group input {
   width: 100%;
-  padding: 12px;
-  background: var(--gold);
-  color: #000;
-  font-weight: bold;
+  padding: 15px 15px 15px 45px; /* Space for icon */
+  border: 1px solid #eee;
   border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: 0.3s;
+  background: #fdfdfd;
+}
+
+.input-group input:focus {
+  border-color: #c48a8a;
+  background: #fff;
+  box-shadow: 0 4px 15px rgba(196, 138, 138, 0.1);
+}
+
+.input-group i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #c48a8a;
+  font-size: 1.1rem;
+}
+
+/* Toggle Password Eye */
+.input-group .toggle-pass {
+  left: auto;
+  right: 15px;
   cursor: pointer;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+.input-group .toggle-pass:hover { color: #555; }
+
+/* Button */
+.login-btn {
+  width: 100%;
+  padding: 15px;
+  background: #c48a8a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
-.error {
-  color: red;
-  margin-top: 10px;
+.login-btn:hover {
+  background: #a66d6d;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(196, 138, 138, 0.2);
+}
+
+/* Error Message */
+.error-msg {
+  background: #ffe6e6;
+  color: #dc3545;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-top: 20px;
+  display: none; /* Hidden by default */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #ffcccc;
+}
+
+/* Animations */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  50% { transform: translateX(10px); }
+  75% { transform: translateX(-10px); }
+  100% { transform: translateX(0); }
+}
+
+.shake-animation {
+  animation: shake 0.4s ease-in-out;
+}
+
+.loader {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
