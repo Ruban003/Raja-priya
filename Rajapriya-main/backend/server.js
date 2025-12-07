@@ -8,27 +8,58 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// CONNECT DB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ DB Error:', err));
 
+// --- SCHEMAS ---
+const serviceSchema = new mongoose.Schema({
+  name: String,
+  price: Number,
+  category: String
+});
+const Service = mongoose.model('Service', serviceSchema);
+
 const appointmentSchema = new mongoose.Schema({
   clientName: String,
   clientPhone: String,
-  serviceName: String, // Can hold "Haircut + Facial"
+  serviceName: String, // Stores "Haircut + Facial"
   price: Number,       // Total Price
   date: String,
   time: String,
   status: String,
   paymentStatus: { type: String, default: 'Unpaid' },
-  paymentMethod: String,
-  gst: Number,         // New: Tax Amount
-  totalAmount: Number  // New: Price + Tax
+  gst: Number,
+  totalAmount: Number
 });
-
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 
 // --- ROUTES ---
+
+// 1. SERVICES MANAGEMENT (New!)
+app.get('/api/services', async (req, res) => {
+  const services = await Service.find();
+  res.json(services);
+});
+
+app.post('/api/services', async (req, res) => {
+  const newService = new Service(req.body);
+  await newService.save();
+  res.json(newService);
+});
+
+app.put('/api/services/:id', async (req, res) => {
+  const updated = await Service.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.json(updated);
+});
+
+app.delete('/api/services/:id', async (req, res) => {
+  await Service.findByIdAndDelete(req.params.id);
+  res.json({ message: "Deleted" });
+});
+
+// 2. APPOINTMENTS
 app.get('/api/appointments', async (req, res) => {
   const apps = await Appointment.find().sort({ _id: -1 });
   res.json(apps);
@@ -50,13 +81,12 @@ app.put('/api/appointments/:id', async (req, res) => {
   res.json(updated);
 });
 
-// ✅ NEW: DELETE ROUTE
 app.delete('/api/appointments/:id', async (req, res) => {
   await Appointment.findByIdAndDelete(req.params.id);
   res.json({ message: "Deleted" });
 });
 
-// ADMIN LOGIN
+// 3. LOGIN
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   if (username === "Glam" && password === "Glam@123") {
