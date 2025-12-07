@@ -1,437 +1,72 @@
-/* =========================================
-   GLOBAL ADMIN RESET & LAYOUT
-   ========================================= */
-* {
-  box-sizing: border-box; /* Fixes width/padding calculation issues */
-  margin: 0;
-  padding: 0;
-}
+/* admin/dashboard.css */
+* { box-sizing: border-box; }
+body { margin: 0; display: flex; font-family: 'Poppins', sans-serif; background: #f8f5f5; height: 100vh; }
 
-body.admin-app {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-  background-color: #f4f5f7;
-  font-family: 'Poppins', sans-serif;
-  color: #333;
-}
-
-/* =========================================
-   SIDEBAR ALIGNMENT
-   ========================================= */
+/* SIDEBAR */
 .sidebar {
-  width: 260px;
+  width: 250px;
   background: white;
-  border-right: 1px solid #e0e0e0;
-  padding: 25px 20px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0; /* Prevents shrinking on small screens */
+  border-right: 1px solid #eee;
 }
-
-.brand {
-  font-size: 1.6rem;
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  margin-bottom: 40px;
-  color: #333;
-  display: flex;
-  align-items: center; /* Vertically center brand text */
-  gap: 10px;
-}
-
-.menu {
-  display: flex;
-  flex-direction: column;
-  gap: 8px; /* Consistent spacing between items */
-}
+.brand { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 40px; color: #333; }
+.brand span { color: #c48a8a; }
 
 .menu-item {
-  display: flex;
-  align-items: center; /* Vertically center icon and text */
-  padding: 12px 15px;
-  color: #666;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  font-size: 0.95rem;
+  display: block; padding: 12px 15px; color: #666; text-decoration: none;
+  border-radius: 8px; margin-bottom: 5px; transition: 0.3s;
 }
+.menu-item:hover, .menu-item.active { background: #fff0f0; color: #c48a8a; font-weight: 600; }
+.logout-btn { margin-top: auto; border: none; background: none; color: #d9534f; cursor: pointer; text-align: left; padding: 10px; }
 
-.menu-item i {
-  width: 24px; /* Fixed width for icons ensures text aligns perfectly */
-  text-align: center;
-  margin-right: 12px;
-  font-size: 1.1rem;
+/* CONTENT */
+.content { flex: 1; padding: 30px; overflow-y: auto; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+h2 { font-family: 'Playfair Display', serif; color: #333; }
+
+.new-btn { background: #c48a8a; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
+
+/* CARDS */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+.card h3 { color: #888; font-size: 0.9rem; margin: 0; }
+.card p { font-size: 2rem; font-weight: 700; color: #c48a8a; margin: 10px 0 0; }
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+th, td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+th { background: #fcfcfc; color: #555; font-weight: 600; }
+.btn-del { color: #dc3545; background: none; border: none; cursor: pointer; }
+.btn-edit { color: #3498db; background: none; border: none; cursor: pointer; margin-right: 10px; }
+
+/* BILLING */
+.billing-layout { display: flex; gap: 20px; }
+.queue-list { flex: 1; }
+.queue-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; border-left: 4px solid #c48a8a; }
+.invoice-panel { flex: 1; background: white; padding: 30px; border-radius: 12px; border: 1px solid #eee; }
+.total { font-size: 1.5rem; color: #27ae60; font-weight: 700; margin-top: 20px; }
+
+/* ACTIONS */
+.pay-actions { margin-top: 20px; display: flex; gap: 10px; }
+.pay-actions button { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; color: white; }
+.btn-print { background: #555; }
+.btn-cash { background: #27ae60; }
+.btn-upi { background: #8e44ad; }
+
+/* MODAL */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; width: 400px; margin: 100px auto; padding: 25px; border-radius: 10px; }
+input, select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; }
+.close { float: right; cursor: pointer; font-size: 1.5rem; }
+
+/* PRINT STYLES */
+@media print {
+  body * { visibility: hidden; }
+  #printArea, #printArea * { visibility: visible; }
+  #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 40px; font-family: monospace; }
+  .print-header { text-align: center; margin-bottom: 30px; border-bottom: 1px dashed #000; padding-bottom: 20px; }
+  .print-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .print-total { border-top: 1px dashed #000; padding-top: 10px; font-weight: bold; margin-top: 20px; }
 }
-
-.menu-item:hover, .menu-item.active {
-  background-color: #fff0f0;
-  color: var(--rose-primary);
-  font-weight: 600;
-}
-
-.user-profile {
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-  color: #888;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-}
-
-/* =========================================
-   MAIN CONTENT AREA
-   ========================================= */
-.content-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0; /* Prevents flex items from overflowing */
-}
-
-.top-bar {
-  height: 80px;
-  background: white;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 30px;
-  flex-shrink: 0;
-}
-
-.top-bar h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.view-section {
-  padding: 30px;
-  overflow-y: auto;
-  height: calc(100vh - 80px); /* Fill remaining height */
-}
-
-/* =========================================
-   BUTTONS
-   ========================================= */
-.btn-walkin {
-  background-color: var(--rose-primary);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 50px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: 0.3s;
-  box-shadow: 0 4px 10px rgba(196, 138, 138, 0.3);
-}
-
-.btn-walkin:hover {
-  background-color: var(--rose-deep);
-  transform: translateY(-2px);
-}
-
-.btn-pay {
-  width: 100%;
-  padding: 15px;
-  background-color: #2ecc71;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-top: 20px;
-  transition: 0.2s;
-}
-
-.btn-pay:hover {
-  background-color: #27ae60;
-}
-
-/* =========================================
-   STATS GRID (DASHBOARD)
-   ========================================= */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive Grid */
-  gap: 25px;
-  margin-bottom: 30px;
-}
-
-.stat-card {
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-  border: 1px solid #f0f0f0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.stat-card h3 {
-  font-size: 0.9rem;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-}
-
-.stat-num {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: var(--rose-primary);
-}
-
-/* =========================================
-   TABLES (APPOINTMENTS)
-   ========================================= */
-.table-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-  border: 1px solid #eee;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th {
-  background: #f9fafb;
-  padding: 18px 20px;
-  text-align: left;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  border-bottom: 1px solid #eee;
-}
-
-.data-table td {
-  padding: 18px 20px;
-  border-bottom: 1px solid #eee;
-  vertical-align: middle;
-  color: #444;
-}
-
-.data-table tr:last-child td {
-  border-bottom: none;
-}
-
-/* Status Badges - Centered content */
-.badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.badge-pending { background: #fff3cd; color: #856404; }
-.badge-confirmed { background: #d1e7dd; color: #0f5132; }
-.badge-in-store { background: #cff4fc; color: #055160; }
-.badge-completed { background: #e2e3e5; color: #383d41; }
-
-/* =========================================
-   POS / BILLING LAYOUT
-   ========================================= */
-.pos-container {
-  display: grid;
-  grid-template-columns: 1fr 380px; /* Fixed width for invoice, fluid for queue */
-  gap: 25px;
-  height: 100%;
-  align-items: start;
-}
-
-.pos-queue, .pos-invoice {
-  background: white;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-  border: 1px solid #eee;
-  height: 100%; /* Fill container height */
-  overflow-y: auto;
-}
-
-.queue-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: 0.2s;
-  background: #fff;
-}
-
-.queue-item:hover {
-  border-color: var(--rose-primary);
-  background: #fffafa;
-}
-
-/* Invoice Styling */
-.inv-header {
-  border-bottom: 2px dashed #eee;
-  padding-bottom: 20px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.inv-client {
-  text-align: center;
-  background: #f9f9f9;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.inv-items .row {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  font-size: 1rem;
-}
-
-.inv-totals {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 2px solid #333;
-}
-
-.inv-totals .row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  color: #666;
-}
-
-.inv-totals .total {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #333;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #eee;
-}
-
-/* =========================================
-   MODAL ALIGNMENT
-   ========================================= */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.6);
-  z-index: 2000;
-  backdrop-filter: blur(4px); /* Modern blur effect */
-}
-
-.modal-content {
-  background-color: white;
-  margin: 5vh auto; /* 5% from top */
-  padding: 30px;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 450px;
-  position: relative;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  animation: slideDown 0.3s ease;
-}
-
-.close {
-  position: absolute;
-  top: 20px;
-  right: 25px;
-  font-size: 28px;
-  font-weight: bold;
-  color: #aaa;
-  cursor: pointer;
-}
-
-.close:hover { color: #333; }
-
-.form-group { margin-bottom: 15px; }
-
-.form-group input, 
-.form-group select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-}
-
-.form-group input:focus, 
-.form-group select:focus {
-  border-color: var(--rose-primary);
-}
-
-.form-row {
-  display: flex;
-  gap: 15px;
-}
-
-.form-row input {
-  flex: 1; /* Inputs share equal space */
-}
-
-.empty-state {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: #ccc;
-  font-size: 1.1rem;
-}
-
-@keyframes slideDown {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-
-/* REPORT CONTROLS */
-.report-controls { 
-    display: flex;
-    gap: 15px;
-    align-items: center;
-    background: #fff;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-.date-picker-styled {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-family: 'Poppins', sans-serif;
-    outline: none;
-}
-
-.date-picker-styled:focus {
-    border-color: var(--rose-primary);
-}
-
