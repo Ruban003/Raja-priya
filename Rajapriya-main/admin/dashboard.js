@@ -2,20 +2,13 @@
    GLAM ADMIN - DASHBOARD CONTROLLER (Async)
    ========================================= */
 
-// 1. SECURITY CHECK
 (function checkSession() {
   const sessionRaw = localStorage.getItem("glam_session");
   const now = new Date().getTime();
-
-  if (!sessionRaw) {
-    window.location.href = "admin.html";
-    return;
-  }
+  if (!sessionRaw) { window.location.href = "admin.html"; return; }
   const session = JSON.parse(sessionRaw);
   if (!session.loggedIn || now > session.expiry) {
-    alert("Session Expired"); 
-    localStorage.removeItem("glam_session"); 
-    window.location.href = "admin.html";
+    alert("Session Expired"); localStorage.removeItem("glam_session"); window.location.href = "admin.html";
   }
 })();
 
@@ -55,7 +48,6 @@ async function switchTab(id) {
 // --- DATA RENDERING ---
 async function renderDashboard() {
   const apps = await DB.getAppointments();
-  
   const today = new Date().toISOString().split('T')[0];
   const revenue = apps.filter(a => a.date === today && a.paymentStatus === 'Paid')
                       .reduce((sum, a) => sum + (a.price || 0), 0);
