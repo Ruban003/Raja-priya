@@ -1,6 +1,11 @@
 /* =========================================
-   GLAM ADMIN - LOGIN STYLES
+   GLAM ADMIN - LOGIN STYLES (FIXED)
    ========================================= */
+
+/* 1. RESET: Ensures padding doesn't break the width */
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -8,10 +13,9 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Luxury Background Overlay */
   background: 
     linear-gradient(rgba(255, 255, 255, 0.85), rgba(249, 244, 244, 0.9)), 
-    url('/img/3030.jpg');
+    url('/img/3030.jpg'); /* Ensure this path matches your folder */
   background-size: cover;
   background-position: center;
   font-family: 'Poppins', sans-serif;
@@ -21,7 +25,7 @@ body {
   width: 90%;
   max-width: 400px;
   background: rgba(255, 255, 255, 0.95);
-  padding: 50px 40px;
+  padding: 40px 30px;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(196, 138, 138, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.8);
@@ -32,43 +36,48 @@ body {
 /* Brand Header */
 .brand-logo {
   font-family: 'Playfair Display', serif;
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   font-weight: 700;
   color: #333;
   margin-bottom: 5px;
 }
-.brand-logo span { color: #c48a8a; } /* Rose Primary */
+.brand-logo span { color: #c48a8a; }
 
 .subtitle {
   color: #888;
-  margin-bottom: 35px;
-  font-size: 0.95rem;
-  letter-spacing: 0.5px;
+  margin-bottom: 30px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-/* Inputs */
+/* --- INPUT FIELDS (THE FIX) --- */
 .input-group {
   position: relative;
   margin-bottom: 20px;
+  width: 100%; /* Forces it to fit the card */
 }
 
 .input-group input {
   width: 100%;
-  padding: 15px 15px 15px 45px; /* Space for icon */
-  border: 1px solid #eee;
+  height: 50px; /* Fixed height for consistency */
+  padding: 10px 45px 10px 45px; /* Left padding for User Icon, Right for Eye Icon */
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
   transition: 0.3s;
   background: #fdfdfd;
+  color: #333;
 }
 
 .input-group input:focus {
   border-color: #c48a8a;
   background: #fff;
-  box-shadow: 0 4px 15px rgba(196, 138, 138, 0.1);
+  box-shadow: 0 4px 15px rgba(196, 138, 138, 0.15);
 }
 
+/* Icons (User / Lock) */
 .input-group i {
   position: absolute;
   left: 15px;
@@ -76,22 +85,27 @@ body {
   transform: translateY(-50%);
   color: #c48a8a;
   font-size: 1.1rem;
+  pointer-events: none; /* Allows clicking through the icon */
 }
 
-/* Toggle Password Eye */
+/* Toggle Password Eye (Right Side) */
 .input-group .toggle-pass {
-  left: auto;
-  right: 15px;
+  left: auto; /* Reset left */
+  right: 15px; /* Stick to right */
   cursor: pointer;
+  pointer-events: all; /* Make clickable */
   color: #ccc;
-  font-size: 0.9rem;
+  transition: color 0.3s;
 }
-.input-group .toggle-pass:hover { color: #555; }
+
+.input-group .toggle-pass:hover { 
+  color: #555; 
+}
 
 /* Button */
 .login-btn {
   width: 100%;
-  padding: 15px;
+  padding: 14px;
   background: #c48a8a;
   color: white;
   border: none;
@@ -113,32 +127,33 @@ body {
   box-shadow: 0 10px 20px rgba(196, 138, 138, 0.2);
 }
 
+.login-btn:disabled {
+  background: #dcbaba;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Error Message */
 .error-msg {
   background: #ffe6e6;
   color: #dc3545;
   padding: 12px;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   margin-top: 20px;
-  display: none; /* Hidden by default */
+  display: none;
   align-items: center;
   justify-content: center;
   gap: 8px;
   border: 1px solid #ffcccc;
 }
 
-/* Animations */
+/* Animation */
+.shake-animation { animation: shake 0.4s ease-in-out; }
 @keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  50% { transform: translateX(10px); }
-  75% { transform: translateX(-10px); }
-  100% { transform: translateX(0); }
-}
-
-.shake-animation {
-  animation: shake 0.4s ease-in-out;
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
 }
 
 .loader {
@@ -150,8 +165,4 @@ body {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
