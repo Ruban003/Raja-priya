@@ -6,13 +6,16 @@
   if (!session || !session.loggedIn) window.location.href = "admin.html";
 })();
 
-const API_BASE = "https://glam-backend-nw7q.onrender.com/api"; // CHANGE THIS IF NEEDED
+const API_BASE = "https://glam-backend-nw7q.onrender.com/api"; 
 
 document.addEventListener("DOMContentLoaded", () => {
   renderDashboard();
-  renderServices(); // New
+  renderServices();
   renderAppointmentList();
   renderBillingQueue();
+  
+  // Set Today's Date for Reports
+  document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
   
   // Handle Service Form
   document.getElementById('serviceForm').addEventListener('submit', handleServiceSubmit);
@@ -24,10 +27,28 @@ function switchTab(tab) {
   document.getElementById(`view-${tab}`).style.display = 'block';
   document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
   event.target.closest('.menu-item').classList.add('active');
+  
   if(tab === 'services') renderServices();
+  if(tab === 'reports') renderReport(); // LOAD REPORT WHEN CLICKED
+  if(tab === 'dashboard') renderDashboard();
 }
 
-// --- SERVICES MANAGEMENT (NEW) ---
+// --- DASHBOARD OVERVIEW ---
+async function renderDashboard() {
+  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Calc Today's Revenue
+  const revenue = apps
+    .filter(a => a.date === today && a.paymentStatus === 'Paid')
+    .reduce((sum, a) => sum + (a.totalAmount || a.price || 0), 0);
+
+  document.getElementById('todayRev').innerText = "₹" + revenue.toLocaleString();
+  document.getElementById('activeCount').innerText = apps.filter(a => a.status !== 'Completed').length;
+  document.getElementById('pendingBillsCount').innerText = apps.filter(a => a.paymentStatus === 'Unpaid').length;
+}
+
+// --- SERVICES MANAGEMENT ---
 async function renderServices() {
   const res = await fetch(`${API_BASE}/services`);
   const services = await res.json();
@@ -72,7 +93,7 @@ async function handleServiceSubmit(e) {
 
 function editService(s) {
   document.getElementById('modalTitle').innerText = "Edit Service";
-  document.getElementById('sId').value = s._id; // Hidden ID
+  document.getElementById('sId').value = s._id; 
   document.getElementById('sName').value = s.name;
   document.getElementById('sCat').value = s.category;
   document.getElementById('sPrice').value = s.price;
@@ -129,20 +150,62 @@ async function loadBill(id) {
   const gst = Math.round(appt.price * 0.05);
   document.getElementById('invTax').innerText = gst;
   document.getElementById('invTotal').innerText = appt.price + gst;
-  
-  // Store current ID for payment
   document.getElementById('invoicePanel').dataset.id = id;
 }
 
 async function processPayment(method) {
   const id = document.getElementById('invoicePanel').dataset.id;
+  const price = parseInt(document.getElementById('invSub').innerText);
+  const gst = parseInt(document.getElementById('invTax').innerText);
+  const total = parseInt(document.getElementById('invTotal').innerText);
+
   await fetch(`${API_BASE}/appointments/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ paymentStatus: 'Paid', status: 'Completed' })
+    body: JSON.stringify({ 
+      paymentStatus: 'Paid', 
+      status: 'Completed',
+      gst: gst,
+      totalAmount: total,
+      paymentMethod: method
+    })
   });
   document.getElementById('invoicePanel').style.display = 'none';
   renderBillingQueue();
+}
+
+// --- REPORTS (ADDED BACK) ---
+async function renderReport() {
+  const date = document.getElementById('reportDate').value;
+  if(!date) return;
+
+  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
+  
+  // Filter: Must be PAID and match the DATE
+  const dailyApps = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
+  
+  const totalRevenue = dailyApps.reduce((sum, a) => sum + (a.totalAmount || 0), 0);
+
+  // Update UI
+  document.getElementById('reportRevenue').innerText = totalRevenue.toLocaleString();
+  document.getElementById('reportCount').innerText = dailyApps.length;
+
+  const tbody = document.getElementById('reportListBody');
+  tbody.innerHTML = '';
+  
+  if(dailyApps.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4">No sales found for this date.</td></tr>';
+  } else {
+    dailyApps.forEach(a => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${a.clientName}</td>
+          <td>${a.serviceName}</td>
+          <td>₹${a.totalAmount}</td>
+          <td>${a.paymentMethod}</td>
+        </tr>`;
+    });
+  }
 }
 
 function logout() { localStorage.removeItem('glam_session'); window.location.href='admin.html'; }

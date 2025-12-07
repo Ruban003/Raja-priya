@@ -15,8 +15,9 @@
     <div class="menu">
       <a href="#" class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-home"></i> Dashboard</a>
       <a href="#" class="menu-item" onclick="switchTab('appointments')"><i class="fas fa-calendar-alt"></i> Appointments</a>
-      <a href="#" class="menu-item" onclick="switchTab('services')"><i class="fas fa-cut"></i> Services</a> <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
-    </div>
+      <a href="#" class="menu-item" onclick="switchTab('services')"><i class="fas fa-cut"></i> Services</a>
+      <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
+      <a href="#" class="menu-item" onclick="switchTab('reports')"><i class="fas fa-chart-line"></i> Reports</a> </div>
     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
   </nav>
 
@@ -27,6 +28,7 @@
       <div class="stats-grid">
         <div class="card"><h3>Today's Income</h3><p id="todayRev">₹0</p></div>
         <div class="card"><h3>Active Clients</h3><p id="activeCount">0</p></div>
+        <div class="card"><h3>Pending Bills</h3><p id="pendingBillsCount">0</p></div>
       </div>
     </div>
 
@@ -68,6 +70,27 @@
           <button class="btn-print" onclick="window.print()">Print</button>
           <button class="btn-cash" onclick="processPayment('Cash')">Mark Paid</button>
         </div>
+      </div>
+    </div>
+
+    <div id="view-reports" class="view-section" style="display:none;">
+      <h2>Daily Reports</h2>
+      <div class="report-controls" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px; display:flex; gap:10px; align-items:center;">
+        <label>Select Date:</label>
+        <input type="date" id="reportDate" onchange="renderReport()">
+        <button class="new-btn" onclick="renderReport()">Generate</button>
+      </div>
+
+      <div class="stats-grid" style="margin-bottom:20px;">
+        <div class="card"><h3>Total Revenue</h3><p>₹<span id="reportRevenue">0</span></p></div>
+        <div class="card"><h3>Appointments</h3><p><span id="reportCount">0</span></p></div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Client</th><th>Service</th><th>Amount</th><th>Method</th></tr></thead>
+          <tbody id="reportListBody"></tbody>
+        </table>
       </div>
     </div>
 
