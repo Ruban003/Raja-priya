@@ -105,18 +105,3 @@ const DB = {
 };
 
 /
-// --- ADMIN LOGIN ROUTE (SECURE) ---
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-
-  // You can change these credentials here (Server-side is secure)
-  const ADMIN_USER = "Glam";
-  const ADMIN_PASS = "Glam@123"; 
-
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    res.json({ success: true, token: "secure_session_token_123" });
-  } else {
-    res.status(401).json({ success: false, message: "Invalid Credentials" });
-  }
-});
-
