@@ -13,40 +13,30 @@
   <nav class="sidebar">
     <div class="brand">GLAM<span>PRO</span></div>
     <div class="menu">
-      <a href="#" class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-home"></i> Dashboard</a>
-      <a href="#" class="menu-item" onclick="switchTab('appointments')"><i class="fas fa-calendar-alt"></i> Appointments</a>
+      <a href="#" class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-home"></i> Overview</a>
+      <a href="#" class="menu-item" onclick="switchTab('appointments')"><i class="fas fa-calendar-check"></i> Appointments</a>
       <a href="#" class="menu-item" onclick="switchTab('services')"><i class="fas fa-cut"></i> Services</a>
-      <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
-      <a href="#" class="menu-item" onclick="switchTab('reports')"><i class="fas fa-chart-line"></i> Reports</a> </div>
-    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing & POS</a>
+      <a href="#" class="menu-item" onclick="switchTab('reports')"><i class="fas fa-chart-line"></i> Reports</a>
+    </div>
+    <div class="user-profile">
+      <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
   </nav>
 
   <main class="content">
     
     <div id="view-dashboard" class="view-section">
-      <h2 class="page-title">Overview</h2>
+      <h2 class="page-title">Shop Overview</h2>
       <div class="stats-grid">
-        <div class="card"><h3>Today's Income</h3><p id="todayRev">₹0</p></div>
-        <div class="card"><h3>Active Clients</h3><p id="activeCount">0</p></div>
-        <div class="card"><h3>Pending Bills</h3><p id="pendingBillsCount">0</p></div>
-      </div>
-    </div>
-
-    <div id="view-services" class="view-section" style="display:none;">
-      <header>
-        <h2>Manage Services</h2>
-        <button class="new-btn" onclick="openServiceModal()">+ Add Service</button>
-      </header>
-      <div class="table-container">
-        <table>
-          <thead><tr><th>Service Name</th><th>Category</th><th>Price</th><th>Actions</th></tr></thead>
-          <tbody id="serviceListBody"></tbody>
-        </table>
+        <div class="card c-purple"><h3>Today's Collection</h3><p id="todayRev">₹0</p></div>
+        <div class="card c-pink"><h3>Active Appts</h3><p id="activeCount">0</p></div>
+        <div class="card c-orange"><h3>Pending Bills</h3><p id="pendingBillsCount">0</p></div>
       </div>
     </div>
 
     <div id="view-appointments" class="view-section" style="display:none;">
-      <h2>Appointments</h2>
+      <h2 class="page-title">Appointments</h2>
       <div class="table-container">
         <table>
           <thead><tr><th>Date</th><th>Client</th><th>Services</th><th>Status</th><th>Action</th></tr></thead>
@@ -55,60 +45,73 @@
       </div>
     </div>
 
+    <div id="view-services" class="view-section" style="display:none;">
+      <div class="header-row">
+        <h2 class="page-title">Service Menu</h2>
+        <button class="btn-new" onclick="openServiceModal()">+ Add New Service</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Actions</th></tr></thead>
+          <tbody id="serviceListBody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div id="view-billing" class="view-section" style="display:none;">
-      <h2>Billing / POS</h2>
+      <h2 class="page-title">Billing Counter</h2>
       <div class="billing-layout">
         <div class="queue-list" id="billingQueue"></div>
+        
         <div class="invoice-panel" id="invoicePanel" style="display:none;">
-          <h3>INVOICE</h3>
-          <p><strong>Client:</strong> <span id="invName"></span></p>
-          <p><strong>Service:</strong> <span id="invService"></span></p>
-          <hr>
-          <p>Subtotal: <span id="invSub">0</span></p>
-          <p>GST (5%): <span id="invTax">0</span></p>
-          <p class="total">Total: ₹<span id="invTotal">0</span></p>
-          <button class="btn-print" onclick="window.print()">Print</button>
-          <button class="btn-cash" onclick="processPayment('Cash')">Mark Paid</button>
+          <div class="inv-header"><h3>GLAM SALON</h3><p>Official Invoice</p></div>
+          <div class="inv-body">
+            <p><strong>Client:</strong> <span id="invName"></span></p>
+            <p><strong>Items:</strong> <span id="invService"></span></p>
+            <hr>
+            <div class="row"><span>Subtotal:</span> <span>₹<span id="invSub">0</span></span></div>
+            <div class="row"><span>GST (5%):</span> <span>₹<span id="invTax">0</span></span></div>
+            <div class="row total"><span>Total:</span> <span>₹<span id="invTotal">0</span></span></div>
+          </div>
+          <div class="inv-actions">
+            <button class="btn-print" onclick="printInvoice()"><i class="fas fa-print"></i> Print</button>
+            <button class="btn-pay" onclick="processPayment('Cash')">Cash</button>
+            <button class="btn-pay" onclick="processPayment('UPI')">UPI</button>
+          </div>
         </div>
       </div>
     </div>
 
     <div id="view-reports" class="view-section" style="display:none;">
-      <h2>Daily Reports</h2>
-      <div class="report-controls" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px; display:flex; gap:10px; align-items:center;">
-        <label>Select Date:</label>
+      <h2 class="page-title">Sales Report</h2>
+      <div class="control-bar">
         <input type="date" id="reportDate" onchange="renderReport()">
-        <button class="new-btn" onclick="renderReport()">Generate</button>
+        <span class="report-total">Day Total: ₹<span id="reportRevenue">0</span></span>
       </div>
-
-      <div class="stats-grid" style="margin-bottom:20px;">
-        <div class="card"><h3>Total Revenue</h3><p>₹<span id="reportRevenue">0</span></p></div>
-        <div class="card"><h3>Appointments</h3><p><span id="reportCount">0</span></p></div>
-      </div>
-
       <div class="table-container">
-        <table>
-          <thead><tr><th>Client</th><th>Service</th><th>Amount</th><th>Method</th></tr></thead>
+        <table id="reportTable">
+          <thead><tr><th>Client</th><th>Service</th><th>Total (Inc. GST)</th><th>Method</th></tr></thead>
           <tbody id="reportListBody"></tbody>
         </table>
       </div>
     </div>
-
   </main>
 
   <div id="serviceModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeServiceModal()">&times;</span>
-      <h3 id="modalTitle">Add Service</h3>
+      <h3>Service Details</h3>
       <form id="serviceForm">
         <input type="hidden" id="sId">
-        <input type="text" id="sName" placeholder="Service Name (e.g. Gold Facial)" required>
-        <input type="text" id="sCat" placeholder="Category (e.g. Skin)" required>
+        <input type="text" id="sName" placeholder="Service Name" required>
+        <input type="text" id="sCat" placeholder="Category" required>
         <input type="number" id="sPrice" placeholder="Price (₹)" required>
-        <button type="submit">Save Service</button>
+        <button type="submit" class="btn-new">Save</button>
       </form>
     </div>
   </div>
+
+  <div id="printArea"></div>
 
   <script src="../js/db.js"></script>
   <script src="dashboard.js"></script>
