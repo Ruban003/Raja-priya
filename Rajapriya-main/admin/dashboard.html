@@ -16,7 +16,7 @@
       <a href="#" class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-home"></i> Overview</a>
       <a href="#" class="menu-item" onclick="switchTab('appointments')"><i class="fas fa-calendar-check"></i> Appointments</a>
       <a href="#" class="menu-item" onclick="switchTab('services')"><i class="fas fa-cut"></i> Services</a>
-      <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing & POS</a>
+      <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
       <a href="#" class="menu-item" onclick="switchTab('reports')"><i class="fas fa-chart-line"></i> Reports</a>
     </div>
     <div class="user-profile">
@@ -29,17 +29,20 @@
     <div id="view-dashboard" class="view-section">
       <h2 class="page-title">Shop Overview</h2>
       <div class="stats-grid">
-        <div class="card c-purple"><h3>Today's Collection</h3><p id="todayRev">₹0</p></div>
-        <div class="card c-pink"><h3>Active Appts</h3><p id="activeCount">0</p></div>
+        <div class="card c-purple"><h3>Today's Income</h3><p id="todayRev">₹0</p></div>
+        <div class="card c-pink"><h3>Active Clients</h3><p id="activeCount">0</p></div>
         <div class="card c-orange"><h3>Pending Bills</h3><p id="pendingBillsCount">0</p></div>
       </div>
     </div>
 
     <div id="view-appointments" class="view-section" style="display:none;">
-      <h2 class="page-title">Appointments</h2>
+      <div class="header-row">
+        <h2 class="page-title">Appointments</h2>
+        <button class="btn-new" onclick="openWalkinModal()">+ New Appointment</button>
+      </div>
       <div class="table-container">
         <table>
-          <thead><tr><th>Date</th><th>Client</th><th>Services</th><th>Status</th><th>Action</th></tr></thead>
+          <thead><tr><th>Date</th><th>Client</th><th>Services</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="apptListBody"></tbody>
         </table>
       </div>
@@ -47,12 +50,12 @@
 
     <div id="view-services" class="view-section" style="display:none;">
       <div class="header-row">
-        <h2 class="page-title">Service Menu</h2>
+        <h2 class="page-title">Services Menu</h2>
         <button class="btn-new" onclick="openServiceModal()">+ Add New Service</button>
       </div>
       <div class="table-container">
         <table>
-          <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Service Name</th><th>Category</th><th>Price</th><th>Action</th></tr></thead>
           <tbody id="serviceListBody"></tbody>
         </table>
       </div>
@@ -62,22 +65,17 @@
       <h2 class="page-title">Billing Counter</h2>
       <div class="billing-layout">
         <div class="queue-list" id="billingQueue"></div>
-        
         <div class="invoice-panel" id="invoicePanel" style="display:none;">
-          <div class="inv-header"><h3>GLAM SALON</h3><p>Official Invoice</p></div>
-          <div class="inv-body">
-            <p><strong>Client:</strong> <span id="invName"></span></p>
-            <p><strong>Items:</strong> <span id="invService"></span></p>
-            <hr>
-            <div class="row"><span>Subtotal:</span> <span>₹<span id="invSub">0</span></span></div>
-            <div class="row"><span>GST (5%):</span> <span>₹<span id="invTax">0</span></span></div>
-            <div class="row total"><span>Total:</span> <span>₹<span id="invTotal">0</span></span></div>
-          </div>
-          <div class="inv-actions">
-            <button class="btn-print" onclick="printInvoice()"><i class="fas fa-print"></i> Print</button>
-            <button class="btn-pay" onclick="processPayment('Cash')">Cash</button>
-            <button class="btn-pay" onclick="processPayment('UPI')">UPI</button>
-          </div>
+          <h3>INVOICE</h3>
+          <p><strong>Client:</strong> <span id="invName"></span></p>
+          <p><strong>Service:</strong> <span id="invService"></span></p>
+          <hr>
+          <p>Subtotal: <span id="invSub">0</span></p>
+          <p>GST (5%): <span id="invTax">0</span></p>
+          <p class="total">Total: ₹<span id="invTotal">0</span></p>
+          <button class="btn-print" onclick="printInvoice()">Print</button>
+          <button class="btn-pay" onclick="processPayment('Cash')">Cash</button>
+          <button class="btn-pay" onclick="processPayment('UPI')">UPI</button>
         </div>
       </div>
     </div>
@@ -86,16 +84,35 @@
       <h2 class="page-title">Sales Report</h2>
       <div class="control-bar">
         <input type="date" id="reportDate" onchange="renderReport()">
-        <span class="report-total">Day Total: ₹<span id="reportRevenue">0</span></span>
+        <span style="font-weight:bold; font-size:1.2rem; color:#27ae60;">Total: ₹<span id="reportRevenue">0</span></span>
       </div>
       <div class="table-container">
         <table id="reportTable">
-          <thead><tr><th>Client</th><th>Service</th><th>Total (Inc. GST)</th><th>Method</th></tr></thead>
+          <thead><tr><th>Client</th><th>Service</th><th>Amount</th><th>Method</th></tr></thead>
           <tbody id="reportListBody"></tbody>
         </table>
       </div>
     </div>
+
   </main>
+
+  <div id="walkinModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeWalkinModal()">&times;</span>
+      <h3>New Walk-in Booking</h3>
+      <form id="walkinForm">
+        <input type="text" id="wName" placeholder="Client Name" required>
+        <input type="tel" id="wPhone" placeholder="Phone Number" required>
+        <label>Select Service:</label>
+        <select id="wService" required></select>
+        <div class="row">
+          <input type="date" id="wDate" required>
+          <input type="time" id="wTime" required>
+        </div>
+        <button type="submit" class="btn-new">Confirm Booking</button>
+      </form>
+    </div>
+  </div>
 
   <div id="serviceModal" class="modal">
     <div class="modal-content">
@@ -106,14 +123,12 @@
         <input type="text" id="sName" placeholder="Service Name" required>
         <input type="text" id="sCat" placeholder="Category" required>
         <input type="number" id="sPrice" placeholder="Price (₹)" required>
-        <button type="submit" class="btn-new">Save</button>
+        <button type="submit" class="btn-new">Save Service</button>
       </form>
     </div>
   </div>
 
   <div id="printArea"></div>
-
-  <script src="../js/db.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>
