@@ -1,76 +1,228 @@
-/* admin/dashboard.js */
+/* =========================================
+   GLAMPRO ADMIN DASHBOARD CONTROLLER
+   ========================================= */
 
-// SECURITY
-(function checkSession() {
-  const session = JSON.parse(localStorage.getItem("glam_session"));
-  if (!session || !session.loggedIn) window.location.href = "admin.html";
-})();
-
+// --- CONFIGURATION ---
 const API_BASE = "https://glam-backend-nw7q.onrender.com/api"; 
 
+// --- 1. SECURITY: CHECK SESSION ---
+(function checkSession() {
+  const session = JSON.parse(localStorage.getItem("glam_session"));
+  if (!session || !session.loggedIn) {
+    window.location.href = "admin.html"; // Redirect if not logged in
+  }
+})();
+
+// --- 2. INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
+  // Set default report date to today
+  const dateInput = document.getElementById('reportDate');
+  if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+  // Load Initial View
   renderDashboard();
-  renderServices();
   renderAppointmentList();
   renderBillingQueue();
-  
-  // Set Today's Date for Reports
-  document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
-  
-  // Handle Service Form
-  document.getElementById('serviceForm').addEventListener('submit', handleServiceSubmit);
+  renderServices();
+
+  // Attach Form Listeners
+  const serviceForm = document.getElementById('serviceForm');
+  if(serviceForm) serviceForm.addEventListener('submit', handleServiceSubmit);
+
+  const walkinForm = document.getElementById('walkinForm');
+  if(walkinForm) walkinForm.addEventListener('submit', handleWalkinSubmit);
 });
 
-// --- NAVIGATION ---
-function switchTab(tab) {
+// --- 3. NAVIGATION ---
+function switchTab(tabId) {
+  // Hide all views
   document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
-  document.getElementById(`view-${tab}`).style.display = 'block';
+  // Show selected view
+  document.getElementById(`view-${tabId}`).style.display = 'block';
+  
+  // Update Menu Active State
   document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-  event.target.closest('.menu-item').classList.add('active');
-  
-  if(tab === 'services') renderServices();
-  if(tab === 'reports') renderReport(); // LOAD REPORT WHEN CLICKED
-  if(tab === 'dashboard') renderDashboard();
+  event.currentTarget.classList.add('active');
+
+  // Refresh Data for the Tab
+  if(tabId === 'dashboard') renderDashboard();
+  if(tabId === 'appointments') renderAppointmentList();
+  if(tabId === 'services') renderServices();
+  if(tabId === 'billing') renderBillingQueue();
+  if(tabId === 'reports') renderReport();
 }
 
-// --- DASHBOARD OVERVIEW ---
+function logout() {
+  localStorage.removeItem("glam_session");
+  window.location.href = "admin.html";
+}
+
+// --- 4. DASHBOARD OVERVIEW ---
 async function renderDashboard() {
-  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
-  const today = new Date().toISOString().split('T')[0];
-  
-  // Calc Today's Revenue
-  const revenue = apps
-    .filter(a => a.date === today && a.paymentStatus === 'Paid')
-    .reduce((sum, a) => sum + (a.totalAmount || a.price || 0), 0);
+  try {
+    const res = await fetch(`${API_BASE}/appointments`);
+    const apps = await res.json();
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Calculate Today's Revenue (Only Paid)
+    const revenue = apps
+      .filter(a => a.date === today && a.paymentStatus === 'Paid')
+      .reduce((sum, a) => sum + (a.totalAmount || a.price || 0), 0);
 
-  document.getElementById('todayRev').innerText = "₹" + revenue.toLocaleString();
-  document.getElementById('activeCount').innerText = apps.filter(a => a.status !== 'Completed').length;
-  document.getElementById('pendingBillsCount').innerText = apps.filter(a => a.paymentStatus === 'Unpaid').length;
+    // Update Cards
+    document.getElementById('todayRev').innerText = "₹" + revenue.toLocaleString();
+    document.getElementById('activeCount').innerText = apps.filter(a => a.status !== 'Completed').length;
+    document.getElementById('pendingBillsCount').innerText = apps.filter(a => a.paymentStatus === 'Unpaid').length;
+  } catch (err) { console.error("Error loading dashboard stats", err); }
 }
 
-// --- SERVICES MANAGEMENT ---
-async function renderServices() {
+// --- 5. APPOINTMENTS MANAGEMENT ---
+async function renderAppointmentList() {
+  try {
+    const res = await fetch(`${API_BASE}/appointments`);
+    const apps = await res.json();
+    const tbody = document.getElementById('apptListBody');
+    tbody.innerHTML = '';
+
+    if(apps.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No appointments found</td></tr>';
+      return;
+    }
+
+    apps.forEach(a => {
+      // Style status badge
+      let badgeColor = '#ffeeba'; // yellow (pending)
+      if(a.status === 'Completed') badgeColor = '#d4edda'; // green
+      if(a.status === 'In-Store') badgeColor = '#cce5ff'; // blue
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${a.date}<br><small>${a.time}</small></td>
+          <td><strong>${a.clientName}</strong><br><small>${a.clientPhone}</small></td>
+          <td>${a.serviceName}</td>
+          <td><span style="background:${badgeColor}; padding:4px 8px; border-radius:4px; font-size:0.85rem;">${a.status}</span></td>
+          <td>
+            <button class="btn-del" onclick="deleteAppt('${a._id}')" title="Delete"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>`;
+    });
+  } catch (err) { console.error("Error loading appointments", err); }
+}
+
+async function deleteAppt(id) {
+  if(confirm("Are you sure you want to delete this appointment?")) {
+    await fetch(`${API_BASE}/appointments/${id}`, { method: 'DELETE' });
+    renderAppointmentList(); // Refresh list
+  }
+}
+
+// --- 6. WALK-IN BOOKING (NEW APPOINTMENT) ---
+function openWalkinModal() {
+  document.getElementById('walkinModal').style.display = 'block';
+  // Set default date/time to now
+  const now = new Date();
+  document.getElementById('wDate').value = now.toISOString().split('T')[0];
+  
+  // Populate the service dropdown dynamically
+  populateWalkinServices();
+}
+
+function closeWalkinModal() {
+  document.getElementById('walkinModal').style.display = 'none';
+}
+
+async function populateWalkinServices() {
+  const select = document.getElementById('wService');
+  select.innerHTML = '<option>Loading...</option>';
+  
   const res = await fetch(`${API_BASE}/services`);
   const services = await res.json();
-  const tbody = document.getElementById('serviceListBody');
-  tbody.innerHTML = '';
-
+  
+  select.innerHTML = '';
   services.forEach(s => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${s.name}</td>
-        <td>${s.category}</td>
-        <td>₹${s.price}</td>
-        <td>
-          <button class="btn-edit" onclick='editService(${JSON.stringify(s)})'><i class="fas fa-edit"></i></button>
-          <button class="btn-del" onclick="deleteService('${s._id}')"><i class="fas fa-trash"></i></button>
-        </td>
-      </tr>`;
+    // We store the full object stringified to get both Name and Price later
+    const val = JSON.stringify({ name: s.name, price: s.price });
+    select.innerHTML += `<option value='${val}'>${s.name} - ₹${s.price}</option>`;
   });
+}
+
+async function handleWalkinSubmit(e) {
+  e.preventDefault();
+  
+  const rawService = document.getElementById('wService').value;
+  const serviceData = JSON.parse(rawService); // Parse the stored JSON
+
+  const payload = {
+    clientName: document.getElementById('wName').value,
+    clientPhone: document.getElementById('wPhone').value,
+    serviceName: serviceData.name,
+    price: serviceData.price,
+    date: document.getElementById('wDate').value,
+    time: document.getElementById('wTime').value,
+    status: "In-Store",      // Walk-ins are physically present
+    paymentStatus: "Unpaid"
+  };
+
+  await fetch(`${API_BASE}/bookings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  alert("Walk-in Added!");
+  closeWalkinModal();
+  renderAppointmentList();
+  document.getElementById('walkinForm').reset();
+}
+
+// --- 7. SERVICE MANAGEMENT (CRUD) ---
+async function renderServices() {
+  try {
+    const res = await fetch(`${API_BASE}/services`);
+    const services = await res.json();
+    const tbody = document.getElementById('serviceListBody');
+    tbody.innerHTML = '';
+
+    services.forEach(s => {
+      // Pass the object safely to edit function
+      const safeObj = JSON.stringify(s).replace(/'/g, "&apos;");
+      
+      tbody.innerHTML += `
+        <tr>
+          <td>${s.name}</td>
+          <td>${s.category}</td>
+          <td>₹${s.price}</td>
+          <td>
+            <button class="btn-edit" onclick='editService(${safeObj})'><i class="fas fa-edit"></i></button>
+            <button class="btn-del" onclick="deleteService('${s._id}')"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>`;
+    });
+  } catch (err) { console.error("Error loading services", err); }
+}
+
+function openServiceModal() {
+  document.getElementById('serviceForm').reset();
+  document.getElementById('sId').value = ""; // Clear ID for new entry
+  document.getElementById('serviceModal').style.display = 'block';
+}
+
+function closeServiceModal() {
+  document.getElementById('serviceModal').style.display = 'none';
+}
+
+function editService(service) {
+  document.getElementById('sId').value = service._id;
+  document.getElementById('sName').value = service.name;
+  document.getElementById('sCat').value = service.category;
+  document.getElementById('sPrice').value = service.price;
+  document.getElementById('serviceModal').style.display = 'block';
 }
 
 async function handleServiceSubmit(e) {
   e.preventDefault();
+  
   const id = document.getElementById('sId').value;
   const data = {
     name: document.getElementById('sName').value,
@@ -91,128 +243,149 @@ async function handleServiceSubmit(e) {
   renderServices();
 }
 
-function editService(s) {
-  document.getElementById('modalTitle').innerText = "Edit Service";
-  document.getElementById('sId').value = s._id; 
-  document.getElementById('sName').value = s.name;
-  document.getElementById('sCat').value = s.category;
-  document.getElementById('sPrice').value = s.price;
-  document.getElementById('serviceModal').style.display = 'block';
-}
-
 async function deleteService(id) {
-  if(confirm("Delete this service?")) {
+  if(confirm("Delete this service? It will disappear from the booking menu.")) {
     await fetch(`${API_BASE}/services/${id}`, { method: 'DELETE' });
     renderServices();
   }
 }
 
-// --- APPOINTMENTS & BILLING ---
-async function renderAppointmentList() {
-  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
-  const tbody = document.getElementById('apptListBody');
-  tbody.innerHTML = '';
-  apps.forEach(a => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${a.date}</td>
-        <td>${a.clientName}</td>
-        <td>${a.serviceName}</td>
-        <td>${a.status}</td>
-        <td><button class="btn-del" onclick="deleteAppt('${a._id}')">X</button></td>
-      </tr>`;
-  });
-}
-
-async function deleteAppt(id) {
-  if(confirm("Delete?")) {
-    await fetch(`${API_BASE}/appointments/${id}`, { method: 'DELETE' });
-    renderAppointmentList();
-  }
-}
+// --- 8. BILLING & GST ---
+let currentBillAppt = null;
 
 async function renderBillingQueue() {
-  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
-  const unpaid = apps.filter(a => a.paymentStatus === 'Unpaid');
-  const div = document.getElementById('billingQueue');
-  div.innerHTML = unpaid.length ? '' : 'No bills';
-  unpaid.forEach(a => {
-    div.innerHTML += `<div class="queue-item" onclick="loadBill('${a._id}')"><h4>${a.clientName}</h4><p>₹${a.price}</p></div>`;
-  });
+  try {
+    const res = await fetch(`${API_BASE}/appointments`);
+    const apps = await res.json();
+    const unpaid = apps.filter(a => a.paymentStatus === 'Unpaid');
+    
+    const div = document.getElementById('billingQueue');
+    div.innerHTML = unpaid.length ? '' : '<p class="empty-msg">No pending bills</p>';
+    
+    unpaid.forEach(a => {
+      div.innerHTML += `
+        <div class="queue-item" onclick="loadBill('${a._id}')">
+          <div style="font-weight:bold;">${a.clientName}</div>
+          <div style="font-size:0.85rem; color:#666;">${a.serviceName}</div>
+          <div style="color:#c48a8a;">₹${a.price}</div>
+        </div>`;
+    });
+  } catch (err) { console.error("Error loading bills", err); }
 }
 
 async function loadBill(id) {
-  const appt = await (await fetch(`${API_BASE}/appointments/${id}`)).json();
+  const res = await fetch(`${API_BASE}/appointments/${id}`);
+  const appt = await res.json();
+  currentBillAppt = appt;
+
   document.getElementById('invoicePanel').style.display = 'block';
+  
+  // Fill Invoice Details
   document.getElementById('invName').innerText = appt.clientName;
   document.getElementById('invService').innerText = appt.serviceName;
   document.getElementById('invSub').innerText = appt.price;
+  
+  // GST Calculation (5%)
   const gst = Math.round(appt.price * 0.05);
+  const total = appt.price + gst;
+  
   document.getElementById('invTax').innerText = gst;
-  document.getElementById('invTotal').innerText = appt.price + gst;
-  document.getElementById('invoicePanel').dataset.id = id;
+  document.getElementById('invTotal').innerText = total;
 }
 
 async function processPayment(method) {
-  const id = document.getElementById('invoicePanel').dataset.id;
-  const price = parseInt(document.getElementById('invSub').innerText);
+  if(!currentBillAppt) return;
+  
   const gst = parseInt(document.getElementById('invTax').innerText);
   const total = parseInt(document.getElementById('invTotal').innerText);
 
-  await fetch(`${API_BASE}/appointments/${id}`, {
+  // Update Database
+  await fetch(`${API_BASE}/appointments/${currentBillAppt._id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      paymentStatus: 'Paid', 
+    body: JSON.stringify({
+      paymentStatus: 'Paid',
       status: 'Completed',
       gst: gst,
       totalAmount: total,
       paymentMethod: method
     })
   });
+
+  alert("Payment Successful!");
   document.getElementById('invoicePanel').style.display = 'none';
-  renderBillingQueue();
+  renderBillingQueue(); // Remove from queue
 }
 
-// --- REPORTS (ADDED BACK) ---
+function printInvoice() {
+  if(!currentBillAppt) return;
+  
+  const gst = document.getElementById('invTax').innerText;
+  const total = document.getElementById('invTotal').innerText;
+
+  const invoiceHTML = `
+    <div style="font-family: monospace; padding: 20px; max-width: 300px; margin: 0 auto; border: 1px solid #000;">
+      <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px;">
+        <h2 style="margin:0;">GLAM SALON</h2>
+        <p style="margin:5px 0;">Luxury & Spa</p>
+        <p style="font-size:0.8rem;">Date: ${new Date().toLocaleDateString()}</p>
+      </div>
+      <div style="margin-top: 15px;">
+        <p><strong>Client:</strong> ${currentBillAppt.clientName}</p>
+        <p><strong>Service:</strong> ${currentBillAppt.serviceName}</p>
+      </div>
+      <div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px;">
+        <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span> <span>₹${currentBillAppt.price}</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>GST (5%):</span> <span>₹${gst}</span></div>
+        <div style="display:flex; justify-content:space-between; font-weight:bold; margin-top:5px; font-size:1.1rem;">
+          <span>TOTAL:</span> <span>₹${total}</span>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 20px; font-size: 0.8rem;">
+        <p>Thank you for visiting!</p>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('printArea').innerHTML = invoiceHTML;
+  window.print();
+}
+
+// --- 9. REPORTS ---
 async function renderReport() {
   const date = document.getElementById('reportDate').value;
   if(!date) return;
 
-  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
+  const res = await fetch(`${API_BASE}/appointments`);
+  const apps = await res.json();
   
-  // Filter: Must be PAID and match the DATE
-  const dailyApps = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
+  // Filter for PAID appointments on selected date
+  const filtered = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
   
-  const totalRevenue = dailyApps.reduce((sum, a) => sum + (a.totalAmount || 0), 0);
-
-  // Update UI
-  document.getElementById('reportRevenue').innerText = totalRevenue.toLocaleString();
-  document.getElementById('reportCount').innerText = dailyApps.length;
-
   const tbody = document.getElementById('reportListBody');
   tbody.innerHTML = '';
   
-  if(dailyApps.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4">No sales found for this date.</td></tr>';
-  } else {
-    dailyApps.forEach(a => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${a.clientName}</td>
-          <td>${a.serviceName}</td>
-          <td>₹${a.totalAmount}</td>
-          <td>${a.paymentMethod}</td>
-        </tr>`;
-    });
-  }
-}
+  let dayTotal = 0;
 
-function logout() { localStorage.removeItem('glam_session'); window.location.href='admin.html'; }
-function openServiceModal() { 
-  document.getElementById('serviceForm').reset(); 
-  document.getElementById('sId').value = ""; 
-  document.getElementById('modalTitle').innerText = "Add Service";
-  document.getElementById('serviceModal').style.display = 'block'; 
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">No sales recorded for this date</td></tr>';
+    document.getElementById('reportRevenue').innerText = "0";
+    return;
+  }
+
+  filtered.forEach(a => {
+    // Use totalAmount if it exists (includes tax), otherwise fallback to price
+    const amt = a.totalAmount || a.price; 
+    dayTotal += amt;
+    
+    tbody.innerHTML += `
+      <tr>
+        <td>${a.clientName}</td>
+        <td>${a.serviceName}</td>
+        <td>₹${amt}</td>
+        <td>${a.paymentMethod}</td>
+      </tr>`;
+  });
+
+  document.getElementById('reportRevenue').innerText = dayTotal.toLocaleString();
 }
-function closeServiceModal() { document.getElementById('serviceModal').style.display = 'none'; }
