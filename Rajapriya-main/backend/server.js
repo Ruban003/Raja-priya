@@ -1,4 +1,3 @@
-/* backend/server.js */
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -8,85 +7,82 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// CONNECT DB
+// 1. CONNECT TO DATABASE
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ DB Error:', err));
 
-// --- SCHEMAS ---
+// 2. SCHEMAS
+// Schema for the "Services" you manage in Admin
 const serviceSchema = new mongoose.Schema({
   name: String,
-  price: Number,
-  category: String
+  category: String,
+  price: Number
 });
 const Service = mongoose.model('Service', serviceSchema);
 
+// Schema for Appointments/Billing
 const appointmentSchema = new mongoose.Schema({
   clientName: String,
   clientPhone: String,
   serviceName: String, // Stores "Haircut + Facial"
-  price: Number,       // Total Price
+  price: Number,       // Subtotal
   date: String,
   time: String,
   status: String,
   paymentStatus: { type: String, default: 'Unpaid' },
-  gst: Number,
-  totalAmount: Number
+  gst: Number,         // 5% Tax
+  totalAmount: Number, // Total with Tax
+  paymentMethod: String
 });
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 
-// --- ROUTES ---
+// 3. ROUTES
 
-// 1. SERVICES MANAGEMENT (New!)
+// --- SERVICES MANAGEMENT ---
 app.get('/api/services', async (req, res) => {
   const services = await Service.find();
   res.json(services);
 });
-
 app.post('/api/services', async (req, res) => {
   const newService = new Service(req.body);
   await newService.save();
   res.json(newService);
 });
-
 app.put('/api/services/:id', async (req, res) => {
-  const updated = await Service.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(updated);
+  await Service.findByIdAndUpdate(req.params.id, req.body);
+  res.json({ success: true });
 });
-
 app.delete('/api/services/:id', async (req, res) => {
   await Service.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted" });
+  res.json({ success: true });
 });
 
-// 2. APPOINTMENTS
+// --- APPOINTMENTS & BILLING ---
 app.get('/api/appointments', async (req, res) => {
   const apps = await Appointment.find().sort({ _id: -1 });
   res.json(apps);
 });
-
 app.get('/api/appointments/:id', async (req, res) => {
   const appt = await Appointment.findById(req.params.id);
   res.json(appt);
 });
-
 app.post('/api/bookings', async (req, res) => {
   const newApp = new Appointment(req.body);
   await newApp.save();
   res.json(newApp);
 });
-
 app.put('/api/appointments/:id', async (req, res) => {
+  // Updates payment status, GST, etc.
   const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
   res.json(updated);
 });
-
 app.delete('/api/appointments/:id', async (req, res) => {
   await Appointment.findByIdAndDelete(req.params.id);
   res.json({ message: "Deleted" });
 });
 
-// 3. LOGIN
+// --- SECURE LOGIN ---
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   if (username === "Glam" && password === "Glam@123") {
