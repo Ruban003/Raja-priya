@@ -1,78 +1,98 @@
-document.addEventListener("DOMContentLoaded", function () {
-  
-  // FAIL-SAFE: Hide Preloader
-  setTimeout(() => { 
-    const p = document.getElementById("preloader"); 
-    if(p) { p.style.opacity = '0'; setTimeout(()=>p.style.display='none',500); }
-  }, 500);
+const API_URL = "https://glam-backend-nw7q.onrender.com/api"; 
 
-  // FILL SERVICES
-  const select = document.getElementById("service");
-  if(select && typeof DB !== 'undefined') {
-    select.innerHTML = '<option value="" disabled selected>Select Experience</option>';
-    DB.getServices().forEach(s => {
-      select.innerHTML += `<option value="${s.name}">${s.name} - ₹${s.price}</option>`;
+document.addEventListener("DOMContentLoaded", async function () {
+  
+  // 1. FETCH SERVICES FROM DB (Dynamic)
+  try {
+    const res = await fetch(`${API_URL}/services`);
+    const services = await res.json();
+    window.allServices = services;
+    // Fill the first dropdown if it exists
+    const firstSelect = document.querySelector(".service-select");
+    if(firstSelect) populateDropdown(firstSelect);
+  } catch (err) { console.error("Error loading services"); }
+
+  // 2. "ADD SERVICE" BUTTON (+)
+  const addBtn = document.getElementById("addServiceBtn");
+  if(addBtn) {
+    addBtn.addEventListener("click", function() {
+      const container = document.getElementById("services-container");
+      const div = document.createElement("div");
+      div.classList.add("input-group");
+      div.style.marginTop = "10px";
+      
+      // Create dropdown
+      const sel = document.createElement("select");
+      sel.classList.add("service-select");
+      sel.required = true;
+      populateDropdown(sel);
+      
+      // Create remove button (x)
+      const removeBtn = document.createElement("span");
+      removeBtn.innerHTML = " &times;";
+      removeBtn.style.cursor = "pointer";
+      removeBtn.style.color = "red";
+      removeBtn.onclick = function() { container.removeChild(div); };
+
+      div.appendChild(sel);
+      div.appendChild(removeBtn);
+      container.appendChild(div);
     });
   }
 
-  // BOOKING LOGIC
+  // 3. BOOKING FORM LOGIC
   const form = document.getElementById("appointmentForm");
-  if (form) {
+  if(form) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const btn = form.querySelector('button');
-      const originalText = btn.innerText;
+      const btn = form.querySelector("button[type='submit']");
       btn.innerText = "Booking..."; btn.disabled = true;
 
       try {
-        const timeVal = document.getElementById("time").value;
-        let [h, m] = timeVal.split(':');
-        let ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        
-        // Wait for DB to create booking
-        await DB.createBooking({
-          name: document.getElementById("name").value,
-          phone: document.getElementById("phone").value,
-          serviceId: document.getElementById("service").value,
-          date: document.getElementById("date").value,
-          time: `${h}:${m} ${ampm}`,
-          type: "Online Booking",
-          status: "Pending"
+        // Collect all selected services
+        const selects = document.querySelectorAll(".service-select");
+        let names = [];
+        let price = 0;
+
+        selects.forEach(s => {
+          if(s.value) {
+            const data = JSON.parse(s.value);
+            names.push(data.name);
+            price += data.price;
+          }
         });
 
-        // Show Success
-        const popup = document.getElementById("popup");
-        if(popup) { popup.style.display = "block"; setTimeout(() => popup.style.display = "none", 3000); }
-        form.reset();
-      } catch (err) {
-        alert("Booking Failed. Is the backend running?");
-        console.error(err);
-      } finally {
-        btn.innerText = originalText; btn.disabled = false;
-      }
-    });
-  }
+        const payload = {
+          clientName: document.getElementById("name").value,
+          clientPhone: document.getElementById("phone").value,
+          serviceName: names.join(" + "), // "Haircut + Facial"
+          price: price,
+          date: document.getElementById("date").value,
+          time: document.getElementById("time").value,
+          status: "Pending"
+        };
 
-  // UI ELEMENTS
-  const burger = document.getElementById("burgerBtn");
-  const nav = document.getElementById("navMenu");
-  if (burger) {
-      burger.addEventListener("click", () => { burger.classList.toggle("active"); nav.classList.toggle("open"); });
-      document.querySelectorAll('#navMenu a').forEach(l => l.addEventListener('click', () => { burger.classList.remove("active"); nav.classList.remove("open"); }));
-  }
-  
-  // Back to Top
-  const backToTop = document.getElementById("backToTop");
-  if(backToTop) {
-    window.addEventListener("scroll", () => {
-      if (window.scrollY > 300) backToTop.classList.add("visible");
-      else backToTop.classList.remove("visible");
+        await fetch(`${API_URL}/bookings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        alert("Booking Confirmed!");
+        window.location.reload();
+
+      } catch (err) { alert("Booking Failed"); }
+      finally { btn.innerText = "Confirm Reservation"; btn.disabled = false; }
     });
-    backToTop.onclick = function() { window.scrollTo({ top: 0, behavior: 'smooth' }); };
   }
-  
-  // Date Picker Min Date
-  const dateInput = document.getElementById("date");
-  if (dateInput) dateInput.setAttribute("min", new Date().toISOString().split("T")[0]);
 });
+
+function populateDropdown(select) {
+  if(!window.allServices) return;
+  select.innerHTML = '<option value="" disabled selected>Select Service</option>';
+  window.allServices.forEach(s => {
+    // Store price in the value so we can calculate it easily
+    const val = JSON.stringify({ name: s.name, price: s.price });
+    select.innerHTML += `<option value='${val}'>${s.name} - ₹${s.price}</option>`;
+  });
+}
