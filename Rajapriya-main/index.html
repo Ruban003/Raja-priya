@@ -151,14 +151,16 @@
         <input type="tel" id="phone" placeholder="Phone Number" required>
     </div>
     
-    <div class="input-group" id="services-container">
-        <label>Select Service(s):</label>
-        <select id="service-1" name="service" required>
-            <option value="" disabled selected>Select Experience</option>
+    <div id="services-container">
+        <div class="input-group">
+            <label>Select Service:</label>
+            <select class="service-select" required>
+                <option value="" disabled selected>Loading...</option>
             </select>
+        </div>
     </div>
     
-    <button type="button" id="addServiceBtn" style="background:#eee; border:none; padding:5px 10px; cursor:pointer; margin-bottom:15px;">
+    <button type="button" id="addServiceBtn" style="background:#f0f0f0; border:none; padding:5px 10px; cursor:pointer; margin-bottom:15px; border-radius:4px;">
         + Add Another Service
     </button>
 
