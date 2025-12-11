@@ -4,12 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GlamPro | Manager</title>
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  
   <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
@@ -24,9 +21,7 @@
       <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
       <a href="#" class="menu-item" onclick="switchTab('reports')"><i class="fas fa-chart-line"></i> Reports</a>
     </div>
-    <div class="user-profile">
-      <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-    </div>
+    <div class="user-profile"><button class="logout-btn" onclick="logout()">Logout</button></div>
   </nav>
 
   <main class="content">
@@ -34,35 +29,26 @@
     <div id="view-dashboard" class="view-section">
       <h2 class="page-title">Business Insight</h2>
       <div class="stats-grid">
-        <div class="card bg-green"><h3>Total Net</h3><p id="dashNet">₹0</p></div>
-        <div class="card bg-blue"><h3>Total Cash</h3><p id="salesCash">₹0</p></div>
-        <div class="card bg-orange"><h3>Total UPI</h3><p id="salesUPI">₹0</p></div>
+        <div class="card bg-green"><h3>Total Revenue</h3><p id="dashNet">₹0</p></div>
+        <div class="card bg-blue"><h3>Cash Collected</h3><p id="salesCash">₹0</p></div>
+        <div class="card bg-orange"><h3>UPI Collected</h3><p id="salesUPI">₹0</p></div>
         <div class="card bg-pink"><h3>Appointments</h3><p id="dashCount">0</p></div>
       </div>
     </div>
 
     <div id="view-appointments" class="view-section" style="display:none;">
-      
-      <div class="stats-grid" style="margin-bottom: 25px; grid-template-columns: repeat(3, 1fr);">
-        <div class="card" style="background: linear-gradient(135deg, #34495e, #2c3e50);">
-          <h3>Total Today</h3><p id="apptTotal">0</p>
-        </div>
-        <div class="card" style="background: linear-gradient(135deg, #f39c12, #d35400);">
-          <h3>Upcoming / Pending</h3><p id="apptPending">0</p>
-        </div>
-        <div class="card" style="background: linear-gradient(135deg, #27ae60, #2ecc71);">
-          <h3>Completed / Done</h3><p id="apptDone">0</p>
-        </div>
+      <div class="stats-grid" style="margin-bottom:20px; grid-template-columns:repeat(3, 1fr);">
+        <div class="card" style="background:#34495e;"><h3>Total Today</h3><p id="apptTotal">0</p></div>
+        <div class="card" style="background:#e67e22;"><h3>Pending</h3><p id="apptPending">0</p></div>
+        <div class="card" style="background:#27ae60;"><h3>Done</h3><p id="apptDone">0</p></div>
       </div>
-
       <div class="header-row">
-        <h2 class="page-title">Appointment List</h2>
-        <button class="btn-new" onclick="openWalkinModal()">+ New Appointment</button>
+        <h2 class="page-title">Appointments</h2>
+        <button class="btn-new" onclick="openWalkinModal()">+ New Booking</button>
       </div>
-      
       <div class="table-container">
         <table>
-          <thead><tr><th>Date/Time</th><th>Client</th><th>Service</th><th>Status</th><th>Billing</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Time</th><th>Client</th><th>Service</th><th>Status</th><th>Billing</th><th>Edit</th></tr></thead>
           <tbody id="apptListBody"></tbody>
         </table>
       </div>
@@ -75,29 +61,25 @@
       </div>
       <div class="table-container">
         <table>
-          <thead><tr><th>Name</th><th>Category</th><th>Gender</th><th>Price</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Action</th></tr></thead>
           <tbody id="serviceListBody"></tbody>
         </table>
       </div>
     </div>
 
     <div id="view-clients" class="view-section" style="display:none;">
-      <h2 class="page-title">Client Database</h2>
+      <h2 class="page-title">Clients</h2>
       <div class="table-container">
-        <table>
-          <thead><tr><th>Client Name</th><th>Phone</th><th>Visits</th><th>Last Visit</th><th>History</th></tr></thead>
-          <tbody id="clientListBody"></tbody>
-        </table>
+        <table><thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>History</th></tr></thead><tbody id="clientListBody"></tbody></table>
       </div>
     </div>
 
     <div id="view-billing" class="view-section" style="display:none;">
-      <div class="header-row">
-        <h2 class="page-title">Billing Counter</h2>
-        <button class="btn-print" onclick="showDayCloseReport()" style="background:#2c3e50;">📜 Close Day / Tally</button>
-      </div>
+      <h2 class="page-title">Billing Counter</h2>
+      
       <div class="billing-layout">
         <div class="queue-list" id="billingQueue"></div>
+        
         <div class="invoice-panel" id="invoicePanel" style="display:none;">
           <h3>INVOICE #<span id="invId"></span></h3>
           <p id="invClientName" style="font-weight:bold;"></p>
@@ -107,108 +89,69 @@
             <button onclick="addItemToBill()" class="btn-add-item">+</button>
           </div>
           
-          <table class="bill-table"><tbody id="billItemsBody"></tbody></table>
+          <table class="bill-table">
+              <thead><tr><th>Item</th><th>Price</th><th>Remove</th></tr></thead>
+              <tbody id="billItemsBody"></tbody>
+          </table>
           <hr>
+          
           <div class="inv-footer">
-            <div class="row"><span>Total:</span> <span id="invTotal" style="font-weight:bold; font-size:1.2rem;">0</span></div>
+            <div class="row"><span>Total Bill:</span> <span id="invTotal" style="font-weight:bold; font-size:1.4rem;">0</span></div>
           </div>
-          <div class="inv-actions">
-            <button class="btn-pay cash" onclick="processPayment('Cash')">Cash</button>
-            <button class="btn-pay upi" onclick="processPayment('UPI')">UPI</button>
+
+          <div class="payment-section" style="background:#f9f9f9; padding:15px; border-radius:8px; margin-top:15px;">
+            <p style="font-weight:bold; margin-bottom:10px;">Payment Collection</p>
+            
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1;">
+                    <label>Cash (₹)</label>
+                    <input type="number" id="payCash" value="0" oninput="calculateBalance()">
+                </div>
+                <div style="flex:1;">
+                    <label>UPI (₹)</label>
+                    <input type="number" id="payUPI" value="0" oninput="calculateBalance()">
+                </div>
+            </div>
+            
+            <div class="row" style="color:red; font-weight:bold;">
+                <span>Balance Due:</span> <span>₹<span id="payBalance">0</span></span>
+            </div>
+
+            <button id="btnCompleteBill" class="btn-new" style="width:100%; margin-top:15px; background:#ccc;" disabled onclick="processSplitPayment()">Complete Bill</button>
           </div>
+
         </div>
       </div>
     </div>
 
     <div id="view-reports" class="view-section" style="display:none;">
-      <h2 class="page-title">Sales Reports</h2>
-      <div class="control-bar" style="background:white; padding:15px; border-radius:8px; display:flex; gap:10px; align-items:center;">
-        <label>Date:</label>
-        <input type="text" id="reportDate" class="flatpickr" placeholder="Select Date">
-        <button class="btn-new" onclick="renderReport()">View Report</button>
+      <h2 class="page-title">Reports</h2>
+      <div class="control-bar" style="background:white; padding:15px; border-radius:8px; display:flex; gap:10px;">
+        <input type="text" id="reportDate" class="flatpickr" placeholder="Date">
+        <button class="btn-new" onclick="renderReport()">View</button>
       </div>
       <div class="table-container" style="margin-top:20px;">
-        <table id="reportTable">
-          <thead><tr><th>Inv ID</th><th>Client</th><th>Service</th><th>Total</th><th>Method</th></tr></thead>
-          <tbody id="reportListBody"></tbody>
-        </table>
-        <div style="padding:15px; font-weight:bold; text-align:right; font-size:1.2rem;">
-          Total Revenue: ₹<span id="reportRevenue">0</span>
-        </div>
+        <table id="reportTable"><thead><tr><th>Inv #</th><th>Client</th><th>Items</th><th>Total</th><th>Paid Via</th></tr></thead><tbody id="reportListBody"></tbody></table>
+        <div style="padding:15px; text-align:right; font-weight:bold;">Total: ₹<span id="reportRevenue">0</span></div>
       </div>
     </div>
 
   </main>
 
   <div id="walkinModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('walkinModal')">&times;</span>
-      <h3>New Appointment</h3>
-      <form id="walkinForm">
-        <input type="text" id="wName" placeholder="Client Name" required>
-        <input type="tel" id="wPhone" placeholder="Phone Number" required>
-        <label>Gender:</label>
-        <select id="wGender"><option value="Female">Female</option><option value="Male">Male</option></select>
-        <label>Date & Time:</label>
-        <input type="text" id="wDateTime" class="flatpickr" placeholder="Select Date & Time" required>
-        <label>Service:</label>
-        <select id="wService" required></select>
-        <button type="submit" class="btn-new">Confirm Booking</button>
-      </form>
-    </div>
-  </div>
-
-  <div id="editApptModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('editApptModal')">&times;</span>
-      <h3>Edit Appointment</h3>
-      <form id="editApptForm">
-        <input type="hidden" id="editApptId">
-        
-        <label>Client Name:</label>
-        <input type="text" id="editName" required>
-        
-        <label>Date & Time:</label>
-        <input type="text" id="editDateTime" class="flatpickr" required>
-        
-        <label>Status:</label>
-        <select id="editStatus">
-            <option value="Pending">Pending</option>
-            <option value="In-Store">In-Store</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-        </select>
-
-        <button type="submit" class="btn-new" style="background:#f39c12; margin-top:15px;">Update Appointment</button>
-      </form>
-    </div>
+    <div class="modal-content"><span class="close" onclick="closeModal('walkinModal')">&times;</span><h3>New Booking</h3><form id="walkinForm"><input type="text" id="wName" placeholder="Name" required><input type="tel" id="wPhone" placeholder="Phone" required><select id="wService"></select><input type="text" id="wDateTime" class="flatpickr" placeholder="Date Time" required><button class="btn-new">Book</button></form></div>
   </div>
 
   <div id="serviceModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('serviceModal')">&times;</span>
-      <h3>Manage Service</h3>
-      <form id="serviceForm">
-        <input type="hidden" id="sId">
-        <input type="text" id="sName" placeholder="Service Name" required>
-        <input type="text" id="sCat" placeholder="Category" required>
-        <select id="sGender"><option value="Unisex">Unisex</option><option value="Female">Female</option><option value="Male">Male</option></select>
-        <input type="number" id="sPrice" placeholder="Price (₹)" required>
-        <button type="submit" class="btn-new">Save Service</button>
-      </form>
-    </div>
+    <div class="modal-content"><span class="close" onclick="closeModal('serviceModal')">&times;</span><h3>Service</h3><form id="serviceForm"><input type="hidden" id="sId"><input type="text" id="sName" placeholder="Name" required><input type="text" id="sCat" placeholder="Category"><input type="number" id="sPrice" placeholder="Price" required><button class="btn-new">Save</button></form></div>
   </div>
-
-  <div id="historyModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('historyModal')">&times;</span>
-      <h3>Client History</h3>
-      <div id="historyContent" style="max-height:300px; overflow-y:auto;"></div>
-    </div>
-  </div>
-
-  <div id="printArea"></div>
   
+  <div id="editApptModal" class="modal">
+      <div class="modal-content"><span class="close" onclick="closeModal('editApptModal')">&times;</span><h3>Edit</h3><form id="editApptForm"><input type="hidden" id="editApptId"><input type="text" id="editName"><input type="text" id="editDateTime" class="flatpickr"><select id="editStatus"><option value="Pending">Pending</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select><button class="btn-new">Update</button></form></div>
+  </div>
+
+  <div id="historyModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('historyModal')">&times;</span><div id="historyContent"></div></div></div>
+
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="dashboard.js"></script>
 </body>
