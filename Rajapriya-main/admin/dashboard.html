@@ -13,11 +13,11 @@
   <nav class="sidebar">
     <div class="brand">GLAM<span>PRO</span></div>
     <div class="menu">
-      <a href="#" class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-home"></i> Overview</a>
+      <a href="#" class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-th-large"></i> Dashboard</a>
       <a href="#" class="menu-item" onclick="switchTab('appointments')"><i class="fas fa-calendar-check"></i> Appointments</a>
       <a href="#" class="menu-item" onclick="switchTab('services')"><i class="fas fa-cut"></i> Services</a>
-      <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
-      <a href="#" class="menu-item" onclick="switchTab('reports')"><i class="fas fa-chart-line"></i> Reports</a>
+      <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Active Billing</a>
+      <a href="#" class="menu-item" onclick="switchTab('history')"><i class="fas fa-history"></i> Billing History</a>
     </div>
     <div class="user-profile">
       <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -27,22 +27,66 @@
   <main class="content">
     
     <div id="view-dashboard" class="view-section">
-      <h2 class="page-title">Shop Overview</h2>
+      <h2 class="page-title">Business Insight</h2>
+      
       <div class="stats-grid">
-        <div class="card c-purple"><h3>Today's Income</h3><p id="todayRev">₹0</p></div>
-        <div class="card c-pink"><h3>Active Clients</h3><p id="activeCount">0</p></div>
-        <div class="card c-orange"><h3>Pending Bills</h3><p id="pendingBillsCount">0</p></div>
+        <div class="card bg-green">
+          <h3>Total Net</h3>
+          <p id="dashNet">₹0</p>
+          <div class="icon"><i class="fas fa-wallet"></i></div>
+        </div>
+        <div class="card bg-blue">
+          <h3>Total Gross</h3>
+          <p id="dashGross">₹0</p>
+          <div class="icon"><i class="fas fa-chart-bar"></i></div>
+        </div>
+        <div class="card bg-orange">
+          <h3>Total Advance</h3>
+          <p>₹0</p> <div class="icon"><i class="fas fa-credit-card"></i></div>
+        </div>
+        <div class="card bg-pink">
+          <h3>Total Discount</h3>
+          <p>₹0</p>
+          <div class="icon"><i class="fas fa-tags"></i></div>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="d-card">
+          <span class="lbl">Service Bills</span>
+          <span class="val" id="countBills">0</span>
+        </div>
+        <div class="d-card">
+          <span class="lbl">Men / Women</span>
+          <span class="val"><span id="countMen">0</span> / <span id="countWomen">0</span></span>
+        </div>
+        <div class="d-card">
+          <span class="lbl">Cash Sales</span>
+          <span class="val green-text" id="salesCash">₹0</span>
+        </div>
+        <div class="d-card">
+          <span class="lbl">UPI/Online</span>
+          <span class="val blue-text" id="salesUPI">₹0</span>
+        </div>
+        <div class="d-card">
+          <span class="lbl">Pending Appts</span>
+          <span class="val orange-text" id="countPending">0</span>
+        </div>
+        <div class="d-card">
+          <span class="lbl">Avg. Sale</span>
+          <span class="val pink-text" id="avgSale">₹0</span>
+        </div>
       </div>
     </div>
 
     <div id="view-appointments" class="view-section" style="display:none;">
       <div class="header-row">
         <h2 class="page-title">Appointments</h2>
-        <button class="btn-new" onclick="openWalkinModal()">+ New Appointment</button>
+        <button class="btn-new" onclick="openWalkinModal()">+ New Booking</button>
       </div>
       <div class="table-container">
         <table>
-          <thead><tr><th>Date</th><th>Client</th><th>Services</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Time</th><th>Client</th><th>Booked Service</th><th>Status</th><th>Action</th></tr></thead>
           <tbody id="apptListBody"></tbody>
         </table>
       </div>
@@ -50,12 +94,12 @@
 
     <div id="view-services" class="view-section" style="display:none;">
       <div class="header-row">
-        <h2 class="page-title">Services Menu</h2>
-        <button class="btn-new" onclick="openServiceModal()">+ Add New Service</button>
+        <h2 class="page-title">Service Menu</h2>
+        <button class="btn-new" onclick="openServiceModal()">+ Add Service</button>
       </div>
       <div class="table-container">
         <table>
-          <thead><tr><th>Service Name</th><th>Category</th><th>Price</th><th>Action</th></tr></thead>
+          <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Action</th></tr></thead>
           <tbody id="serviceListBody"></tbody>
         </table>
       </div>
@@ -64,32 +108,49 @@
     <div id="view-billing" class="view-section" style="display:none;">
       <h2 class="page-title">Billing Counter</h2>
       <div class="billing-layout">
+        
         <div class="queue-list" id="billingQueue"></div>
+        
         <div class="invoice-panel" id="invoicePanel" style="display:none;">
-          <h3>INVOICE</h3>
-          <p><strong>Client:</strong> <span id="invName"></span></p>
-          <p><strong>Service:</strong> <span id="invService"></span></p>
+          <div class="inv-header">
+            <h3>INVOICE #<span id="invId"></span></h3>
+            <p id="invClientName" style="font-weight:bold; color:#555;"></p>
+          </div>
+          
+          <div class="add-item-row">
+            <select id="billAddService"></select>
+            <button onclick="addItemToBill()" class="btn-add-item">+</button>
+          </div>
+
+          <div class="bill-items-container">
+            <table class="bill-table">
+              <thead><tr><th>Item</th><th>Price</th><th>X</th></tr></thead>
+              <tbody id="billItemsBody"></tbody>
+            </table>
+          </div>
+
           <hr>
-          <p>Subtotal: <span id="invSub">0</span></p>
-          <p>GST (5%): <span id="invTax">0</span></p>
-          <p class="total">Total: ₹<span id="invTotal">0</span></p>
-          <button class="btn-print" onclick="printInvoice()">Print</button>
-          <button class="btn-pay" onclick="processPayment('Cash')">Cash</button>
-          <button class="btn-pay" onclick="processPayment('UPI')">UPI</button>
+          
+          <div class="inv-footer">
+            <div class="row"><span>Subtotal:</span> <span id="invSub">0</span></div>
+            <div class="row"><span>GST (5%):</span> <span id="invTax">0</span></div>
+            <div class="row total"><span>Net Payable:</span> <span>₹<span id="invTotal">0</span></span></div>
+          </div>
+
+          <div class="inv-actions">
+            <button class="btn-pay cash" onclick="processPayment('Cash')">Cash</button>
+            <button class="btn-pay upi" onclick="processPayment('UPI')">UPI</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div id="view-reports" class="view-section" style="display:none;">
-      <h2 class="page-title">Sales Report</h2>
-      <div class="control-bar">
-        <input type="date" id="reportDate" onchange="renderReport()">
-        <span style="font-weight:bold; font-size:1.2rem; color:#27ae60;">Total: ₹<span id="reportRevenue">0</span></span>
-      </div>
+    <div id="view-history" class="view-section" style="display:none;">
+      <h2 class="page-title">Billing History</h2>
       <div class="table-container">
-        <table id="reportTable">
-          <thead><tr><th>Client</th><th>Service</th><th>Amount</th><th>Method</th></tr></thead>
-          <tbody id="reportListBody"></tbody>
+        <table>
+          <thead><tr><th>Date</th><th>Client</th><th>Items</th><th>Total</th><th>Method</th><th>Action</th></tr></thead>
+          <tbody id="historyListBody"></tbody>
         </table>
       </div>
     </div>
@@ -99,17 +160,13 @@
   <div id="walkinModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeWalkinModal()">&times;</span>
-      <h3>New Walk-in Booking</h3>
+      <h3>New Appointment</h3>
       <form id="walkinForm">
         <input type="text" id="wName" placeholder="Client Name" required>
-        <input type="tel" id="wPhone" placeholder="Phone Number" required>
-        <label>Select Service:</label>
+        <input type="tel" id="wPhone" placeholder="Phone">
         <select id="wService" required></select>
-        <div class="row">
-          <input type="date" id="wDate" required>
-          <input type="time" id="wTime" required>
-        </div>
-        <button type="submit" class="btn-new">Confirm Booking</button>
+        <div class="row"><input type="date" id="wDate"><input type="time" id="wTime"></div>
+        <button type="submit" class="btn-new">Book</button>
       </form>
     </div>
   </div>
@@ -117,18 +174,19 @@
   <div id="serviceModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeServiceModal()">&times;</span>
-      <h3>Service Details</h3>
+      <h3>Service</h3>
       <form id="serviceForm">
         <input type="hidden" id="sId">
-        <input type="text" id="sName" placeholder="Service Name" required>
+        <input type="text" id="sName" placeholder="Name" required>
         <input type="text" id="sCat" placeholder="Category" required>
-        <input type="number" id="sPrice" placeholder="Price (₹)" required>
-        <button type="submit" class="btn-new">Save Service</button>
+        <input type="number" id="sPrice" placeholder="Price" required>
+        <button type="submit" class="btn-new">Save</button>
       </form>
     </div>
   </div>
 
   <div id="printArea"></div>
+  <script src="../js/db.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>
