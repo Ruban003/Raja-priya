@@ -143,34 +143,40 @@
     <section class="appointment" id="appointment">
       <h2 data-aos="fade-down">Book Your Visit</h2>
       
-      <form id="appointmentForm">
+<form id="appointmentForm">
     <div class="input-group">
         <input type="text" id="name" placeholder="Your Name" required>
     </div>
     <div class="input-group">
         <input type="tel" id="phone" placeholder="Phone Number" required>
     </div>
+    <div class="input-group">
+        <select id="gender" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px;">
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+        </select>
+    </div>
     
     <div id="services-container">
         <div class="input-group">
-            <label>Select Service:</label>
-            <select class="service-select" required>
-                <option value="" disabled selected>Loading...</option>
-            </select>
+            <select class="service-select" required><option>Loading...</option></select>
         </div>
     </div>
-    
-    <button type="button" id="addServiceBtn" style="background:#f0f0f0; border:none; padding:5px 10px; cursor:pointer; margin-bottom:15px; border-radius:4px;">
-        + Add Another Service
-    </button>
+    <button type="button" id="addServiceBtn" style="margin-bottom:10px;">+ Add Service</button>
 
-    <div class="input-group row">
-        <input type="date" id="date" required>
-        <input type="time" id="time" required>
+    <div class="input-group">
+        <input type="text" id="date" class="flatpickr" placeholder="Select Date & Time" required>
     </div>
     
     <button type="submit" class="btn-submit">Confirm Reservation</button>
 </form>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    flatpickr("#date", { enableTime: true, dateFormat: "Y-m-d H:i", minDate: "today" });
+</script>
+<script src="js/script.js"></script>
 
       <div id="popup">Booking Confirmed! See you soon. ✨</div>
     </section>
