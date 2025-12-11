@@ -1,8 +1,5 @@
-/* =========================================
-   GLAMPRO ADMIN CONTROLLER - FINAL COMPLETE
-   ========================================= */
+/* admin/dashboard.js - FIXED BOOKING & SPLIT PAYMENTS */
 
-// --- 1. SECURITY & CONFIG ---
 (function checkSession() {
   const session = JSON.parse(localStorage.getItem("glam_session"));
   if (!session || !session.loggedIn) window.location.href = "admin.html";
@@ -13,30 +10,28 @@ let allServices = [];
 let currentBillItems = [];
 let currentBillApptId = null;
 
-// --- 2. INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize Date Pickers
+  // Init Date Pickers
   flatpickr("#reportDate", { dateFormat: "Y-m-d", defaultDate: "today" });
-  flatpickr("#wDateTime", { enableTime: true, dateFormat: "Y-m-d H:i" });
+  flatpickr("#wDateTime", { enableTime: true, dateFormat: "Y-m-d H:i", minDate: "today" });
   flatpickr("#editDateTime", { enableTime: true, dateFormat: "Y-m-d H:i" });
 
-  // Load Initial View
+  // Initial Load
   switchTab('dashboard'); 
   
-  // Attach Form Listeners
+  // Attach Listeners
   document.getElementById('serviceForm').addEventListener('submit', handleServiceSubmit);
   document.getElementById('walkinForm').addEventListener('submit', handleWalkinSubmit);
   document.getElementById('editApptForm').addEventListener('submit', handleEditApptSubmit);
 });
 
-// --- 3. NAVIGATION ---
+// --- NAVIGATION ---
 function switchTab(tab) {
   document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
   document.getElementById(`view-${tab}`).style.display = 'block';
   document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
   event.currentTarget.classList.add('active');
 
-  // Refresh data on tab switch to keep things instant
   if(tab === 'dashboard') renderDashboard();
   if(tab === 'appointments') renderAppointmentList();
   if(tab === 'services') renderServices();
@@ -48,7 +43,87 @@ function switchTab(tab) {
 function logout() { localStorage.removeItem('glam_session'); window.location.href='admin.html'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// --- 4. BILLING & SPLIT PAYMENT LOGIC ---
+// --- WALKIN BOOKING (FIXED) ---
+function openWalkinModal() {
+  document.getElementById('walkinModal').style.display = 'block';
+  
+  // Reset Form
+  document.getElementById('walkinForm').reset();
+  
+  // Set default Date to Now
+  const now = new Date();
+  document.getElementById('wDateTime')._flatpickr.setDate(now);
+
+  // Populate Services
+  const sel = document.getElementById('wService');
+  sel.innerHTML = '<option value="" disabled selected>-- Select Service --</option>';
+  
+  if(allServices.length === 0) {
+     sel.innerHTML += '<option disabled>Loading services...</option>';
+     // Try fetching again if empty
+     renderServices().then(() => {
+         sel.innerHTML = '<option value="" disabled selected>-- Select Service --</option>';
+         allServices.forEach(s => {
+            const val = JSON.stringify({ name: s.name, price: s.price });
+            sel.innerHTML += `<option value='${val}'>${s.name} - ₹${s.price}</option>`;
+         });
+     });
+  } else {
+     allServices.forEach(s => {
+        const val = JSON.stringify({ name: s.name, price: s.price });
+        sel.innerHTML += `<option value='${val}'>${s.name} - ₹${s.price}</option>`;
+     });
+  }
+}
+
+async function handleWalkinSubmit(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById('wName').value;
+  const phone = document.getElementById('wPhone').value;
+  const serviceVal = document.getElementById('wService').value;
+  const dateVal = document.getElementById('wDateTime').value;
+
+  // 1. Validate Inputs
+  if (!serviceVal) { alert("⚠️ Please select a Service!"); return; }
+  if (!dateVal) { alert("⚠️ Please select Date & Time!"); return; }
+
+  try {
+    const s = JSON.parse(serviceVal); // This is where it failed before
+    const dt = dateVal.split(' '); // "2025-12-12 14:00"
+
+    const payload = {
+      clientName: name,
+      clientPhone: phone,
+      clientGender: document.getElementById('wGender').value,
+      serviceName: s.name,
+      price: s.price,
+      date: dt[0], 
+      time: dt[1],
+      status: "In-Store", 
+      paymentStatus: "Unpaid"
+    };
+
+    const res = await fetch(`${API_BASE}/bookings`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    if(res.ok) {
+        alert("✅ Booking Successful!");
+        closeModal('walkinModal');
+        switchTab('appointments');
+    } else {
+        alert("❌ Error saving booking.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error: " + err.message);
+  }
+}
+
+// --- BILLING & SPLIT PAYMENT ---
 async function renderBillingQueue() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const unpaid = apps.filter(a => a.paymentStatus === 'Unpaid');
@@ -67,15 +142,12 @@ async function renderBillingQueue() {
 async function initBill(id) {
   const appt = await (await fetch(`${API_BASE}/appointments/${id}`)).json();
   currentBillApptId = id;
-  
-  // Initialize bill with the booked service
   currentBillItems = [{ name: appt.serviceName, price: appt.price }];
   
   document.getElementById('invoicePanel').style.display = 'block';
   document.getElementById('invClientName').innerText = appt.clientName;
   document.getElementById('invId').innerText = appt._id.slice(-4).toUpperCase();
 
-  // Populate "Add Service" dropdown for billing
   const sel = document.getElementById('billAddService');
   sel.innerHTML = '';
   allServices.forEach(s => sel.innerHTML += `<option value='${JSON.stringify(s)}'>${s.name} - ₹${s.price}</option>`);
@@ -84,12 +156,13 @@ async function initBill(id) {
 }
 
 function addItemToBill() {
-  const s = JSON.parse(document.getElementById('billAddService').value);
+  const val = document.getElementById('billAddService').value;
+  if(!val) return;
+  const s = JSON.parse(val);
   currentBillItems.push({ name: s.name, price: s.price });
   renderBillItems();
 }
 
-// Remove item logic (Red X)
 function removeItemFromBill(index) {
   currentBillItems.splice(index, 1);
   renderBillItems();
@@ -106,42 +179,37 @@ function renderBillItems() {
       <tr>
         <td>${i.name}</td>
         <td>₹${i.price}</td>
-        <td><button style="color:red; font-weight:bold; border:none; background:none; cursor:pointer;" onclick="removeItemFromBill(${index})">X</button></td>
+        <td><button style="color:red; background:none; border:none; cursor:pointer; font-weight:bold;" onclick="removeItemFromBill(${index})">X</button></td>
       </tr>`;
   });
   
   document.getElementById('invTotal').innerText = total;
-  
-  // Reset Payment Inputs
   document.getElementById('payCash').value = 0;
   document.getElementById('payUPI').value = 0;
   calculateBalance();
 }
 
-// Live Balance Calculator (Cash + UPI)
 function calculateBalance() {
   const total = parseInt(document.getElementById('invTotal').innerText) || 0;
   const cash = parseInt(document.getElementById('payCash').value) || 0;
   const upi = parseInt(document.getElementById('payUPI').value) || 0;
   
   const balance = total - (cash + upi);
-  const balanceText = document.getElementById('payBalance');
+  const balEl = document.getElementById('payBalance');
   const btn = document.getElementById('btnCompleteBill');
   
-  balanceText.innerText = balance;
+  balEl.innerText = balance;
   
   if (balance === 0 && total > 0) {
     btn.disabled = false;
-    btn.style.background = "#27ae60"; // Green
+    btn.style.background = "#27ae60"; 
     btn.innerText = "Complete Bill";
-    balanceText.style.color = "green";
+    balEl.style.color = "green";
   } else {
     btn.disabled = true;
-    btn.style.background = "#ccc"; // Grey
-    balanceText.style.color = "red";
-    
-    if(balance > 0) btn.innerText = `Collect ₹${balance} more`;
-    else btn.innerText = `Excess amount!`;
+    btn.style.background = "#ccc";
+    balEl.style.color = "red";
+    btn.innerText = balance > 0 ? "Amount Pending" : "Excess Amount";
   }
 }
 
@@ -160,23 +228,17 @@ async function processSplitPayment() {
     method: 'PUT',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ 
-      paymentStatus: 'Paid', 
-      status: 'Completed', 
-      totalAmount: total, 
-      paymentMethod: method, 
-      serviceName: names,
-      cashAmount: cash, 
-      upiAmount: upi 
+      paymentStatus: 'Paid', status: 'Completed', totalAmount: total, paymentMethod: method, serviceName: names, cashAmount: cash, upiAmount: upi 
     })
   });
   
   document.getElementById('invoicePanel').style.display = 'none';
   renderBillingQueue();
   renderDashboard();
-  alert("✅ Bill Saved Successfully!");
+  alert("Bill Saved!");
 }
 
-// --- 5. DASHBOARD STATS ---
+// --- DASHBOARD & REPORTS ---
 async function renderDashboard() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const paidApps = apps.filter(a => a.paymentStatus === 'Paid');
@@ -191,20 +253,33 @@ async function renderDashboard() {
   document.getElementById('dashCount').innerText = apps.length;
 }
 
-// --- 6. APPOINTMENTS ---
+async function renderReport() {
+  const date = document.getElementById('reportDate').value;
+  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
+  const filtered = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
+  const tbody = document.getElementById('reportListBody');
+  tbody.innerHTML = '';
+  let total = 0;
+  filtered.forEach(a => {
+    total += a.totalAmount;
+    tbody.innerHTML += `<tr><td>#${a._id.slice(-4).toUpperCase()}</td><td>${a.clientName}</td><td>${a.serviceName}</td><td>₹${a.totalAmount}</td><td>${a.paymentMethod}</td></tr>`;
+  });
+  document.getElementById('reportRevenue').innerText = total.toLocaleString();
+}
+
+// --- APPOINTMENTS LIST ---
 async function renderAppointmentList() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const tbody = document.getElementById('apptListBody');
   tbody.innerHTML = '';
   
-  // Top Stats
   document.getElementById('apptTotal').innerText = apps.length;
   document.getElementById('apptDone').innerText = apps.filter(a => a.status === 'Completed').length;
   document.getElementById('apptPending').innerText = apps.filter(a => a.status === 'Pending' || a.status === 'In-Store').length;
 
   apps.forEach(a => {
-    const btn = a.paymentStatus === 'Unpaid' 
-      ? `<button class="btn-new" style="background:#e67e22; padding:5px 10px;" onclick="moveToBill('${a._id}')">Bill ➔</button>` 
+    let btn = a.paymentStatus === 'Unpaid' 
+      ? `<button class="btn-new" style="background:#e67e22; padding:6px 12px; font-size:0.8rem;" onclick="moveToBill('${a._id}')">Bill ➔</button>` 
       : `<span style="color:#27ae60;font-weight:bold;">Paid</span>`;
       
     const safeName = a.clientName.replace(/'/g, "");
@@ -223,12 +298,8 @@ async function renderAppointmentList() {
   });
 }
 
-function moveToBill(id) {
-  switchTab('billing');
-  initBill(id);
-}
+function moveToBill(id) { switchTab('billing'); initBill(id); }
 
-// Edit Modal Logic
 function openEditAppt(id, name, datetime, status) {
   document.getElementById('editApptId').value = id;
   document.getElementById('editName').value = name;
@@ -241,155 +312,45 @@ async function handleEditApptSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('editApptId').value;
   const dt = document.getElementById('editDateTime').value.split(' ');
-  
   await fetch(`${API_BASE}/appointments/${id}`, {
     method: 'PUT',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      clientName: document.getElementById('editName').value,
-      date: dt[0],
-      time: dt[1],
-      status: document.getElementById('editStatus').value
-    })
+    body: JSON.stringify({ clientName: document.getElementById('editName').value, date: dt[0], time: dt[1], status: document.getElementById('editStatus').value })
   });
   closeModal('editApptModal');
   renderAppointmentList();
 }
 
-// --- 7. SERVICES ---
+// --- SERVICES & CLIENTS ---
 async function renderServices() {
   const res = await fetch(`${API_BASE}/services`);
   allServices = await res.json();
   const tbody = document.getElementById('serviceListBody');
   tbody.innerHTML = '';
-  
   allServices.forEach(s => {
     const safeObj = JSON.stringify(s).replace(/'/g, "&apos;");
-    tbody.innerHTML += `
-      <tr>
-        <td>${s.name}</td>
-        <td>${s.category}</td>
-        <td>₹${s.price}</td>
-        <td>
-          <button class="btn-del" onclick="deleteService('${s._id}')" title="Delete"><i class="fas fa-trash"></i></button>
-        </td>
-      </tr>`;
+    tbody.innerHTML += `<tr><td>${s.name}</td><td>${s.category}</td><td>₹${s.price}</td><td><button class="btn-del" onclick="deleteService('${s._id}')"><i class="fas fa-trash"></i></button></td></tr>`;
   });
 }
-
-async function deleteService(id) {
-  if(confirm("Permanently remove this service?")) {
-    await fetch(`${API_BASE}/services/${id}`, { method: 'DELETE' });
-    renderServices();
-  }
+async function deleteService(id) { if(confirm("Delete?")) { await fetch(`${API_BASE}/services/${id}`, { method: 'DELETE' }); renderServices(); } }
+async function handleServiceSubmit(e) { 
+    e.preventDefault(); 
+    await fetch(`${API_BASE}/services`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: document.getElementById('sName').value, category: document.getElementById('sCat').value, price: document.getElementById('sPrice').value }) });
+    closeModal('serviceModal'); renderServices(); 
 }
 
-async function handleServiceSubmit(e) {
-  e.preventDefault();
-  const payload = {
-    name: document.getElementById('sName').value,
-    category: document.getElementById('sCat').value,
-    price: document.getElementById('sPrice').value
-  };
-  await fetch(`${API_BASE}/services`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-  closeModal('serviceModal');
-  renderServices();
-}
-
-// --- 8. CLIENTS & REPORTS ---
 async function renderClients() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const tbody = document.getElementById('clientListBody');
   tbody.innerHTML = '';
   const clients = {};
-  apps.forEach(a => {
-    if(!clients[a.clientPhone]) clients[a.clientPhone] = { name: a.clientName, phone: a.clientPhone, visits: 0, last: a.date };
-    clients[a.clientPhone].visits++;
-  });
-  Object.values(clients).forEach(c => {
-    tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.visits}</td><td><button onclick="viewHistory('${c.phone}')" class="btn-new" style="padding:5px;">View</button></td></tr>`;
-  });
-}
-
-async function renderReport() {
-  const date = document.getElementById('reportDate').value;
-  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
-  const filtered = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
-  const tbody = document.getElementById('reportListBody');
-  tbody.innerHTML = '';
-  let total = 0;
-  filtered.forEach(a => {
-    total += a.totalAmount;
-    tbody.innerHTML += `<tr><td>#${a._id.slice(-4).toUpperCase()}</td><td>${a.clientName}</td><td>${a.serviceName}</td><td>₹${a.totalAmount}</td><td>${a.paymentMethod}</td></tr>`;
-  });
-  document.getElementById('reportRevenue').innerText = total.toLocaleString();
-}
-
-async function viewHistory(phone) {
-  const res = await fetch(`${API_BASE}/clients/${phone}`);
-  const hist = await res.json();
-  const div = document.getElementById('historyContent');
-  div.innerHTML = hist.map(h => `<div style="padding:10px; border-bottom:1px solid #eee;">${h.date}: ${h.serviceName} - ₹${h.totalAmount||h.price}</div>`).join('');
-  document.getElementById('historyModal').style.display='block';
-}
-
-// --- 9. WALKIN BOOKING (FIXED) ---
-function openWalkinModal() {
-  document.getElementById('walkinModal').style.display = 'block';
-  // Set default Date/Time
-  const now = new Date();
-  document.getElementById('wDateTime')._flatpickr.setDate(now);
-
-  // Populate Services
-  const sel = document.getElementById('wService');
-  sel.innerHTML = '<option value="" disabled selected>-- Select Service --</option>';
-  
-  if (allServices.length === 0) sel.innerHTML += '<option value="" disabled>No Services Found</option>';
-
-  allServices.forEach(s => {
-    const val = JSON.stringify({ name: s.name, price: s.price });
-    sel.innerHTML += `<option value='${val}'>${s.name} - ₹${s.price}</option>`;
-  });
-}
-
-async function handleWalkinSubmit(e) {
-  e.preventDefault();
-  
-  const name = document.getElementById('wName').value;
-  const phone = document.getElementById('wPhone').value;
-  const serviceValue = document.getElementById('wService').value;
-  const dateTime = document.getElementById('wDateTime').value;
-
-  if (!serviceValue) { alert("Please select a Service!"); return; }
-  if (!dateTime) { alert("Please select Date & Time!"); return; }
-
-  const s = JSON.parse(serviceValue);
-  const dt = dateTime.split(' ');
-
-  const payload = {
-    clientName: name,
-    clientPhone: phone,
-    serviceName: s.name,
-    price: s.price,
-    date: dt[0], time: dt[1],
-    status: "In-Store", paymentStatus: "Unpaid"
-  };
-
-  await fetch(`${API_BASE}/bookings`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(payload)
-  });
-
-  alert("Booking Added!");
-  closeModal('walkinModal');
-  switchTab('appointments');
-  document.getElementById('walkinForm').reset();
+  apps.forEach(a => { if(!clients[a.clientPhone]) clients[a.clientPhone] = { name: a.clientName, phone: a.clientPhone, visits: 0 }; clients[a.clientPhone].visits++; });
+  Object.values(clients).forEach(c => tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.visits}</td><td><button class="btn-new" style="padding:5px;" onclick="alert('History View Coming Soon')">View</button></td></tr>`);
 }
 
 function showDayCloseReport() {
   const cash = document.getElementById('salesCash').innerText;
   const upi = document.getElementById('salesUPI').innerText;
   const total = document.getElementById('dashNet').innerText;
-  alert(`=== DAY CLOSING TALLY ===\n\nCash In Hand: ${cash}\nOnline (UPI): ${upi}\n------------------\nTotal Sales: ${total}`);
+  alert(`=== DAY TALLY ===\nCash: ${cash}\nUPI: ${upi}\nTotal: ${total}`);
 }
