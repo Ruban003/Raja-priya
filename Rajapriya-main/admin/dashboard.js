@@ -1,4 +1,4 @@
-/* admin/dashboard.js */
+/* admin/dashboard.js - COMPLETE UPDATED VERSION */
 (function checkSession() {
   const session = JSON.parse(localStorage.getItem("glam_session"));
   if (!session || !session.loggedIn) window.location.href = "admin.html";
@@ -10,125 +10,153 @@ let currentBillItems = [];
 let currentBillApptId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Init Date Pickers
   flatpickr("#reportDate", { dateFormat: "Y-m-d", defaultDate: "today" });
   flatpickr("#wDateTime", { enableTime: true, dateFormat: "Y-m-d H:i" });
+  flatpickr("#editDateTime", { enableTime: true, dateFormat: "Y-m-d H:i" });
 
+  // Initial Data Load
   renderDashboard();
   renderAppointmentList();
   renderServices();
-  renderClients(); // NEW
+  renderClients();
   renderBillingQueue();
 
+  // Attach Listeners
   document.getElementById('serviceForm').addEventListener('submit', handleServiceSubmit);
   document.getElementById('walkinForm').addEventListener('submit', handleWalkinSubmit);
+  document.getElementById('editApptForm').addEventListener('submit', handleEditApptSubmit);
 });
 
-// --- TABS ---
+// --- NAVIGATION ---
 function switchTab(tab) {
   document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
   document.getElementById(`view-${tab}`).style.display = 'block';
+  document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
   
+  // Refresh data immediately when tab is clicked
   if(tab === 'appointments') renderAppointmentList();
   if(tab === 'services') renderServices();
-  if(tab === 'clients') renderClients(); // NEW
+  if(tab === 'clients') renderClients();
   if(tab === 'reports') renderReport();
+  if(tab === 'dashboard') renderDashboard();
 }
 
 function logout() { localStorage.removeItem('glam_session'); window.location.href='admin.html'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// --- 1. APPOINTMENTS (With "Bill" Button) ---
+// --- 1. APPOINTMENTS (Stats + Edit Modal) ---
 async function renderAppointmentList() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const tbody = document.getElementById('apptListBody');
   tbody.innerHTML = '';
+  
+  // Update Stats Cards
+  const total = apps.length;
+  const completed = apps.filter(a => a.status === 'Completed').length;
+  const pending = apps.filter(a => a.status === 'Pending' || a.status === 'In-Store').length;
+
+  document.getElementById('apptTotal').innerText = total;
+  document.getElementById('apptDone').innerText = completed;
+  document.getElementById('apptPending').innerText = pending;
 
   apps.forEach(a => {
-    // Logic: Show "Bill" button if Unpaid, otherwise show "Paid" badge
     let billAction = '';
+    // Show Bill button if unpaid, otherwise show Paid status
     if(a.paymentStatus === 'Unpaid') {
       billAction = `<button class="btn-new" style="background:#e67e22; padding:5px 10px;" onclick="moveToBill('${a._id}')">Bill ➔</button>`;
     } else {
       billAction = `<span style="color:#27ae60; font-weight:bold;">Paid</span>`;
     }
 
+    // Status Color
+    let statusColor = '#333';
+    if(a.status === 'Completed') statusColor = 'green';
+    if(a.status === 'Pending') statusColor = 'orange';
+    if(a.status === 'Cancelled') statusColor = 'red';
+
+    // Safe object for Edit function
+    const safeName = a.clientName.replace(/'/g, "");
+
     tbody.innerHTML += `
       <tr>
         <td>${a.date} <br><small>${a.time}</small></td>
         <td><strong>${a.clientName}</strong><br><small>${a.clientPhone}</small></td>
         <td>${a.serviceName}</td>
-        <td>${a.status}</td>
+        <td style="color:${statusColor}; font-weight:bold;">${a.status}</td>
         <td>${billAction}</td>
-        <td><button class="btn-del" onclick="deleteAppt('${a._id}')"><i class="fas fa-trash"></i></button></td>
+        <td>
+          <button class="btn-edit" onclick="openEditAppt('${a._id}', '${safeName}', '${a.date} ${a.time}', '${a.status}')" title="Edit"><i class="fas fa-edit"></i></button>
+          <button class="btn-del" onclick="deleteAppt('${a._id}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </td>
       </tr>`;
   });
 }
 
-// NEW: Move directly from Appointment to Billing
+function openEditAppt(id, name, datetime, status) {
+  document.getElementById('editApptId').value = id;
+  document.getElementById('editName').value = name;
+  document.getElementById('editStatus').value = status;
+  // Set Date Picker
+  document.getElementById('editDateTime')._flatpickr.setDate(datetime);
+  document.getElementById('editApptModal').style.display = 'block';
+}
+
+async function handleEditApptSubmit(e) {
+  e.preventDefault();
+  const id = document.getElementById('editApptId').value;
+  const dt = document.getElementById('editDateTime').value.split(' '); // "2025-12-12 14:00"
+  
+  await fetch(`${API_BASE}/appointments/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      clientName: document.getElementById('editName').value,
+      date: dt[0],
+      time: dt[1],
+      status: document.getElementById('editStatus').value
+    })
+  });
+
+  closeModal('editApptModal');
+  renderAppointmentList(); // Immediate Refresh
+  renderDashboard();
+}
+
 async function moveToBill(id) {
   switchTab('billing');
   initBill(id);
 }
 
 async function deleteAppt(id) {
-  if(confirm("Delete?")) { await fetch(`${API_BASE}/appointments/${id}`, { method: 'DELETE' }); renderAppointmentList(); }
+  if(confirm("Permanently delete this appointment?")) { 
+    await fetch(`${API_BASE}/appointments/${id}`, { method: 'DELETE' }); 
+    renderAppointmentList(); 
+    renderDashboard();
+  }
 }
 
-// --- 2. CLIENTS (New Feature) ---
-async function renderClients() {
-  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
-  const tbody = document.getElementById('clientListBody');
-  tbody.innerHTML = '';
-  
-  // Group appointments by Phone Number to find unique clients
-  const clients = {};
-  apps.forEach(a => {
-    if(!clients[a.clientPhone]) {
-      clients[a.clientPhone] = { 
-        name: a.clientName, 
-        phone: a.clientPhone, 
-        visits: 0, 
-        lastVisit: a.date 
-      };
-    }
-    clients[a.clientPhone].visits++;
-    if(a.date > clients[a.clientPhone].lastVisit) clients[a.clientPhone].lastVisit = a.date;
-  });
-
-  // Display Clients
-  Object.values(clients).forEach(c => {
-    tbody.innerHTML += `
-      <tr>
-        <td>${c.name}</td>
-        <td>${c.phone}</td>
-        <td>${c.visits}</td>
-        <td>${c.lastVisit}</td>
-        <td><button class="btn-new" style="padding:4px 8px;" onclick="viewHistory('${c.phone}')">View</button></td>
-      </tr>`;
-  });
-}
-
-async function viewHistory(phone) {
-  const res = await fetch(`${API_BASE}/clients/${phone}`);
-  const hist = await res.json();
-  const div = document.getElementById('historyContent');
-  div.innerHTML = hist.length ? '' : 'No history found.';
-  hist.forEach(h => div.innerHTML += `<div style="border-bottom:1px solid #eee; padding:5px; margin-bottom:5px;">
-    <strong>${h.date}</strong>: ${h.serviceName} <br>
-    <small>Status: ${h.paymentStatus} | Amt: ₹${h.totalAmount || h.price}</small>
-  </div>`);
-  document.getElementById('historyModal').style.display = 'block';
-}
-
-// --- 3. SERVICES ---
+// --- 2. SERVICES ---
 async function renderServices() {
   const res = await fetch(`${API_BASE}/services`);
   allServices = await res.json();
   const tbody = document.getElementById('serviceListBody');
   tbody.innerHTML = '';
+  
   allServices.forEach(s => {
     const safeObj = JSON.stringify(s).replace(/'/g, "&apos;");
-    tbody.innerHTML += `<tr><td>${s.name}</td><td>${s.category}</td><td>${s.gender||'U'}</td><td>₹${s.price}</td><td><button class="btn-edit" onclick='openServiceModal(${safeObj})'><i class="fas fa-edit"></i></button><button class="btn-del" onclick="deleteService('${s._id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+    tbody.innerHTML += `
+      <tr>
+        <td>${s.name}</td>
+        <td>${s.category}</td>
+        <td>${s.gender||'U'}</td>
+        <td>₹${s.price}</td>
+        <td>
+          <button class="btn-edit" onclick='openServiceModal(${safeObj})'><i class="fas fa-edit"></i></button>
+          <button class="btn-del" onclick="deleteService('${s._id}')"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
   });
 }
 
@@ -155,14 +183,49 @@ async function handleServiceSubmit(e) {
   };
   const url = id ? `${API_BASE}/services/${id}` : `${API_BASE}/services`;
   const method = id ? 'PUT' : 'POST';
+  
   await fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+  
   closeModal('serviceModal');
-  renderServices();
+  renderServices(); // Immediate Refresh
 }
 
-async function deleteService(id) { if(confirm("Delete?")) { await fetch(`${API_BASE}/services/${id}`, { method: 'DELETE' }); renderServices(); } }
+async function deleteService(id) { 
+  if(confirm("Remove this service?")) { 
+    await fetch(`${API_BASE}/services/${id}`, { method: 'DELETE' }); 
+    renderServices(); 
+  } 
+}
 
-// --- 4. BILLING & TALLY ---
+// --- 3. REPORTS (Added Invoice ID) ---
+async function renderReport() {
+  const date = document.getElementById('reportDate').value;
+  if(!date) return;
+  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
+  const filtered = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
+  
+  const tbody = document.getElementById('reportListBody');
+  tbody.innerHTML = '';
+  let total = 0;
+  
+  filtered.forEach(a => {
+    total += (a.totalAmount || 0);
+    // Invoice ID is last 4 chars of DB ID
+    const invId = a._id.slice(-4).toUpperCase();
+    
+    tbody.innerHTML += `
+      <tr>
+        <td>#${invId}</td>
+        <td>${a.clientName}</td>
+        <td>${a.serviceName}</td>
+        <td>₹${a.totalAmount}</td>
+        <td>${a.paymentMethod}</td>
+      </tr>`;
+  });
+  document.getElementById('reportRevenue').innerText = total.toLocaleString();
+}
+
+// --- 4. BILLING ---
 async function renderBillingQueue() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const unpaid = apps.filter(a => a.paymentStatus === 'Unpaid');
@@ -180,9 +243,8 @@ async function initBill(id) {
   
   document.getElementById('invoicePanel').style.display = 'block';
   document.getElementById('invClientName').innerText = appt.clientName;
-  document.getElementById('invId').innerText = appt._id.slice(-4);
+  document.getElementById('invId').innerText = appt._id.slice(-4).toUpperCase();
   
-  // Fill Add Service Dropdown
   const sel = document.getElementById('billAddService');
   sel.innerHTML = '';
   allServices.forEach(s => sel.innerHTML += `<option value='${JSON.stringify(s)}'>${s.name} - ₹${s.price}</option>`);
@@ -217,47 +279,10 @@ async function processPayment(method) {
   });
   document.getElementById('invoicePanel').style.display = 'none';
   renderBillingQueue();
-  renderDashboard();
+  renderDashboard(); // Immediate Refresh
 }
 
-function showDayCloseReport() {
-  const cash = document.getElementById('salesCash').innerText;
-  const upi = document.getElementById('salesUPI').innerText;
-  const total = document.getElementById('dashNet').innerText;
-  alert(`=== DAY CLOSING TALLY ===\n\nCash: ${cash}\nUPI: ${upi}\n------------------\nTotal: ${total}`);
-}
-
-// --- 5. DASHBOARD STATS ---
-async function renderDashboard() {
-  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
-  const paidApps = apps.filter(a => a.paymentStatus === 'Paid');
-  
-  const cash = paidApps.filter(a => a.paymentMethod === 'Cash').reduce((sum, a) => sum + (a.totalAmount||0), 0);
-  const upi = paidApps.filter(a => a.paymentMethod === 'UPI').reduce((sum, a) => sum + (a.totalAmount||0), 0);
-  
-  document.getElementById('dashNet').innerText = "₹" + (cash + upi).toLocaleString();
-  document.getElementById('salesCash').innerText = "₹" + cash.toLocaleString();
-  document.getElementById('salesUPI').innerText = "₹" + upi.toLocaleString();
-  document.getElementById('dashCount').innerText = apps.length;
-}
-
-// --- 6. REPORTS ---
-async function renderReport() {
-  const date = document.getElementById('reportDate').value;
-  if(!date) return;
-  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
-  const filtered = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
-  const tbody = document.getElementById('reportListBody');
-  tbody.innerHTML = '';
-  let total = 0;
-  filtered.forEach(a => {
-    total += (a.totalAmount || 0);
-    tbody.innerHTML += `<tr><td>${a.clientName}</td><td>${a.serviceName}</td><td>₹${a.totalAmount}</td><td>${a.paymentMethod}</td></tr>`;
-  });
-  document.getElementById('reportRevenue').innerText = total.toLocaleString();
-}
-
-// --- 7. WALKIN ---
+// --- 5. WALK-IN ---
 function openWalkinModal() {
   document.getElementById('walkinModal').style.display = 'block';
   const sel = document.getElementById('wService');
@@ -283,5 +308,43 @@ async function handleWalkinSubmit(e) {
     })
   });
   closeModal('walkinModal');
-  switchTab('appointments');
+  switchTab('appointments'); // Immediate Refresh
+}
+
+// --- 6. DASHBOARD STATS ---
+async function renderDashboard() {
+  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
+  const paidApps = apps.filter(a => a.paymentStatus === 'Paid');
+  const cash = paidApps.filter(a => a.paymentMethod === 'Cash').reduce((sum, a) => sum + (a.totalAmount||0), 0);
+  const upi = paidApps.filter(a => a.paymentMethod === 'UPI').reduce((sum, a) => sum + (a.totalAmount||0), 0);
+  
+  document.getElementById('dashNet').innerText = "₹" + (cash + upi).toLocaleString();
+  document.getElementById('salesCash').innerText = "₹" + cash.toLocaleString();
+  document.getElementById('salesUPI').innerText = "₹" + upi.toLocaleString();
+  document.getElementById('dashCount').innerText = apps.length;
+}
+
+// --- 7. CLIENTS ---
+async function renderClients() {
+  const apps = await (await fetch(`${API_BASE}/appointments`)).json();
+  const tbody = document.getElementById('clientListBody');
+  tbody.innerHTML = '';
+  const clients = {};
+  apps.forEach(a => {
+    if(!clients[a.clientPhone]) {
+      clients[a.clientPhone] = { name: a.clientName, phone: a.clientPhone, visits: 0, lastVisit: a.date };
+    }
+    clients[a.clientPhone].visits++;
+    if(a.date > clients[a.clientPhone].lastVisit) clients[a.clientPhone].lastVisit = a.date;
+  });
+  Object.values(clients).forEach(c => {
+    tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.visits}</td><td>${c.lastVisit}</td><td><button class="btn-new" style="padding:4px 8px;" onclick="viewHistory('${c.phone}')">View</button></td></tr>`;
+  });
+}
+
+function showDayCloseReport() {
+  const cash = document.getElementById('salesCash').innerText;
+  const upi = document.getElementById('salesUPI').innerText;
+  const total = document.getElementById('dashNet').innerText;
+  alert(`=== DAY CLOSING TALLY ===\n\nCash: ${cash}\nUPI: ${upi}\n------------------\nTotal: ${total}`);
 }
