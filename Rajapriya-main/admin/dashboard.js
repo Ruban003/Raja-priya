@@ -1,7 +1,8 @@
 /* =========================================
-   GLAMPRO ADMIN CONTROLLER - FINAL
+   GLAMPRO ADMIN CONTROLLER - FINAL COMPLETE
    ========================================= */
 
+// --- 1. SECURITY & CONFIG ---
 (function checkSession() {
   const session = JSON.parse(localStorage.getItem("glam_session"));
   if (!session || !session.loggedIn) window.location.href = "admin.html";
@@ -12,6 +13,7 @@ let allServices = [];
 let currentBillItems = [];
 let currentBillApptId = null;
 
+// --- 2. INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize Date Pickers
   flatpickr("#reportDate", { dateFormat: "Y-m-d", defaultDate: "today" });
@@ -27,14 +29,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('editApptForm').addEventListener('submit', handleEditApptSubmit);
 });
 
-// --- NAVIGATION ---
+// --- 3. NAVIGATION ---
 function switchTab(tab) {
   document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
   document.getElementById(`view-${tab}`).style.display = 'block';
   document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
   event.currentTarget.classList.add('active');
 
-  // Refresh data on tab switch
+  // Refresh data on tab switch to keep things instant
   if(tab === 'dashboard') renderDashboard();
   if(tab === 'appointments') renderAppointmentList();
   if(tab === 'services') renderServices();
@@ -46,7 +48,7 @@ function switchTab(tab) {
 function logout() { localStorage.removeItem('glam_session'); window.location.href='admin.html'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// --- 1. BILLING & SPLIT PAYMENT SYSTEM ---
+// --- 4. BILLING & SPLIT PAYMENT LOGIC ---
 async function renderBillingQueue() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const unpaid = apps.filter(a => a.paymentStatus === 'Unpaid');
@@ -73,7 +75,7 @@ async function initBill(id) {
   document.getElementById('invClientName').innerText = appt.clientName;
   document.getElementById('invId').innerText = appt._id.slice(-4).toUpperCase();
 
-  // Populate "Add Service" dropdown
+  // Populate "Add Service" dropdown for billing
   const sel = document.getElementById('billAddService');
   sel.innerHTML = '';
   allServices.forEach(s => sel.innerHTML += `<option value='${JSON.stringify(s)}'>${s.name} - ₹${s.price}</option>`);
@@ -87,7 +89,7 @@ function addItemToBill() {
   renderBillItems();
 }
 
-// 🛑 REMOVE ITEM LOGIC
+// Remove item logic (Red X)
 function removeItemFromBill(index) {
   currentBillItems.splice(index, 1);
   renderBillItems();
@@ -116,7 +118,7 @@ function renderBillItems() {
   calculateBalance();
 }
 
-// 💰 CALCULATE BALANCE (Cash + UPI)
+// Live Balance Calculator (Cash + UPI)
 function calculateBalance() {
   const total = parseInt(document.getElementById('invTotal').innerText) || 0;
   const cash = parseInt(document.getElementById('payCash').value) || 0;
@@ -129,19 +131,17 @@ function calculateBalance() {
   balanceText.innerText = balance;
   
   if (balance === 0 && total > 0) {
-    // Amounts match exactly
     btn.disabled = false;
     btn.style.background = "#27ae60"; // Green
-    btn.innerText = "Complete Bill (Amount Matched)";
+    btn.innerText = "Complete Bill";
     balanceText.style.color = "green";
   } else {
-    // Amounts do not match
     btn.disabled = true;
     btn.style.background = "#ccc"; // Grey
     balanceText.style.color = "red";
     
     if(balance > 0) btn.innerText = `Collect ₹${balance} more`;
-    else btn.innerText = `Excess amount entered!`;
+    else btn.innerText = `Excess amount!`;
   }
 }
 
@@ -151,7 +151,6 @@ async function processSplitPayment() {
   const upi = parseInt(document.getElementById('payUPI').value) || 0;
   const names = currentBillItems.map(i => i.name).join(' + ');
 
-  // Determine Payment Method Label
   let method = "Split";
   if(cash === total) method = "Cash";
   else if(upi === total) method = "UPI";
@@ -177,12 +176,11 @@ async function processSplitPayment() {
   alert("✅ Bill Saved Successfully!");
 }
 
-// --- 2. DASHBOARD STATS (Live Calculation) ---
+// --- 5. DASHBOARD STATS ---
 async function renderDashboard() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const paidApps = apps.filter(a => a.paymentStatus === 'Paid');
   
-  // Sum precise amounts from DB
   const cashTotal = paidApps.reduce((sum, a) => sum + (a.cashAmount || 0), 0);
   const upiTotal = paidApps.reduce((sum, a) => sum + (a.upiAmount || 0), 0);
   const totalRev = cashTotal + upiTotal;
@@ -193,24 +191,22 @@ async function renderDashboard() {
   document.getElementById('dashCount').innerText = apps.length;
 }
 
-// --- 3. APPOINTMENTS ---
+// --- 6. APPOINTMENTS ---
 async function renderAppointmentList() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const tbody = document.getElementById('apptListBody');
   tbody.innerHTML = '';
   
-  // Update Top Stats
+  // Top Stats
   document.getElementById('apptTotal').innerText = apps.length;
   document.getElementById('apptDone').innerText = apps.filter(a => a.status === 'Completed').length;
-  document.getElementById('apptPending').innerText = apps.filter(a => a.status === 'Pending').length;
+  document.getElementById('apptPending').innerText = apps.filter(a => a.status === 'Pending' || a.status === 'In-Store').length;
 
   apps.forEach(a => {
-    // Show Bill button if unpaid
     const btn = a.paymentStatus === 'Unpaid' 
       ? `<button class="btn-new" style="background:#e67e22; padding:5px 10px;" onclick="moveToBill('${a._id}')">Bill ➔</button>` 
       : `<span style="color:#27ae60;font-weight:bold;">Paid</span>`;
       
-    // Escape quotes for JS function
     const safeName = a.clientName.replace(/'/g, "");
 
     tbody.innerHTML += `
@@ -232,7 +228,7 @@ function moveToBill(id) {
   initBill(id);
 }
 
-// Edit Appointment Modal
+// Edit Modal Logic
 function openEditAppt(id, name, datetime, status) {
   document.getElementById('editApptId').value = id;
   document.getElementById('editName').value = name;
@@ -260,7 +256,7 @@ async function handleEditApptSubmit(e) {
   renderAppointmentList();
 }
 
-// --- 4. SERVICES (With Delete) ---
+// --- 7. SERVICES ---
 async function renderServices() {
   const res = await fetch(`${API_BASE}/services`);
   allServices = await res.json();
@@ -300,18 +296,16 @@ async function handleServiceSubmit(e) {
   renderServices();
 }
 
-// --- 5. CLIENTS & REPORTS ---
+// --- 8. CLIENTS & REPORTS ---
 async function renderClients() {
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const tbody = document.getElementById('clientListBody');
   tbody.innerHTML = '';
   const clients = {};
-  
   apps.forEach(a => {
-    if(!clients[a.clientPhone]) clients[a.clientPhone] = { name: a.clientName, phone: a.clientPhone, visits: 0 };
+    if(!clients[a.clientPhone]) clients[a.clientPhone] = { name: a.clientName, phone: a.clientPhone, visits: 0, last: a.date };
     clients[a.clientPhone].visits++;
   });
-  
   Object.values(clients).forEach(c => {
     tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.visits}</td><td><button onclick="viewHistory('${c.phone}')" class="btn-new" style="padding:5px;">View</button></td></tr>`;
   });
@@ -321,11 +315,9 @@ async function renderReport() {
   const date = document.getElementById('reportDate').value;
   const apps = await (await fetch(`${API_BASE}/appointments`)).json();
   const filtered = apps.filter(a => a.date === date && a.paymentStatus === 'Paid');
-  
   const tbody = document.getElementById('reportListBody');
   tbody.innerHTML = '';
   let total = 0;
-  
   filtered.forEach(a => {
     total += a.totalAmount;
     tbody.innerHTML += `<tr><td>#${a._id.slice(-4).toUpperCase()}</td><td>${a.clientName}</td><td>${a.serviceName}</td><td>₹${a.totalAmount}</td><td>${a.paymentMethod}</td></tr>`;
@@ -341,36 +333,63 @@ async function viewHistory(phone) {
   document.getElementById('historyModal').style.display='block';
 }
 
-// --- WALKIN BOOKING ---
+// --- 9. WALKIN BOOKING (FIXED) ---
 function openWalkinModal() {
   document.getElementById('walkinModal').style.display = 'block';
+  // Set default Date/Time
+  const now = new Date();
+  document.getElementById('wDateTime')._flatpickr.setDate(now);
+
+  // Populate Services
   const sel = document.getElementById('wService');
-  sel.innerHTML = '';
-  allServices.forEach(s => sel.innerHTML += `<option value='${JSON.stringify(s)}'>${s.name} - ₹${s.price}</option>`);
+  sel.innerHTML = '<option value="" disabled selected>-- Select Service --</option>';
+  
+  if (allServices.length === 0) sel.innerHTML += '<option value="" disabled>No Services Found</option>';
+
+  allServices.forEach(s => {
+    const val = JSON.stringify({ name: s.name, price: s.price });
+    sel.innerHTML += `<option value='${val}'>${s.name} - ₹${s.price}</option>`;
+  });
 }
 
 async function handleWalkinSubmit(e) {
   e.preventDefault();
-  const s = JSON.parse(document.getElementById('wService').value);
-  const dt = document.getElementById('wDateTime').value.split(' ');
   
+  const name = document.getElementById('wName').value;
+  const phone = document.getElementById('wPhone').value;
+  const serviceValue = document.getElementById('wService').value;
+  const dateTime = document.getElementById('wDateTime').value;
+
+  if (!serviceValue) { alert("Please select a Service!"); return; }
+  if (!dateTime) { alert("Please select Date & Time!"); return; }
+
+  const s = JSON.parse(serviceValue);
+  const dt = dateTime.split(' ');
+
+  const payload = {
+    clientName: name,
+    clientPhone: phone,
+    serviceName: s.name,
+    price: s.price,
+    date: dt[0], time: dt[1],
+    status: "In-Store", paymentStatus: "Unpaid"
+  };
+
   await fetch(`${API_BASE}/bookings`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      clientName: document.getElementById('wName').value,
-      clientPhone: document.getElementById('wPhone').value,
-      serviceName: s.name,
-      price: s.price,
-      date: dt[0], time: dt[1],
-      status: "In-Store", paymentStatus: "Unpaid"
-    })
+    body: JSON.stringify(payload)
   });
+
+  alert("Booking Added!");
   closeModal('walkinModal');
   switchTab('appointments');
+  document.getElementById('walkinForm').reset();
 }
 
-// Dummy function to prevent errors if button exists in HTML
 function showDayCloseReport() {
-  alert("Please check the 'Reports' tab for detailed daily closing.");
+  const cash = document.getElementById('salesCash').innerText;
+  const upi = document.getElementById('salesUPI').innerText;
+  const total = document.getElementById('dashNet').innerText;
+  alert(`=== DAY CLOSING TALLY ===\n\nCash In Hand: ${cash}\nOnline (UPI): ${upi}\n------------------\nTotal Sales: ${total}`);
 }
