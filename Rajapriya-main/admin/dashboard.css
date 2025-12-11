@@ -1,72 +1,83 @@
-/* admin/dashboard.css */
 * { box-sizing: border-box; }
-body { margin: 0; display: flex; font-family: 'Poppins', sans-serif; background: #f8f5f5; height: 100vh; }
+body { margin: 0; display: flex; font-family: 'Poppins', sans-serif; background: #f0f2f5; height: 100vh; }
 
 /* SIDEBAR */
-.sidebar {
-  width: 250px;
-  background: white;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #eee;
-}
-.brand { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 40px; color: #333; }
-.brand span { color: #c48a8a; }
-
-.menu-item {
-  display: block; padding: 12px 15px; color: #666; text-decoration: none;
-  border-radius: 8px; margin-bottom: 5px; transition: 0.3s;
-}
-.menu-item:hover, .menu-item.active { background: #fff0f0; color: #c48a8a; font-weight: 600; }
-.logout-btn { margin-top: auto; border: none; background: none; color: #d9534f; cursor: pointer; text-align: left; padding: 10px; }
+.sidebar { width: 250px; background: #2c3e50; color: white; display: flex; flex-direction: column; }
+.brand { padding: 20px; font-size: 1.8rem; font-weight: bold; text-align: center; border-bottom: 1px solid #34495e; }
+.brand span { color: #e74c3c; }
+.menu { flex: 1; padding: 10px; }
+.menu-item { display: block; padding: 12px 15px; color: #b0c4de; text-decoration: none; border-radius: 6px; margin-bottom: 5px; transition: 0.2s; }
+.menu-item:hover, .menu-item.active { background: #34495e; color: white; border-left: 4px solid #e74c3c; }
+.user-profile { padding: 20px; border-top: 1px solid #34495e; text-align: center; }
+.logout-btn { background: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
 
 /* CONTENT */
-.content { flex: 1; padding: 30px; overflow-y: auto; }
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-h2 { font-family: 'Playfair Display', serif; color: #333; }
+.content { flex: 1; padding: 25px; overflow-y: auto; }
+.page-title { margin: 0 0 20px 0; color: #333; }
 
-.new-btn { background: #c48a8a; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
+/* DASHBOARD GRID (Green Trends Style) */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+.card { padding: 20px; border-radius: 8px; color: white; position: relative; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.card h3 { margin: 0; font-size: 0.9rem; opacity: 0.9; }
+.card p { margin: 10px 0 0; font-size: 1.8rem; font-weight: bold; }
+.card .icon { position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.2; }
 
-/* CARDS */
-.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.card h3 { color: #888; font-size: 0.9rem; margin: 0; }
-.card p { font-size: 2rem; font-weight: 700; color: #c48a8a; margin: 10px 0 0; }
+.bg-green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+.bg-blue { background: linear-gradient(135deg, #3498db, #2980b9); }
+.bg-orange { background: linear-gradient(135deg, #f39c12, #d35400); }
+.bg-pink { background: linear-gradient(135deg, #e91e63, #c2185b); }
 
-/* TABLE */
-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
-th, td { padding: 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-th { background: #fcfcfc; color: #555; font-weight: 600; }
-.btn-del { color: #dc3545; background: none; border: none; cursor: pointer; }
-.btn-edit { color: #3498db; background: none; border: none; cursor: pointer; margin-right: 10px; }
+.detail-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; }
+.d-card { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.d-card .lbl { display: block; font-size: 0.8rem; color: #777; margin-bottom: 5px; }
+.d-card .val { display: block; font-size: 1.2rem; font-weight: bold; color: #333; }
+.green-text { color: #27ae60; }
+.blue-text { color: #2980b9; }
+.orange-text { color: #d35400; }
+.pink-text { color: #e91e63; }
+
+/* TABLES */
+.table-container { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+th { background: #f8f9fa; color: #555; font-weight: 600; }
+.btn-new { background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; float: right; }
 
 /* BILLING */
-.billing-layout { display: flex; gap: 20px; }
-.queue-list { flex: 1; }
-.queue-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; border-left: 4px solid #c48a8a; }
-.invoice-panel { flex: 1; background: white; padding: 30px; border-radius: 12px; border: 1px solid #eee; }
-.total { font-size: 1.5rem; color: #27ae60; font-weight: 700; margin-top: 20px; }
+.billing-layout { display: flex; gap: 20px; height: calc(100vh - 150px); }
+.queue-list { width: 300px; overflow-y: auto; }
+.queue-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 6px; cursor: pointer; border-left: 4px solid #3498db; }
+.queue-item:hover { background: #f1faff; }
 
-/* ACTIONS */
-.pay-actions { margin-top: 20px; display: flex; gap: 10px; }
-.pay-actions button { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; color: white; }
-.btn-print { background: #555; }
-.btn-cash { background: #27ae60; }
-.btn-upi { background: #8e44ad; }
+.invoice-panel { flex: 1; background: white; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; }
+.inv-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
 
-/* MODAL */
+.add-item-row { display: flex; gap: 10px; margin-bottom: 15px; }
+.add-item-row select { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+.btn-add-item { background: #27ae60; color: white; border: none; width: 40px; border-radius: 4px; cursor: pointer; font-size: 1.2rem; }
+
+.bill-table { width: 100%; margin-bottom: auto; }
+.bill-table th { background: #eee; }
+.btn-remove-item { color: red; cursor: pointer; font-weight: bold; }
+
+.inv-footer { margin-top: 20px; background: #f9f9f9; padding: 15px; border-radius: 6px; }
+.inv-footer .row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.inv-footer .total { font-weight: bold; font-size: 1.2rem; color: #27ae60; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px; }
+
+.inv-actions { margin-top: 20px; display: flex; gap: 10px; }
+.btn-pay { flex: 1; padding: 12px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; }
+.cash { background: #27ae60; }
+.upi { background: #8e44ad; }
+.btn-print { background: #555; border:none; color:white; padding:5px 10px; border-radius:4px; cursor:pointer;}
+
+/* MODAL & PRINT */
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-.modal-content { background: white; width: 400px; margin: 100px auto; padding: 25px; border-radius: 10px; }
-input, select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px; }
-.close { float: right; cursor: pointer; font-size: 1.5rem; }
+.modal-content { background: white; width: 400px; margin: 80px auto; padding: 25px; border-radius: 8px; }
+input, select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; }
 
-/* PRINT STYLES */
+#printArea { display: none; }
 @media print {
   body * { visibility: hidden; }
   #printArea, #printArea * { visibility: visible; }
-  #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 40px; font-family: monospace; }
-  .print-header { text-align: center; margin-bottom: 30px; border-bottom: 1px dashed #000; padding-bottom: 20px; }
-  .print-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-  .print-total { border-top: 1px dashed #000; padding-top: 10px; font-weight: bold; margin-top: 20px; }
+  #printArea { position: absolute; left: 0; top: 0; width: 100%; }
 }
