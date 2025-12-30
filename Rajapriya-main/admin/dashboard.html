@@ -2,103 +2,337 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GlamPro | Manager</title>
+  
+  <meta http-equiv="refresh" content="300"> 
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="dashboard.css">
+  
+  <style>
+    /* CALENDAR GRID STYLES (Zenoti Style) */
+    .cal-container { overflow-x: auto; background: white; border: 1px solid #ddd; border-radius: 8px; margin-top: 20px; }
+    .cal-header { display: flex; background: #2c3e50; color: white; position: sticky; top: 0; min-width: 800px; }
+    .cal-corner { width: 120px; padding: 10px; font-weight: bold; background: #34495e; border-right: 1px solid #555; position: sticky; left: 0; z-index: 10; }
+    .cal-time-slot { flex: 1; min-width: 100px; text-align: center; padding: 10px; border-right: 1px solid #444; font-size: 14px; }
+    
+    .cal-row { display: flex; border-bottom: 1px solid #eee; min-width: 800px; }
+    .cal-staff-name { width: 120px; padding: 15px 10px; font-weight: bold; background: #f8f9fa; border-right: 1px solid #ddd; position: sticky; left: 0; z-index: 5; }
+    .cal-cell { flex: 1; min-width: 100px; border-right: 1px solid #eee; height: 80px; position: relative; padding: 2px; }
+    
+    .cal-cell.empty-slot:hover { background: #f0f8ff; cursor: pointer; }
+    
+    .appt-block { 
+        height: 95%; width: 100%; border-radius: 4px; color: white; padding: 5px; font-size: 12px; 
+        overflow: hidden; cursor: pointer; box-shadow: 1px 1px 3px rgba(0,0,0,0.2); 
+        transition: transform 0.1s;
+    }
+    .appt-block:hover { transform: scale(1.02); }
+  </style>
 </head>
 <body>
-
+  
   <nav class="sidebar">
     <div class="brand">GLAM<span>PRO</span></div>
-    <div class="menu">
-      <a href="#" class="menu-item active" onclick="switchTab('dashboard')"><i class="fas fa-th-large"></i> Dashboard</a>
-      <a href="#" class="menu-item" onclick="switchTab('appointments')"><i class="fas fa-calendar-check"></i> Appointments</a>
-      <a href="#" class="menu-item" onclick="switchTab('services')"><i class="fas fa-cut"></i> Services</a>
-      <a href="#" class="menu-item" onclick="switchTab('clients')"><i class="fas fa-users"></i> Clients</a>
-      <a href="#" class="menu-item" onclick="switchTab('billing')"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
-      <a href="#" class="menu-item" onclick="switchTab('reports')"><i class="fas fa-chart-line"></i> Reports</a>
+    
+    <div style="padding: 0 20px; margin-bottom: 20px; color: #7f8c8d; font-size: 0.9em;">
+       <i class="fas fa-user-circle"></i> 
+       <span id="userDisplay">Loading...</span> 
+       (<span id="roleDisplay" style="color: #d4af37; font-weight:bold;">...</span>)
     </div>
-    <div class="user-profile"><button class="logout-btn" onclick="logout()">Logout</button></div>
+
+    <div class="menu">
+      <a href="#" class="menu-item active" onclick="switchTab('dashboard')">Dashboard</a>
+      <a href="#" class="menu-item" onclick="switchTab('appointments')">Calendar</a>
+      
+      <a href="#" class="menu-item admin-only" onclick="switchTab('services')">Services</a>
+      <a href="#" class="menu-item admin-only" onclick="switchTab('reports')">Reports</a>
+      <a href="#" class="menu-item admin-only" onclick="switchTab('staff')">Staff</a>
+      
+      <a href="#" class="menu-item" onclick="switchTab('clients')">Clients</a>
+      <a href="#" class="menu-item" onclick="switchTab('billing')">Billing</a>
+      <a href="#" class="menu-item" onclick="switchTab('invoices')">History</a>
+    </div>
+    
+    <button class="logout-btn" onclick="logout()">Logout</button>
   </nav>
 
   <main class="content">
     
     <div id="view-dashboard" class="view-section">
-      <h2 class="page-title">Business Insight</h2>
+      <h2 class="page-title">Business Overview</h2>
       <div class="stats-grid">
-        <div class="card bg-green"><h3>Total Revenue</h3><p id="dashNet">₹0</p></div>
-        <div class="card bg-blue"><h3>Cash Collected</h3><p id="salesCash">₹0</p></div>
-        <div class="card bg-orange"><h3>UPI Collected</h3><p id="salesUPI">₹0</p></div>
+        <div class="card bg-green"><h3>Total Revenue</h3><p id="dashNet">₹0</p></div> 
+        <div class="card bg-blue"><h3>Cash</h3><p id="salesCash">₹0</p></div>
         <div class="card bg-pink"><h3>Appointments</h3><p id="dashCount">0</p></div>
       </div>
     </div>
 
     <div id="view-appointments" class="view-section" style="display:none;">
-      <div class="stats-grid" style="margin-bottom:20px; grid-template-columns:repeat(3, 1fr);">
-        <div class="card" style="background:#34495e;"><h3>Total Today</h3><p id="apptTotal">0</p></div>
-        <div class="card" style="background:#e67e22;"><h3>Pending</h3><p id="apptPending">0</p></div>
-        <div class="card" style="background:#27ae60;"><h3>Done</h3><p id="apptDone">0</p></div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 class="page-title">Appointment Book</h2>
+          <div>
+              <button class="btn-new" onclick="toggleView('calendar')"><i class="fas fa-calendar-alt"></i> Calendar</button>
+              <button class="btn-new" style="background:#7f8c8d;" onclick="toggleView('list')"><i class="fas fa-list"></i> List</button>
+              <button class="btn-new" onclick="openWalkinModal()">+ Booking</button>
+          </div>
       </div>
-      <div class="header-row"><h2 class="page-title">Appointments</h2><button class="btn-new" onclick="openWalkinModal()">+ New Booking</button></div>
-      <div class="table-container"><table><thead><tr><th>Time</th><th>Client</th><th>Service</th><th>Status</th><th>Billing</th><th>Edit</th></tr></thead><tbody id="apptListBody"></tbody></table></div>
-    </div>
+      
+      <input id="calDateInput" class="flatpickr" placeholder="Today" style="margin: 10px 0; padding: 8px; width: 150px;" onchange="renderCalendar()">
 
-    <div id="view-services" class="view-section" style="display:none;">
-      <div class="header-row"><h2 class="page-title">Services</h2><button class="btn-new" onclick="openServiceModal()">+ Add Service</button></div>
-      <div class="table-container"><table><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Action</th></tr></thead><tbody id="serviceListBody"></tbody></table></div>
-    </div>
+      <div id="apptCalendarView">
+          <div class="cal-container">
+              <div class="cal-header" id="calHeader"></div>
+              <div class="cal-body" id="calBody"></div>
+          </div>
+      </div>
 
-    <div id="view-clients" class="view-section" style="display:none;">
-      <h2 class="page-title">Clients</h2>
-      <div class="table-container"><table><thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>Action</th></tr></thead><tbody id="clientListBody"></tbody></table></div>
+      <div id="apptListView" style="display:none; margin-top:20px;">
+          <div class="stats-grid">
+            <div class="card" style="background:#34495e;"><h3>Total</h3><p id="apptTotal">0</p></div>
+          </div>
+          <div class="table-container"><table><tbody id="apptListBody"></tbody></table></div>
+      </div>
     </div>
 
     <div id="view-billing" class="view-section" style="display:none;">
-      <h2 class="page-title">Billing Counter</h2>
       <div class="billing-layout">
         <div class="queue-list" id="billingQueue"></div>
         <div class="invoice-panel" id="invoicePanel" style="display:none;">
           <h3>INVOICE #<span id="invId"></span></h3>
-          <p id="invClientName" style="font-weight:bold;"></p>
-          <div class="add-item-row"><select id="billAddService"></select><button onclick="addItemToBill()" class="btn-add-item">+</button></div>
-          <table class="bill-table"><thead><tr><th>Item</th><th>Price</th><th>X</th></tr></thead><tbody id="billItemsBody"></tbody></table>
+          <p id="invClientName"></p>
+          <div class="add-item-row"><select id="billAddService"></select><button onclick="addItemToBill()">+</button></div>
+          <table class="bill-table"><tbody id="billItemsBody"></tbody></table>
           <hr>
-          <div class="inv-footer"><div class="row"><span>Total:</span> <span id="invTotal" style="font-weight:bold; font-size:1.4rem;">0</span></div></div>
           
-          <div class="payment-section" style="background:#f9f9f9; padding:15px; border-radius:8px; margin-top:15px;">
-            <p style="font-weight:bold; margin-bottom:10px;">Payment Collection</p>
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <div style="flex:1;"><label>Cash (₹)</label><input type="number" id="payCash" value="0" oninput="calculateBalance()"></div>
-                <div style="flex:1;"><label>UPI (₹)</label><input type="number" id="payUPI" value="0" oninput="calculateBalance()"></div>
-            </div>
-            <div class="row" style="color:red; font-weight:bold;"><span>Balance:</span> <span>₹<span id="payBalance">0</span></span></div>
-            <button id="btnCompleteBill" class="btn-new" style="width:100%; margin-top:15px; background:#ccc;" disabled onclick="processSplitPayment()">Complete Bill</button>
+          <div style="text-align:right; font-size:14px; line-height:1.6;">
+            <p>Subtotal: ₹<span id="invSubtotal">0</span></p>
+            <p>GST (5%): ₹<span id="invGST">0</span></p>
+            <h2 style="margin:10px 0;">Total: ₹<span id="invTotal">0</span></h2>
+          </div>
+
+          <div class="payment-section">
+             <label>Cash: <input type="number" id="payCash" value="0" oninput="calculateBalance()"></label>
+             <label>UPI: <input type="number" id="payUPI" value="0" oninput="calculateBalance()"></label>
+             <p>Balance: <span id="payBalance">0</span></p>
+             <button id="btnCompleteBill" disabled onclick="processSplitPayment()">Complete Bill & Print</button>
           </div>
         </div>
       </div>
     </div>
 
+    <div id="view-services" class="view-section" style="display:none;">
+        <button class="btn-new" onclick="document.getElementById('serviceModal').style.display='block'">+ Add Service</button>
+        <table><tbody id="serviceListBody"></tbody></table>
+    </div>
+    
+    <div id="view-staff" class="view-section" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="page-title">Staff Management</h2>
+            <button class="btn-new" onclick="document.getElementById('staffModal').style.display='block'">+ Add Employee</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Phone</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="staffListBody"></tbody>
+        </table>
+    </div>
+
+    <div id="view-clients" class="view-section" style="display:none;">
+        <h2 class="page-title">Client History</h2>
+        <table><thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>Info</th></tr></thead><tbody id="clientListBody"></tbody></table>
+    </div>
+
+    <div id="view-invoices" class="view-section" style="display:none;">
+        <h2 class="page-title">Billed History</h2>
+        <div style="margin-bottom:20px;">
+             <input id="historyDate" class="flatpickr" placeholder="Filter by Date">
+             <button class="btn-new" onclick="renderInvoiceHistory()">Search</button>
+             <button class="btn-new" style="background:#7f8c8d;" onclick="renderInvoiceHistory(true)">Show All</button>
+        </div>
+        <table><thead><tr><th>Inv #</th><th>Client</th><th>Total</th><th>Date</th><th>Action</th></tr></thead><tbody id="invoiceListBody"></tbody></table>
+    </div>
+
     <div id="view-reports" class="view-section" style="display:none;">
-      <h2 class="page-title">Reports</h2>
-      <div class="control-bar" style="background:white; padding:15px; border-radius:8px; display:flex; gap:10px;">
-        <input type="text" id="reportDate" class="flatpickr" placeholder="Date">
-        <button class="btn-new" onclick="renderReport()">View</button>
-      </div>
-      <div class="table-container" style="margin-top:20px;">
-        <table id="reportTable"><thead><tr><th>Inv #</th><th>Client</th><th>Items</th><th>Total</th><th>Paid Via</th></tr></thead><tbody id="reportListBody"></tbody></table>
-        <div style="padding:15px; text-align:right; font-weight:bold;">Total: ₹<span id="reportRevenue">0</span></div>
-      </div>
+        <h2 class="page-title">Sales Reports</h2>
+        <div style="margin-bottom:20px;">
+            <input id="reportDate" class="flatpickr" placeholder="Select Date">
+            <button class="btn-new" onclick="renderReport()">Generate</button>
+        </div>
+        <table><thead><tr><th>ID</th><th>Client</th><th>Service</th><th>Amount</th><th>Method</th></tr></thead><tbody id="reportListBody"></tbody></table>
+        <h3 style="text-align:right; margin-top:20px;">Total Day Sale: ₹<span id="reportRevenue">0</span></h3>
     </div>
   </main>
 
-  <div id="walkinModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('walkinModal')">&times;</span><h3>New Booking</h3><form id="walkinForm"><input type="text" id="wName" placeholder="Name" required><input type="tel" id="wPhone" placeholder="Phone" required><select id="wGender"><option value="Female">Female</option><option value="Male">Male</option></select><select id="wService"></select><input type="text" id="wDateTime" class="flatpickr" placeholder="Date Time" required><button type="submit" class="btn-new">Book</button></form></div></div>
-  <div id="serviceModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('serviceModal')">&times;</span><h3>Service</h3><form id="serviceForm"><input type="hidden" id="sId"><input type="text" id="sName" placeholder="Name" required><input type="text" id="sCat" placeholder="Category"><input type="number" id="sPrice" placeholder="Price" required><button type="submit" class="btn-new">Save</button></form></div></div>
-  <div id="editApptModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal('editApptModal')">&times;</span><h3>Edit</h3><form id="editApptForm"><input type="hidden" id="editApptId"><input type="text" id="editName"><input type="text" id="editDateTime" class="flatpickr"><select id="editStatus"><option value="Pending">Pending</option><option value="Completed">Completed</option><option value="Cancelled">Cancelled</option></select><button type="submit" class="btn-new">Update</button></form></div></div>
+  <div id="walkinModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('walkinModal')">&times;</span>
+      <h3>New Booking</h3>
+      <form id="walkinForm">
+        <div style="display:flex; gap:10px;">
+            <input id="wName" placeholder="Name" required style="flex:1;">
+            <input id="wPhone" placeholder="Phone" style="flex:1;">
+        </div>
+        
+        <select id="wService" required></select>
+        
+        <div style="display:flex; gap:10px;">
+            <input id="wDateTime" class="flatpickr" placeholder="Date & Time" required style="flex:1;">
+            
+            <select id="wStaff" style="flex:1;">
+                <option value="Unassigned">Any Staff</option>
+            </select>
+        </div>
+        
+        <label>Block Color:
+            <input type="color" id="wColor" value="#3498db" style="width:100%; height:30px;">
+        </label>
+        
+        <button type="submit">Book Appointment</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="serviceModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('serviceModal')">&times;</span>
+      <h3>Add Service / Package</h3>
+      <form id="serviceForm">
+        <div style="margin-bottom: 15px; display: flex; gap: 10px; accent-color: #d4af37;">
+          <label style="cursor:pointer; font-weight:bold;">
+            <input type="radio" name="sType" value="single" checked onclick="togglePackageFields(false)"> Single Service
+          </label>
+          <label style="cursor:pointer; font-weight:bold;">
+            <input type="radio" name="sType" value="package" onclick="togglePackageFields(true)"> Combo Package
+          </label>
+        </div>
+        <input id="sName" placeholder="Name" required>
+        <input id="sCat" placeholder="Category" required>
+        <input id="sPrice" type="number" placeholder="Price" required>
+        
+        <div id="pkgSelectionArea" style="display:none; background:#f9f9f9; border:1px solid #ddd; padding:10px; border-radius:5px; margin-bottom:15px;">
+          <p style="margin:0 0 10px 0; font-size:12px; color:#7f8c8d;">Select items included:</p>
+          <div id="pkgCheckboxes" style="max-height: 100px; overflow-y: auto;"></div>
+        </div>
+        
+        <button type="submit">Save Item</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="editApptModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('editApptModal')">&times;</span>
+      <h3>Edit Appointment</h3>
+      <form id="editApptForm">
+        <input type="hidden" id="editApptId">
+        <input id="editName" placeholder="Client Name">
+        
+        <div style="display:flex; gap:10px;">
+            <input id="editDateTime" class="flatpickr" style="flex:1;">
+            <select id="editStaff" style="flex:1;">
+                <option value="Unassigned">Unassigned</option>
+            </select>
+        </div>
+
+        <select id="editStatus">
+            <option>Pending</option>
+            <option>Confirmed</option>
+            <option>Completed</option>
+            <option>Cancelled</option>
+        </select>
+        <button>Update Appointment</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="staffModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('staffModal')">&times;</span>
+      <h3>Add Employee</h3>
+      <form onsubmit="handleStaffSubmit(event)">
+        <input id="stName" placeholder="Name (e.g., Sneha)" required>
+        <select id="stRole" style="margin-bottom:10px; width:100%; padding:8px;">
+            <option>Senior Stylist</option>
+            <option>Junior Stylist</option>
+            <option>Manager</option>
+            <option>Helper</option>
+        </select>
+        <input id="stPhone" placeholder="Phone Number">
+        
+        <label style="display:block; margin-top:10px;">Calendar Color:
+            <input type="color" id="stColor" value="#3498db" style="width:100%; height:30px;">
+        </label>
+        
+        <button type="submit" style="margin-top:15px;">Save Staff</button>
+      </form>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="dashboard.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/appointments.js"></script>
+  <script src="js/billing.js"></script>
+  <script src="js/clients.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/staff.js"></script>
+
+  <script>
+    // Refresh Data Every 10 Seconds
+    setInterval(() => {
+        const activeTab = document.querySelector('.menu-item.active').innerText;
+        if(activeTab === 'Dashboard') renderDashboard();
+        if(activeTab === 'Calendar') renderCalendar();
+        if(activeTab === 'Billing') renderBillingQueue();
+    }, 10000);
+
+    // Init Date Pickers
+    document.addEventListener("DOMContentLoaded", () => {
+        flatpickr("#calDateInput", { dateFormat: "Y-m-d", defaultDate: "today" });
+        flatpickr("#historyDate", { dateFormat: "Y-m-d" });
+    });
+  </script>
+
 </body>
+
+<div id="print-area" class="print-only">
+    <div class="receipt-header">
+        <h2 style="margin:0;">GLAM PRO</h2>
+        <p>Luxury Salon & Spa</p>
+        <p>Bangalore, India | +91 98765 43210</p>
+        <hr>
+    </div>
+    <div style="text-align: left;">
+        <p><strong>Date:</strong> <span id="pDate"></span></p>
+        <p><strong>Invoice:</strong> <span id="pInvId"></span></p>
+        <p><strong>Client:</strong> <span id="pClient"></span></p>
+    </div>
+    <hr>
+    <table style="width:100%; text-align:left; font-size:14px; border-collapse: collapse;">
+        <thead><tr style="border-bottom: 1px dashed #000;"><th style="padding: 5px 0;">Service</th><th style="text-align:right;">Price</th></tr></thead>
+        <tbody id="pItems"></tbody>
+    </table>
+    <hr>
+    <div style="text-align:right; font-size: 14px;">
+        <p>Subtotal: ₹<span id="pSubtotal">0</span></p>
+        <p>GST (5%): ₹<span id="pGST">0</span></p>
+        <h3 style="margin: 5px 0;">Grand Total: ₹<span id="pGrandTotal">0</span></h3>
+    </div>
+    <hr>
+    <div style="text-align:left; font-size:12px;">
+        <p><strong>Payment Mode:</strong></p>
+        <p>Cash Paid: ₹<span id="pCash">0</span></p>
+        <p>UPI Paid:  ₹<span id="pUPI">0</span></p>
+    </div>
+    <div style="text-align:center; margin-top:20px;"><p>Thank you for visiting!</p><small>Prices inclusive of all taxes</small></div>
+</div>
 </html>

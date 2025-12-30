@@ -2,10 +2,8 @@
    GLAM ADMIN - SECURE LOGIN CONTROLLER
    ========================================= */
 
-// Ensure API URL is loaded
-const API_BASE = (typeof API_URL !== 'undefined') 
-  ? API_URL 
-  : "https://glam-backend-nw7q.onrender.com/api"; // Fallback
+// POINT TO LOCALHOST
+const API_BASE = "http://localhost:5001/api";
 
 document.getElementById('loginForm').addEventListener('submit', handleLogin);
 
@@ -17,20 +15,14 @@ async function handleLogin(e) {
   const errorMsg = document.getElementById("errorMsg");
   const btn = document.querySelector(".login-btn");
   const btnText = document.querySelector(".btn-text");
-  const loader = document.querySelector(".loader");
-  const card = document.querySelector(".login-card");
 
-  // 1. Reset UI
+  // Reset UI
   errorMsg.style.display = "none";
-  card.classList.remove("shake-animation");
-  
-  // 2. Loading State
   btn.disabled = true;
   btnText.textContent = "Verifying...";
-  loader.style.display = "block";
 
   try {
-    // 3. Send to Server (SECURE CHECK)
+    // 1. Send Login Request
     const response = await fetch(`${API_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -43,17 +35,20 @@ async function handleLogin(e) {
     const data = await response.json();
 
     if (data.success) {
-      // 4. SUCCESS: Save Session & Redirect
+      // 2. SAVE SESSION & ROLE
       const sessionData = {
         loggedIn: true,
-        user: userInput.value,
+        user: data.username,
+        role: data.role, // <--- Stores 'admin' or 'manager'
         token: data.token,
-        expiry: new Date().getTime() + (24 * 60 * 60 * 1000) // 24 Hours
+        expiry: new Date().getTime() + (24 * 60 * 60 * 1000)
       };
       
       localStorage.setItem("glam_session", JSON.stringify(sessionData));
       
       btnText.textContent = "Success!";
+      
+      // 3. Redirect
       setTimeout(() => {
         window.location.href = "dashboard.html";
       }, 500);
@@ -63,33 +58,10 @@ async function handleLogin(e) {
     }
 
   } catch (error) {
-    // 5. FAIL: Show Error & Animation
+    // Show Error
     errorMsg.style.display = "flex";
     errorMsg.querySelector("span").innerText = "Incorrect Username or Password";
-    
-    // Trigger Shake Animation
-    void card.offsetWidth; // Trigger reflow
-    card.classList.add("shake-animation");
-    
-    // Reset Button
     btn.disabled = false;
     btnText.textContent = "Sign In";
-    loader.style.display = "none";
-  }
-}
-
-// Feature: Show/Hide Password
-function togglePassword() {
-  const passInput = document.getElementById("password");
-  const icon = document.querySelector(".toggle-pass");
-  
-  if (passInput.type === "password") {
-    passInput.type = "text";
-    icon.classList.remove("fa-eye");
-    icon.classList.add("fa-eye-slash");
-  } else {
-    passInput.type = "password";
-    icon.classList.remove("fa-eye-slash");
-    icon.classList.add("fa-eye");
   }
 }

@@ -83,3 +83,31 @@ tr:hover { background: #fafafa; }
 /* PRINTING */
 #printArea { display: none; }
 @media print { body * { visibility: hidden; } #printArea, #printArea * { visibility: visible; } #printArea { position: absolute; left: 0; top: 0; width: 100%; } }
+
+
+/* PRINT STYLES */
+.print-only { display: none; }
+
+@media print {
+    /* Hide everything else */
+    body * { visibility: hidden; }
+    
+    /* Show only the print area */
+    #print-area, #print-area * { 
+        visibility: visible; 
+    }
+    
+    /* Position the receipt */
+    #print-area {
+        display: block;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 300px; /* Standard Receipt Width */
+        font-family: 'Courier New', monospace; /* Classic Receipt Font */
+        padding: 20px;
+    }
+    
+    /* Hide backgrounds/colors to save ink */
+    button, .sidebar, .modal { display: none !important; }
+}
