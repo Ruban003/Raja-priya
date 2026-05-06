@@ -9,9 +9,9 @@ app.use(cors());
 app.use(express.json());
 
 // --- 1. CONNECT TO DATABASE ---
-const LOCAL_DB = "mongodb://127.0.0.1:27017/glampro_db";
-mongoose.connect(LOCAL_DB)
-  .then(() => console.log('✅ Connected to LOCAL MongoDB'))
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/glampro_db";
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => console.error('❌ DB Error:', err));
 
 // --- 2. SAFE SCHEMAS (Prevents "Overwrite" Errors) ---
