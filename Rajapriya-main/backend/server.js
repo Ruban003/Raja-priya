@@ -1,4 +1,4 @@
-/* backend/server.js - FINAL SAFE VERSION */
+/* backend/server.js - FIXED VERSION */
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -9,20 +9,17 @@ app.use(cors({
   origin: ['https://raja-priya.vercel.app', 'http://localhost:5173', 'http://localhost:5001'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
-}));app.use(express.json());
+}));
+app.use(express.json());
 
-// --- 1. CONNECT TO DATABASE ---
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/glampro_db";
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
+  .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => console.error('❌ DB Error:', err));
-
-// --- 2. SAFE SCHEMAS (Prevents "Overwrite" Errors) ---
-// This checks if the model exists before creating it. Vital for stability.
 
 const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, 
+  password: { type: String, required: true },
   role: { type: String, enum: ['admin', 'manager'], default: 'manager' }
 }));
 
@@ -34,7 +31,7 @@ const Service = mongoose.models.Service || mongoose.model('Service', new mongoos
 
 const Appointment = mongoose.models.Appointment || mongoose.model('Appointment', new mongoose.Schema({
   clientName: String, clientPhone: String, clientGender: String,
-  staffName: { type: String, default: 'Unassigned' }, 
+  staffName: { type: String, default: 'Unassigned' },
   color: { type: String, default: '#3498db' },
   serviceName: String, price: Number,
   date: String, time: String, status: String,
@@ -50,49 +47,60 @@ const Staff = mongoose.models.Staff || mongoose.model('Staff', new mongoose.Sche
   isActive: { type: Boolean, default: true }
 }));
 
-// --- 3. API ROUTES ---
-
 // STAFF
 app.get('/api/staff', async (req, res) => {
-  try { res.json(await Staff.find({ isActive: true })); } 
-  catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username });
-  console.log('🔍 Login attempt:', username, password);
-  console.log('🔍 User found:', user);
-  if (!user || user.password !== password) return res.status(401).json({ success: false });
-  res.json({ success: true, role: user.role });
-});
+  try { res.json(await Staff.find({ isActive: true })); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.delete('/api/staff/:id', async (req, res) => {
-  await Staff.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+  try { await Staff.findByIdAndDelete(req.params.id); res.json({ success: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // LOGIN
 app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username });
-  if (!user || user.password !== password) return res.status(401).json({ success: false });
-  res.json({ success: true, role: user.role });
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    console.log('🔍 Login attempt:', username, password);
+    console.log('🔍 User found:', user);
+    if (!user || user.password !== password) return res.status(401).json({ success: false });
+    res.json({ success: true, role: user.role });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // SERVICES
-app.get('/api/services', async (req, res) => res.json(await Service.find()));
-app.post('/api/services', async (req, res) => { await new Service(req.body).save(); res.json({success:true}); });
-app.delete('/api/services/:id', async (req, res) => { await Service.findByIdAndDelete(req.params.id); res.json({success:true}); });
+app.get('/api/services', async (req, res) => {
+  try { res.json(await Service.find()); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.post('/api/services', async (req, res) => {
+  try { await new Service(req.body).save(); res.json({ success: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.delete('/api/services/:id', async (req, res) => {
+  try { await Service.findByIdAndDelete(req.params.id); res.json({ success: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 // APPOINTMENTS
-app.get('/api/appointments', async (req, res) => res.json(await Appointment.find().sort({_id:-1})));
-app.post('/api/bookings', async (req, res) => { await new Appointment(req.body).save(); res.json({success:true}); });
-app.put('/api/appointments/:id', async (req, res) => { await Appointment.findByIdAndUpdate(req.params.id, req.body); res.json({success:true}); });
-app.get('/api/appointments/:id', async (req, res) => res.json(await Appointment.findById(req.params.id)));
+app.get('/api/appointments', async (req, res) => {
+  try { res.json(await Appointment.find().sort({ _id: -1 })); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.post('/api/bookings', async (req, res) => {
+  try { await new Appointment(req.body).save(); res.json({ success: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.put('/api/appointments/:id', async (req, res) => {
+  try { await Appointment.findByIdAndUpdate(req.params.id, req.body); res.json({ success: true }); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.get('/api/appointments/:id', async (req, res) => {
+  try { res.json(await Appointment.findById(req.params.id)); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
 
-// --- 4. START ---
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
