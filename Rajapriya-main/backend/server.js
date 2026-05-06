@@ -58,13 +58,14 @@ app.get('/api/staff', async (req, res) => {
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/staff', async (req, res) => {
-  try { 
-    const newStaff = new Staff(req.body);
-    await newStaff.save();
-    console.log("✅ Staff Added:", newStaff.name);
-    res.json(newStaff); 
-  } 
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+  console.log('🔍 Login attempt:', username, password);
+  console.log('🔍 User found:', user);
+  if (!user || user.password !== password) return res.status(401).json({ success: false });
+  res.json({ success: true, role: user.role });
+});
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
