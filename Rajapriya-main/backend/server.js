@@ -93,5 +93,5 @@ app.put('/api/appointments/:id', async (req, res) => { await Appointment.findByI
 app.get('/api/appointments/:id', async (req, res) => res.json(await Appointment.findById(req.params.id)));
 
 // --- 4. START ---
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
