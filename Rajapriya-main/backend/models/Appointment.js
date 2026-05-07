@@ -1,26 +1,23 @@
 const mongoose = require('mongoose');
 
 const appointmentSchema = new mongoose.Schema({
-  clientName: String, 
-  clientPhone: String, 
-  
-  // NEW FIELDS FOR CALENDAR
-  staffName: { type: String, default: 'Unassigned' }, // Who is doing it?
-  duration: { type: Number, default: 60 }, // How long? (in minutes)
-  color: { type: String, default: '#e67e22' }, // Block color
-  
-  serviceName: String, 
+  centerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Center', required: true },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', default: null },
+  clientName: { type: String, required: true },
+  clientPhone: String,
+  clientGender: String,
+  staffId: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', default: null },
+  staffName: { type: String, default: 'Unassigned' },
+  serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', default: null },
+  serviceName: String,
   price: Number,
-  date: String, 
+  date: String,
   time: String,
-  status: String,
-  paymentStatus: { type: String, default: 'Unpaid' },
-  
-  // Billing
-  totalAmount: Number,
-  paymentMethod: String,
-  cashAmount: { type: Number, default: 0 },
-  upiAmount: { type: Number, default: 0 }
-});
+  duration: { type: Number, default: 30 },
+  status: { type: String, enum: ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'], default: 'pending' },
+  type: { type: String, enum: ['walkin', 'prebooked'], default: 'walkin' },
+  notes: String,
+  color: { type: String, default: '#3498db' }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Appointment', appointmentSchema);
+module.exports = mongoose.models.Appointment || mongoose.model('Appointment', appointmentSchema);
