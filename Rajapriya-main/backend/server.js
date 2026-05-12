@@ -30,5 +30,39 @@ app.use('/api/reports', require('./routes/reports'));
 
 app.get('/', (req, res) => res.json({ message: 'RV Salon Management API v2.0' }));
 
+// ONE-TIME SEED ROUTE — remove after use
+app.get('/api/seed', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    const Center = require('./models/Center');
+
+    let center = await Center.findOne({ name: 'Glam' });
+    if (!center) {
+      center = await new Center({ name: 'Glam', address: 'Chennai', gstNumber: 'GST000000', gstRate: 18 }).save();
+    }
+
+    const users = [
+      { name: 'RV Owner', username: 'rvowner', password: 'RVOwner@123', role: 'rv_owner' },
+      { name: 'Glam Owner', username: 'glamowner', password: 'GlamOwner@123', role: 'center_owner', centerId: center._id },
+      { name: 'Glam Manager', username: 'glammanager', password: 'GlamMgr@123', role: 'manager', centerId: center._id }
+    ];
+
+    const results = [];
+    for (const u of users) {
+      const exists = await User.findOne({ username: u.username });
+      if (!exists) {
+        await new User(u).save();
+        results.push(`✅ Created: ${u.username}`);
+      } else {
+        results.push(`ℹ️ Exists: ${u.username}`);
+      }
+    }
+
+    res.json({ success: true, center: center.name, users: results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
