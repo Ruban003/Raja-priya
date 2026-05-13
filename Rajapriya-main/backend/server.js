@@ -26,6 +26,7 @@ app.use('/api/staff', require('./routes/staff'));
 app.use('/api/campaigns', require('./routes/campaigns'));
 app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/billing', require('./routes/billing'));
+app.use('/api/customers', require('./routes/customers'));
 app.use('/api/reports', require('./routes/reports'));
 
 app.get('/', (req, res) => res.json({ message: 'RV Salon Management API v2.0' }));
