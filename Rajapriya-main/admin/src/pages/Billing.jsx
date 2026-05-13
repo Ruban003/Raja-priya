@@ -1,189 +1,268 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import toast from 'react-hot-toast';
-import { FaPrint, FaTrash } from 'react-icons/fa';
 
-const Billing = () => {
-  const [queue, setQueue] = useState([]);
-  const [activeBill, setActiveBill] = useState(null); // The selected appointment
+export default function Billing() {
+  const { user } = useAuth();
+  const [bills, setBills] = useState([]);
   const [services, setServices] = useState([]);
-  
-  // Bill State
-  const [billItems, setBillItems] = useState([]);
-  const [payments, setPayments] = useState({ cash: 0, upi: 0 });
+  const [staff, setStaff] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [viewBill, setViewBill] = useState(null);
+  const [items, setItems] = useState([]);
+  const [clientInfo, setClientInfo] = useState({ clientName: '', clientPhone: '', customerId: '' });
+  const [payment, setPayment] = useState({ method: 'cash', cashAmount: 0, upiAmount: 0, cardAmount: 0 });
+  const [gstRate, setGstRate] = useState(18);
+  const centerId = user?.centerId;
 
-  const printRef = useRef(); // For printing
-
-  // Load Queue & Services
-  useEffect(() => {
-    const init = async () => {
-        const appRes = await api.get('/appointments');
-        setQueue(appRes.data.filter(a => a.paymentStatus === 'Unpaid'));
-        
-        const srvRes = await api.get('/services');
-        setServices(srvRes.data);
-    };
-    init();
-  }, []);
-
-  // Select a Client from Queue
-  const selectClient = (appt) => {
-    setActiveBill(appt);
-    setBillItems([{ name: appt.serviceName, price: appt.price }]);
-    setPayments({ cash: 0, upi: 0 });
+  const fetchData = async () => {
+    try {
+      const params = centerId ? `?centerId=${centerId}` : '';
+      const [b, sv, st, ca, cu] = await Promise.all([
+        api.get(`/billing${params}`),
+        api.get(`/services${params}`),
+        api.get(`/staff${params}`),
+        api.get(`/campaigns/active${params}`),
+        api.get(`/customers${params}`)
+      ]);
+      setBills(b.data); setServices(sv.data); setStaff(st.data); setCampaigns(ca.data); setCustomers(cu.data);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  // Add Item to Bill
-  const addItem = (e) => {
-    const serviceName = e.target.value;
-    if(!serviceName) return;
-    const s = services.find(srv => srv.name === serviceName);
-    setBillItems([...billItems, { name: s.name, price: s.price }]);
+  useEffect(() => { fetchData(); }, []);
+
+  const addItem = () => setItems([...items, { serviceId: '', serviceName: '', staffId: '', staffName: '', originalPrice: 0, discountedPrice: 0, campaignId: '', campaignName: '', discountType: '', discountValue: 0 }]);
+
+  const updateItem = (idx, field, value) => {
+    const updated = [...items];
+    updated[idx][field] = value;
+
+    if (field === 'serviceId') {
+      const svc = services.find(s => s._id === value);
+      if (svc) {
+        updated[idx].serviceName = svc.name;
+        updated[idx].originalPrice = svc.price;
+        updated[idx].discountedPrice = svc.price;
+
+        // Auto-apply campaign
+        const now = new Date();
+        const activeCampaign = campaigns.find(c => {
+          const appliesToService = c.applicableServices.length === 0 || c.applicableServices.some(s => (s._id || s) === value);
+          return appliesToService;
+        });
+        if (activeCampaign) {
+          updated[idx].campaignId = activeCampaign._id;
+          updated[idx].campaignName = activeCampaign.name;
+          updated[idx].discountType = activeCampaign.discountType;
+          updated[idx].discountValue = activeCampaign.discountValue;
+          if (activeCampaign.discountType === 'percentage') {
+            updated[idx].discountedPrice = svc.price - (svc.price * activeCampaign.discountValue / 100);
+          } else {
+            updated[idx].discountedPrice = svc.price - activeCampaign.discountValue;
+          }
+        }
+      }
+    }
+
+    if (field === 'staffId') {
+      const st = staff.find(s => s._id === value);
+      if (st) updated[idx].staffName = st.name;
+    }
+
+    setItems(updated);
   };
 
-  // Calculations
-  const subtotal = billItems.reduce((sum, item) => sum + item.price, 0);
-  const gst = Math.round(subtotal * 0.05);
-  const total = subtotal + gst;
-  const balance = total - (parseInt(payments.cash || 0) + parseInt(payments.upi || 0));
+  const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
 
-  // Complete Bill
-  const handleComplete = async () => {
-    if(balance !== 0) return toast.error("Balance must be 0");
-    
-    // Save to DB
-    await api.put(`/appointments/${activeBill._id}`, {
-        paymentStatus: 'Paid',
-        status: 'Completed',
-        totalAmount: total,
-        paymentMethod: payments.cash === total ? 'Cash' : (payments.upi === total ? 'UPI' : 'Split'),
-        cashAmount: payments.cash,
-        upiAmount: payments.upi,
-        serviceName: billItems.map(i => i.name).join(' + ') // Update full service string
-    });
+  const subtotal = items.reduce((s, i) => s + (i.discountedPrice || i.originalPrice || 0), 0);
+  const totalDiscount = items.reduce((s, i) => s + ((i.originalPrice || 0) - (i.discountedPrice || i.originalPrice || 0)), 0);
+  const gstAmount = subtotal * gstRate / 100;
+  const grandTotal = subtotal + gstAmount;
 
-    // Trigger Print
-    handlePrint();
-
-    // Reset UI
-    toast.success("Bill Saved!");
-    setActiveBill(null);
-    const appRes = await api.get('/appointments'); // Refresh Queue
-    setQueue(appRes.data.filter(a => a.paymentStatus === 'Unpaid'));
-  };
-
-  const handlePrint = () => {
-     const content = printRef.current.innerHTML;
-     const printWindow = window.open('', '', 'height=600,width=800');
-     printWindow.document.write('<html><head><title>Print</title>');
-     printWindow.document.write('<style>body{font-family:monospace; padding:20px; text-align:center;} table{width:100%; text-align:left;} .right{text-align:right;}</style>');
-     printWindow.document.write('</head><body>');
-     printWindow.document.write(content);
-     printWindow.document.write('</body></html>');
-     printWindow.document.close();
-     printWindow.print();
+  const handleBillSubmit = async () => {
+    if (items.length === 0) return alert('Add at least one service');
+    if (!clientInfo.clientName) return alert('Enter client name');
+    try {
+      await api.post('/billing', {
+        ...clientInfo, centerId, items, subtotal, totalDiscount,
+        gstRate, gstAmount, grandTotal,
+        paymentMethod: payment.method,
+        cashAmount: payment.cashAmount, upiAmount: payment.upiAmount, cardAmount: payment.cardAmount,
+        paymentStatus: 'paid'
+      });
+      setShowModal(false); setItems([]); setClientInfo({ clientName: '', clientPhone: '', customerId: '' });
+      fetchData();
+    } catch (e) { alert('Error creating bill'); }
   };
 
   return (
-    <div className="flex h-full gap-4">
-      
-      {/* LEFT: QUEUE */}
-      <div className="w-1/3 bg-white p-4 rounded shadow overflow-y-auto">
-        <h3 className="font-bold mb-4 text-gray-700">Pending Bills</h3>
-        {queue.length === 0 && <p className="text-gray-400 text-center mt-10">No pending clients</p>}
-        {queue.map(q => (
-            <div key={q._id} onClick={() => selectClient(q)} 
-                 className={`p-3 border-b cursor-pointer hover:bg-blue-50 ${activeBill?._id === q._id ? 'bg-blue-100 border-l-4 border-blue-500' : ''}`}>
-                <div className="font-bold">{q.clientName}</div>
-                <div className="text-xs text-gray-500">{q.serviceName}</div>
-            </div>
-        ))}
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1>Billing</h1>
+          <p>{bills.length} bills today</p>
+        </div>
+        <button className="btn-primary" onClick={() => { setItems([]); setClientInfo({ clientName: '', clientPhone: '' }); setShowModal(true); }}>
+          + New Bill
+        </button>
       </div>
 
-      {/* RIGHT: BILLING PANEL */}
-      {activeBill ? (
-          <div className="w-2/3 bg-white p-6 rounded shadow flex flex-col">
-             <div className="flex justify-between items-center border-b pb-4 mb-4">
-                 <div>
-                    <h2 className="text-xl font-bold uppercase">{activeBill.clientName}</h2>
-                    <p className="text-sm text-gray-500">Invoice #{activeBill._id.slice(-4).toUpperCase()}</p>
-                 </div>
-                 <select onChange={addItem} className="border p-2 rounded">
-                    <option value="">+ Add Service</option>
-                    {services.map(s => <option key={s._id} value={s.name}>{s.name} - ₹{s.price}</option>)}
-                 </select>
-             </div>
+      {loading ? <div className="page-loading">Loading...</div> : (
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr><th>Bill No</th><th>Client</th><th>Items</th><th>Discount</th><th>GST</th><th>Total</th><th>Payment</th><th>Time</th></tr>
+            </thead>
+            <tbody>
+              {bills.map(b => (
+                <tr key={b._id} onClick={() => setViewBill(b)} style={{ cursor: 'pointer' }}>
+                  <td><strong>{b.billNumber}</strong></td>
+                  <td>{b.clientName}</td>
+                  <td>{b.items?.length} services</td>
+                  <td className="discount">-₹{b.totalDiscount?.toLocaleString() || 0}</td>
+                  <td>₹{b.gstAmount?.toLocaleString() || 0}</td>
+                  <td><strong>₹{b.grandTotal?.toLocaleString()}</strong></td>
+                  <td><span className="badge">{b.paymentMethod}</span></td>
+                  <td>{new Date(b.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {bills.length === 0 && <div className="empty-state">No bills today</div>}
+        </div>
+      )}
 
-             {/* Items Table */}
-             <div className="flex-1 overflow-y-auto">
-                 <table className="w-full">
-                    <tbody>
-                        {billItems.map((item, idx) => (
-                            <tr key={idx} className="border-b">
-                                <td className="py-2">{item.name}</td>
-                                <td className="py-2 text-right">₹{item.price}</td>
-                                <td className="py-2 text-right text-red-500 cursor-pointer w-10" 
-                                    onClick={() => setBillItems(billItems.filter((_, i) => i !== idx))}><FaTrash/></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                 </table>
-             </div>
-
-             {/* Totals */}
-             <div className="bg-gray-50 p-4 rounded mt-4">
-                 <div className="flex justify-between text-sm"><span>Subtotal</span><span>₹{subtotal}</span></div>
-                 <div className="flex justify-between text-sm"><span>GST (5%)</span><span>₹{gst}</span></div>
-                 <div className="flex justify-between font-bold text-xl mt-2 border-t pt-2"><span>Total</span><span>₹{total}</span></div>
-             </div>
-
-             {/* Payment */}
-             <div className="flex gap-4 mt-4">
-                 <div className="flex-1">
-                    <label className="text-xs font-bold">Cash</label>
-                    <input type="number" className="border w-full p-2 rounded" value={payments.cash} 
-                           onChange={e => setPayments({...payments, cash: parseInt(e.target.value)||0})} />
-                 </div>
-                 <div className="flex-1">
-                    <label className="text-xs font-bold">UPI</label>
-                    <input type="number" className="border w-full p-2 rounded" value={payments.upi} 
-                           onChange={e => setPayments({...payments, upi: parseInt(e.target.value)||0})} />
-                 </div>
-             </div>
-
-             <button disabled={balance !== 0} onClick={handleComplete}
-                className={`w-full mt-4 text-white py-3 rounded font-bold ${balance === 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed'}`}>
-                {balance === 0 ? `Complete Bill & Print` : `Balance: ₹${balance}`}
-             </button>
-
-             {/* HIDDEN PRINT TEMPLATE */}
-             <div style={{display:'none'}}>
-                <div ref={printRef} style={{padding: '20px', fontFamily: 'monospace'}}>
-                    <h2 style={{textAlign:'center', margin:0}}>GLAM PRO</h2>
-                    <p style={{textAlign:'center', margin:0}}>Luxury Salon</p>
-                    <hr style={{margin:'10px 0', borderStyle:'dashed'}} />
-                    <p>Client: {activeBill.clientName}</p>
-                    <p>Date: {new Date().toLocaleDateString()}</p>
-                    <hr style={{margin:'10px 0', borderStyle:'dashed'}} />
-                    <table style={{width:'100%'}}>
-                        {billItems.map((i,x) => <tr key={x}><td>{i.name}</td><td style={{textAlign:'right'}}>{i.price}</td></tr>)}
-                    </table>
-                    <hr style={{margin:'10px 0', borderStyle:'dashed'}} />
-                    <div style={{textAlign:'right'}}>
-                        <p>Sub: {subtotal}</p>
-                        <p>GST: {gst}</p>
-                        <h3>TOTAL: {total}</h3>
-                    </div>
-                    <p style={{textAlign:'center', marginTop:'20px'}}>Thank You!</p>
+      {/* New Bill Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal modal-xl" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>New Bill</h2>
+              <button onClick={() => setShowModal(false)}>✕</button>
+            </div>
+            <div className="bill-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Client Name *</label>
+                  <input value={clientInfo.clientName} onChange={e => setClientInfo({ ...clientInfo, clientName: e.target.value })} placeholder="Client name" />
                 </div>
-             </div>
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input value={clientInfo.clientPhone} onChange={e => setClientInfo({ ...clientInfo, clientPhone: e.target.value })} placeholder="9876543210" />
+                </div>
+              </div>
 
+              <div className="bill-items-header">
+                <h3>Services</h3>
+                <button className="btn-secondary sm" onClick={addItem}>+ Add Service</button>
+              </div>
+
+              {items.map((item, idx) => (
+                <div key={idx} className="bill-item-row">
+                  <select value={item.serviceId} onChange={e => updateItem(idx, 'serviceId', e.target.value)}>
+                    <option value="">Select service</option>
+                    {services.map(s => <option key={s._id} value={s._id}>{s.name} — ₹{s.price}</option>)}
+                  </select>
+                  <select value={item.staffId} onChange={e => updateItem(idx, 'staffId', e.target.value)}>
+                    <option value="">Any staff</option>
+                    {staff.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                  </select>
+                  <div className="item-pricing">
+                    {item.campaignName && <span className="campaign-tag">🏷 {item.campaignName}</span>}
+                    {item.originalPrice > 0 && item.originalPrice !== item.discountedPrice && (
+                      <span className="original-price">₹{item.originalPrice}</span>
+                    )}
+                    <span className="final-price">₹{item.discountedPrice || item.originalPrice || 0}</span>
+                  </div>
+                  <button className="btn-delete sm" onClick={() => removeItem(idx)}>✕</button>
+                </div>
+              ))}
+
+              {items.length === 0 && <div className="empty-items">Click "+ Add Service" to start billing</div>}
+
+              <div className="bill-summary">
+                <div className="summary-row-item"><span>Subtotal</span><span>₹{subtotal.toLocaleString()}</span></div>
+                {totalDiscount > 0 && <div className="summary-row-item discount"><span>Discount</span><span>-₹{totalDiscount.toLocaleString()}</span></div>}
+                <div className="summary-row-item"><span>GST ({gstRate}%)</span><span>₹{gstAmount.toFixed(2)}</span></div>
+                <div className="summary-row-item total"><span>Grand Total</span><span>₹{grandTotal.toFixed(2)}</span></div>
+              </div>
+
+              <div className="payment-section">
+                <h3>Payment</h3>
+                <div className="payment-methods">
+                  {['cash', 'upi', 'card', 'split'].map(m => (
+                    <button key={m} className={`payment-btn ${payment.method === m ? 'active' : ''}`} onClick={() => setPayment({ ...payment, method: m })}>
+                      {m.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                {payment.method === 'split' && (
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Cash ₹</label>
+                      <input type="number" value={payment.cashAmount} onChange={e => setPayment({ ...payment, cashAmount: +e.target.value })} />
+                    </div>
+                    <div className="form-group">
+                      <label>UPI ₹</label>
+                      <input type="number" value={payment.upiAmount} onChange={e => setPayment({ ...payment, upiAmount: +e.target.value })} />
+                    </div>
+                    <div className="form-group">
+                      <label>Card ₹</label>
+                      <input type="number" value={payment.cardAmount} onChange={e => setPayment({ ...payment, cardAmount: +e.target.value })} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-actions">
+                <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button className="btn-primary" onClick={handleBillSubmit}>Generate Bill — ₹{grandTotal.toFixed(2)}</button>
+              </div>
+            </div>
           </div>
-      ) : (
-          <div className="w-2/3 flex justify-center items-center text-gray-400">Select a client to bill</div>
+        </div>
+      )}
+
+      {/* View Bill Modal */}
+      {viewBill && (
+        <div className="modal-overlay" onClick={() => setViewBill(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Bill — {viewBill.billNumber}</h2>
+              <button onClick={() => setViewBill(null)}>✕</button>
+            </div>
+            <div className="bill-view">
+              <p><strong>Client:</strong> {viewBill.clientName}</p>
+              {viewBill.clientPhone && <p><strong>Phone:</strong> {viewBill.clientPhone}</p>}
+              <table className="data-table">
+                <thead><tr><th>Service</th><th>Staff</th><th>Original</th><th>Discount</th><th>Final</th></tr></thead>
+                <tbody>
+                  {viewBill.items?.map((item, i) => (
+                    <tr key={i}>
+                      <td>{item.serviceName}{item.campaignName && <span className="campaign-tag">🏷 {item.campaignName}</span>}</td>
+                      <td>{item.staffName}</td>
+                      <td>₹{item.originalPrice}</td>
+                      <td className="discount">-₹{(item.originalPrice - item.discountedPrice).toFixed(0)}</td>
+                      <td><strong>₹{item.discountedPrice}</strong></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="bill-summary">
+                <div className="summary-row-item"><span>Subtotal</span><span>₹{viewBill.subtotal?.toLocaleString()}</span></div>
+                {viewBill.totalDiscount > 0 && <div className="summary-row-item discount"><span>Discount</span><span>-₹{viewBill.totalDiscount?.toLocaleString()}</span></div>}
+                <div className="summary-row-item"><span>GST ({viewBill.gstRate}%)</span><span>₹{viewBill.gstAmount?.toFixed(2)}</span></div>
+                <div className="summary-row-item total"><span>Grand Total</span><span>₹{viewBill.grandTotal?.toFixed(2)}</span></div>
+              </div>
+              <p><strong>Payment:</strong> {viewBill.paymentMethod?.toUpperCase()}</p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
-};
-
-export default Billing;
+}

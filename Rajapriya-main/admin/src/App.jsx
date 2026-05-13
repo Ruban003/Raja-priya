@@ -1,48 +1,42 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { Toaster } from 'react-hot-toast';
-
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Calendar from './pages/Calendar';
-import Sidebar from './components/Sidebar';
+import Appointments from './pages/Appointments';
 import Billing from './pages/Billing';
+import Customers from './pages/Customers';
 import Services from './pages/Services';
 import Staff from './pages/Staff';
+import Campaigns from './pages/Campaigns';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
 
-const Layout = ({ children }) => {
-  const location = useLocation();
-  // Don't show Sidebar on Login page
-  if (location.pathname === '/') return children;
-
-  return (
-    <div style={{ display: 'flex' }}>
-      <Sidebar />
-      <main style={{ flex: 1, padding: '20px', background: '#f4f4f9', height: '100vh', overflowY: 'auto' }}>
-        {children}
-      </main>
-    </div>
-  );
+const Protected = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="page-loading full">Loading...</div>;
+  return user ? children : <Navigate to="/login" />;
 };
 
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Toaster position="top-right" />
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/billing" element={<Billing />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/staff" element={<Staff />} />
-          </Routes>
-        </Layout>
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Protected><Layout /></Protected>}>
+            <Route index element={<Dashboard />} />
+            <Route path="appointments" element={<Appointments />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="services" element={<Services />} />
+            <Route path="staff" element={<Staff />} />
+            <Route path="campaigns" element={<Campaigns />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
-
-export default App;

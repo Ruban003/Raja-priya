@@ -1,82 +1,79 @@
-import { useState, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import api from '../api';
-import toast from 'react-hot-toast';
-import { FaLock, FaUser } from 'react-icons/fa';
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const { login } = useContext(AuthContext);
+export default function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ username: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
     try {
-      const res = await api.post('/login', { username, password });
-      if (res.data.success) {
-        login({ username, role: res.data.role });
-        toast.success(`Welcome back!`);
-      }
-    } catch (err) {
-      toast.error("Invalid Credentials");
+      await login(form.username, form.password);
+      navigate('/');
+    } catch {
+      setError('Invalid username or password');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ 
-        height: '100vh', 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)', // Royal Blue Gradient
-        position: 'relative',
-        overflow: 'hidden'
-    }}>
-      
-      {/* Background Decor */}
-      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '500px', height: '500px', background: '#3b82f6', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%' }}></div>
-      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '500px', height: '500px', background: '#fbbf24', filter: 'blur(150px)', opacity: 0.05, borderRadius: '50%' }}></div>
-
-      <form onSubmit={handleSubmit} style={{ 
-          background: 'rgba(255, 255, 255, 0.95)',
-          padding: '40px 50px', 
-          borderRadius: '16px', 
-          width: '400px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-      }}>
-        <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-slate-800 tracking-widest mb-1">
-                GLAM<span style={{color:'#fbbf24'}}>PRO</span>
-            </h1>
-            <p className="text-slate-400 text-xs uppercase tracking-[2px] font-semibold">Salon Management System</p>
+    <div className="login-page">
+      <div className="login-left">
+        <div className="login-brand">
+          <div className="brand-logo">RV</div>
+          <h1>RV Salon<br />Management</h1>
+          <p>Professional salon management system for modern businesses</p>
         </div>
-
-        <div className="mb-4 relative">
-            <FaUser className="absolute left-3 top-4 text-slate-400" />
-            <input 
-                style={{ paddingLeft: '35px', borderColor: '#e2e8f0', background: '#f8fafc' }}
-                placeholder="Username" 
-                onChange={e => setUsername(e.target.value)} 
-            />
+        <div className="login-decor">
+          <div className="decor-circle c1" />
+          <div className="decor-circle c2" />
+          <div className="decor-circle c3" />
         </div>
-
-        <div className="mb-6 relative">
-            <FaLock className="absolute left-3 top-4 text-slate-400" />
-            <input 
+      </div>
+      <div className="login-right">
+        <div className="login-card">
+          <div className="login-header">
+            <h2>Welcome back</h2>
+            <p>Sign in to your account</p>
+          </div>
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="form-group">
+              <label>Username</label>
+              <input
+                type="text"
+                placeholder="Enter username"
+                value={form.username}
+                onChange={e => setForm({ ...form, username: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input
                 type="password"
-                style={{ paddingLeft: '35px', borderColor: '#e2e8f0', background: '#f8fafc' }}
-                placeholder="Password" 
-                onChange={e => setPassword(e.target.value)} 
-            />
+                placeholder="Enter password"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                required
+              />
+            </div>
+            {error && <div className="login-error">{error}</div>}
+            <button type="submit" className="login-btn" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+          <div className="login-footer">
+            <span>RV Salon Management v2.0</span>
+          </div>
         </div>
-        
-        <button className="btn w-full py-3 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
-            style={{ background: '#2563eb' }}>
-            Login
-        </button>
-      </form>
+      </div>
     </div>
   );
-};
-
-export default Login;
+}

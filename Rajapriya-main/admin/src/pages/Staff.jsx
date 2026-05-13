@@ -1,92 +1,132 @@
-// src/pages/Staff.jsx
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import Modal from '../components/Modal';
-import toast from 'react-hot-toast';
-import { FaUserPlus, FaTrash, FaPhone } from 'react-icons/fa';
 
-const Staff = () => {
+export default function Staff() {
+  const { user, canManage } = useAuth();
   const [staff, setStaff] = useState([]);
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', role: 'Stylist', phone: '', color: '#3498db' });
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ name: '', role: 'Stylist', phone: '', color: '#c9a96e', commissionRate: 0 });
+  const centerId = user?.centerId;
 
-  const loadStaff = async () => {
-    const res = await api.get('/staff');
-    setStaff(res.data);
+  const fetch = async () => {
+    try {
+      const { data } = await api.get(`/staff${centerId ? `?centerId=${centerId}` : ''}`);
+      setStaff(data);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => { loadStaff(); }, []);
+  useEffect(() => { fetch(); }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await api.post('/staff', form);
-    toast.success('Staff Added');
-    setModalOpen(false);
-    loadStaff();
+    try {
+      if (editing) await api.put(`/staff/${editing._id}`, { ...form, centerId });
+      else await api.post('/staff', { ...form, centerId });
+      setShowModal(false); setEditing(null);
+      setForm({ name: '', role: 'Stylist', phone: '', color: '#c9a96e', commissionRate: 0 });
+      fetch();
+    } catch (e) { alert('Error saving staff'); }
   };
 
   const handleDelete = async (id) => {
-    if(confirm('Are you sure?')) {
-        await api.delete(`/staff/${id}`);
-        loadStaff();
-    }
+    if (!confirm('Remove this staff member?')) return;
+    await api.delete(`/staff/${id}`);
+    fetch();
   };
 
+  const openEdit = (s) => {
+    setEditing(s);
+    setForm({ name: s.name, role: s.role, phone: s.phone || '', color: s.color, commissionRate: s.commissionRate || 0 });
+    setShowModal(true);
+  };
+
+  const roles = ['Stylist', 'Therapist', 'Makeup Artist', 'Nail Tech', 'Receptionist', 'Manager'];
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
+    <div className="page">
+      <div className="page-header">
         <div>
-            <h2 className="text-2xl font-bold">Team Members</h2>
-            <p className="text-gray-500 text-sm">Manage your stylists and schedule colors</p>
+          <h1>Staff</h1>
+          <p>{staff.length} active members</p>
         </div>
-        <button onClick={() => setModalOpen(true)} className="btn btn-primary flex items-center gap-2">
-            <FaUserPlus /> Add New Staff
-        </button>
+        {canManage() && (
+          <button className="btn-primary" onClick={() => { setEditing(null); setForm({ name: '', role: 'Stylist', phone: '', color: '#c9a96e', commissionRate: 0 }); setShowModal(true); }}>
+            + Add Staff
+          </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        {staff.map(s => (
-          <div key={s._id} className="card relative group hover:shadow-lg transition-all border-l-4" style={{ borderLeftColor: s.color }}>
-             <div className="flex justify-between items-start">
-                <div>
-                    <h3 className="font-bold text-lg">{s.name}</h3>
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-gray-100 px-2 py-1 rounded mt-1 inline-block">
-                        {s.role}
-                    </span>
+      {loading ? <div className="page-loading">Loading...</div> : (
+        <div className="staff-grid">
+          {staff.map(s => (
+            <div key={s._id} className="staff-card">
+              <div className="staff-avatar" style={{ backgroundColor: s.color }}>
+                {s.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="staff-info">
+                <h3>{s.name}</h3>
+                <span className="badge">{s.role}</span>
+                {s.phone && <p className="staff-phone">📞 {s.phone}</p>}
+                <p className="staff-commission">Commission: {s.commissionRate}%</p>
+              </div>
+              {canManage() && (
+                <div className="card-actions">
+                  <button className="btn-edit" onClick={() => openEdit(s)}>Edit</button>
+                  <button className="btn-delete" onClick={() => handleDelete(s._id)}>Remove</button>
                 </div>
-                <div className="h-3 w-3 rounded-full shadow-sm" style={{ background: s.color }}></div>
-             </div>
-             
-             <div className="mt-4 text-sm text-gray-500 flex items-center gap-2">
-                <FaPhone className="text-gray-300"/> {s.phone || 'No Phone'}
-             </div>
-
-             <button onClick={() => handleDelete(s._id)} 
-                className="absolute bottom-4 right-4 text-red-400 opacity-0 group-hover:opacity-100 transition-all hover:text-red-600">
-                <FaTrash />
-             </button>
-          </div>
-        ))}
-      </div>
-
-      <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)} title="Add Team Member">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <input placeholder="Full Name" required onChange={e => setForm({...form, name: e.target.value})} />
-            <select onChange={e => setForm({...form, role: e.target.value})}>
-                <option>Senior Stylist</option>
-                <option>Junior Stylist</option>
-                <option>Manager</option>
-            </select>
-            <input placeholder="Phone Number" onChange={e => setForm({...form, phone: e.target.value})} />
-            <div className="flex items-center gap-3 border p-3 rounded bg-gray-50">
-                <span className="text-sm text-gray-500">Calendar Color:</span>
-                <input type="color" value={form.color} onChange={e => setForm({...form, color: e.target.value})} className="h-8 w-16 p-0 border-0" />
+              )}
             </div>
-            <button className="btn btn-primary mt-2">Save Member</button>
-        </form>
-      </Modal>
+          ))}
+          {staff.length === 0 && <div className="empty-state">No staff added yet</div>}
+        </div>
+      )}
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editing ? 'Edit Staff' : 'Add Staff'}</h2>
+              <button onClick={() => setShowModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleSubmit} className="modal-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Full Name</label>
+                  <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required placeholder="Staff name" />
+                </div>
+                <div className="form-group">
+                  <label>Role</label>
+                  <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                    {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="9876543210" />
+                </div>
+                <div className="form-group">
+                  <label>Commission %</label>
+                  <input type="number" value={form.commissionRate} onChange={e => setForm({ ...form, commissionRate: e.target.value })} placeholder="0" />
+                </div>
+                <div className="form-group">
+                  <label>Color</label>
+                  <input type="color" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">{editing ? 'Update' : 'Add Staff'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default Staff;
+}

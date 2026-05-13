@@ -1,68 +1,123 @@
-// admin/src/pages/Dashboard.jsx
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { FaMoneyBillWave, FaWallet, FaCalendarCheck } from 'react-icons/fa';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
-const Dashboard = () => {
-  const [stats, setStats] = useState({ revenue: 0, cash: 0, count: 0 });
+export default function Dashboard() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [monthly, setMonthly] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const centerId = user?.centerId;
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetch = async () => {
       try {
-        const res = await api.get('/appointments');
-        const apps = res.data;
-        let revenue = 0, cash = 0;
-        apps.filter(a => a.paymentStatus === 'Paid').forEach(a => {
-            revenue += a.totalAmount || 0;
-            cash += a.cashAmount || 0;
-        });
-        setStats({ revenue, cash, count: apps.length });
+        const params = centerId ? `?centerId=${centerId}` : '';
+        const [s, m] = await Promise.all([
+          api.get(`/reports/dashboard${params}`),
+          api.get(`/reports/monthly${params}`)
+        ]);
+        setStats(s.data);
+        setMonthly(m.data);
       } catch (e) { console.error(e); }
+      finally { setLoading(false); }
     };
-    fetchStats();
+    fetch();
   }, []);
 
-  const StatCard = ({ title, value, icon, iconColor, bg }) => (
-    <div className="card stat-card">
-      <div>
-        <p className="text-sm font-bold uppercase tracking-wider opacity-70">{title}</p>
-        <h3 className="text-3xl mt-2">{value}</h3>
-      </div>
-      <div className="stat-icon" style={{ background: bg, color: iconColor }}>
-        {icon}
-      </div>
-    </div>
-  );
+  if (loading) return <div className="page-loading">Loading dashboard...</div>;
+
+  const cards = [
+    { label: "Today's Revenue", value: `₹${stats?.todayRevenue?.toLocaleString() || 0}`, icon: '₹', color: 'green' },
+    { label: "Today's Bills", value: stats?.todayBills || 0, icon: '◈', color: 'blue' },
+    { label: "Appointments", value: stats?.todayAppointments || 0, icon: '◷', color: 'purple' },
+    { label: "Month Revenue", value: `₹${stats?.monthRevenue?.toLocaleString() || 0}`, icon: '◐', color: 'amber' },
+  ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2>Dashboard</h2>
-        <button className="btn btn-primary" onClick={() => window.location.reload()}>Refresh Data</button>
+    <div className="dashboard-page">
+      <div className="page-header">
+        <h1>Dashboard</h1>
+        <p>{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
       </div>
 
-      <div className="grid grid-cols-3">
-        <StatCard 
-            title="Total Revenue" 
-            value={`₹${stats.revenue.toLocaleString()}`} 
-            icon={<FaMoneyBillWave />} 
-            bg="#dcfce7" iconColor="#16a34a" // Soft Green
-        />
-        <StatCard 
-            title="Cash in Hand" 
-            value={`₹${stats.cash.toLocaleString()}`} 
-            icon={<FaWallet />} 
-            bg="#dbeafe" iconColor="#2563eb" // Soft Blue
-        />
-        <StatCard 
-            title="Total Bookings" 
-            value={stats.count} 
-            icon={<FaCalendarCheck />} 
-            bg="#fce7f3" iconColor="#db2777" // Soft Pink
-        />
+      <div className="stats-grid">
+        {cards.map((c, i) => (
+          <div key={i} className={`stat-card stat-${c.color}`}>
+            <div className="stat-icon">{c.icon}</div>
+            <div className="stat-info">
+              <div className="stat-value">{c.value}</div>
+              <div className="stat-label">{c.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {monthly && (
+        <div className="charts-grid">
+          <div className="chart-card">
+            <h3>Monthly Revenue — {new Date().toLocaleString('default', { month: 'long' })}</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={monthly.dailyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v) => [`₹${v}`, 'Revenue']} />
+                <Bar dataKey="revenue" fill="#c9a96e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="chart-card">
+            <h3>Revenue Trend</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={monthly.dailyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v) => [`₹${v}`, 'Revenue']} />
+                <Line type="monotone" dataKey="revenue" stroke="#c9a96e" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      <div className="summary-row">
+        <div className="summary-card">
+          <h3>Month Summary</h3>
+          <div className="summary-item">
+            <span>Total Revenue</span>
+            <strong>₹{monthly?.totalRevenue?.toLocaleString() || 0}</strong>
+          </div>
+          <div className="summary-item">
+            <span>Total Bills</span>
+            <strong>{monthly?.totalBills || 0}</strong>
+          </div>
+          <div className="summary-item">
+            <span>Avg per Bill</span>
+            <strong>₹{monthly?.totalBills ? Math.round(monthly.totalRevenue / monthly.totalBills).toLocaleString() : 0}</strong>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <h3>Today's Summary</h3>
+          <div className="summary-item">
+            <span>Revenue</span>
+            <strong>₹{stats?.todayRevenue?.toLocaleString() || 0}</strong>
+          </div>
+          <div className="summary-item">
+            <span>Bills Generated</span>
+            <strong>{stats?.todayBills || 0}</strong>
+          </div>
+          <div className="summary-item">
+            <span>Pending Appointments</span>
+            <strong>{stats?.pendingAppointments || 0}</strong>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
