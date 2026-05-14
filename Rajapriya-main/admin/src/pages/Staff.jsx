@@ -3,13 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 export default function Staff() {
-  const { user, canManage } = useAuth();
+  const { user, canManage, getActiveCenterId } = useAuth();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', role: 'Stylist', phone: '', color: '#c9a96e', commissionRate: 0 });
-  const centerId = user?.centerId;
+  const centerId = getActiveCenterId();
 
   const fetch = async () => {
     try {

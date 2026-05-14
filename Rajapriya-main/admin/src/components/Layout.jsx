@@ -1,37 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../api';
 
 const navItems = [
-  { path: '/', icon: '⊞', label: 'Dashboard', roles: ['all'] },
-  { path: '/appointments', icon: '◷', label: 'Appointments', roles: ['all'] },
-  { path: '/billing', icon: '◈', label: 'Billing', roles: ['all'] },
-  { path: '/customers', icon: '◉', label: 'Customers', roles: ['all'] },
-  { path: '/services', icon: '✦', label: 'Services', roles: ['all'] },
-  { path: '/staff', icon: '◎', label: 'Staff', roles: ['all'] },
-  { path: '/campaigns', icon: '◆', label: 'Campaigns', roles: ['rv_owner','rv_admin','center_owner','center_admin'] },
-  { path: '/reports', icon: '◐', label: 'Reports', roles: ['all'] },
-  { path: '/settings', icon: '◍', label: 'Settings', roles: ['rv_owner','rv_admin','center_owner'] },
+  { path: '/', icon: '⊞', label: 'Dashboard' },
+  { path: '/appointments', icon: '◷', label: 'Appointments' },
+  { path: '/billing', icon: '◈', label: 'Billing' },
+  { path: '/customers', icon: '◉', label: 'Customers' },
+  { path: '/services', icon: '✦', label: 'Services' },
+  { path: '/staff', icon: '◎', label: 'Staff' },
+  { path: '/campaigns', icon: '◆', label: 'Campaigns', hideFor: ['manager'] },
+  { path: '/reports', icon: '◐', label: 'Reports' },
+  { path: '/settings', icon: '◍', label: 'Settings', hideFor: ['manager', 'center_admin'] },
 ];
 
-const roleLabels = {
-  rv_owner: 'RV Owner',
-  rv_admin: 'RV Admin',
-  center_owner: 'Center Owner',
-  center_admin: 'Center Admin',
-  manager: 'Manager',
-};
+const roleLabels = { rv_owner: 'RV Owner', rv_admin: 'RV Admin', center_owner: 'Center Owner', center_admin: 'Center Admin', manager: 'Manager' };
 
 export default function Layout() {
-  const { user, logout, isRVLevel } = useAuth();
+  const { user, logout, isRVLevel, selectedCenter, selectCenter, getActiveCenterId } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [centers, setCenters] = useState([]);
+  const [showCenterPicker, setShowCenterPicker] = useState(false);
+
+  useEffect(() => {
+    if (isRVLevel()) {
+      api.get('/centers').then(r => setCenters(r.data)).catch(() => {});
+    }
+  }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
-  const visibleNav = navItems.filter(item =>
-    item.roles.includes('all') || item.roles.includes(user?.role)
-  );
+  const visibleNav = navItems.filter(item => !item.hideFor?.includes(user?.role));
+
+  const activeCenterName = isRVLevel()
+    ? (selectedCenter?.name || 'Select Center')
+    : 'Glam';
 
   return (
     <div className={`app-layout ${collapsed ? 'collapsed' : ''}`}>
@@ -59,14 +64,28 @@ export default function Layout() {
           </div>
         )}
 
+        {!collapsed && isRVLevel() && (
+          <div className="center-selector" onClick={() => setShowCenterPicker(!showCenterPicker)}>
+            <span className="center-selector-label">Center</span>
+            <span className="center-selector-value">{activeCenterName} ▾</span>
+            {showCenterPicker && (
+              <div className="center-dropdown">
+                <div className="center-option" onClick={() => { selectCenter(null); setShowCenterPicker(false); }}>
+                  All Centers
+                </div>
+                {centers.map(c => (
+                  <div key={c._id} className="center-option" onClick={() => { selectCenter(c); setShowCenterPicker(false); }}>
+                    {c.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <nav className="sidebar-nav">
           {visibleNav.map(item => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/'}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            >
+            <NavLink key={item.path} to={item.path} end={item.path === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <span className="nav-icon">{item.icon}</span>
               {!collapsed && <span className="nav-label">{item.label}</span>}
             </NavLink>
@@ -84,11 +103,9 @@ export default function Layout() {
       <main className="main-content">
         <div className="topbar">
           <div className="topbar-left">
-            {isRVLevel() && (
-              <div className="center-badge">All Centers</div>
-            )}
-            {!isRVLevel() && user?.centerId && (
-              <div className="center-badge">Glam Center</div>
+            <div className="center-badge">{activeCenterName}</div>
+            {!getActiveCenterId() && isRVLevel() && (
+              <span className="center-warning">⚠ Select a center to add data</span>
             )}
           </div>
           <div className="topbar-right">

@@ -4,12 +4,12 @@ import api from '../api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Reports() {
-  const { user } = useAuth();
+  const { user, getActiveCenterId } = useAuth();
   const [monthly, setMonthly] = useState(null);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
-  const centerId = user?.centerId;
+  const centerId = getActiveCenterId();
 
   const fetch = async () => {
     setLoading(true);

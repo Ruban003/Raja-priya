@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 export default function Billing() {
-  const { user } = useAuth();
+  const { user, getActiveCenterId } = useAuth();
   const [bills, setBills] = useState([]);
   const [services, setServices] = useState([]);
   const [staff, setStaff] = useState([]);
@@ -16,7 +16,7 @@ export default function Billing() {
   const [clientInfo, setClientInfo] = useState({ clientName: '', clientPhone: '', customerId: '' });
   const [payment, setPayment] = useState({ method: 'cash', cashAmount: 0, upiAmount: 0, cardAmount: 0 });
   const [gstRate, setGstRate] = useState(18);
-  const centerId = user?.centerId;
+  const centerId = getActiveCenterId();
 
   const fetchData = async () => {
     try {

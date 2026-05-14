@@ -3,14 +3,14 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 export default function Campaigns() {
-  const { user, canManage } = useAuth();
+  const { user, canManage, getActiveCenterId } = useAuth();
   const [campaigns, setCampaigns] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '', discountType: 'percentage', discountValue: '', startDate: '', endDate: '', applicableServices: [], isActive: true });
-  const centerId = user?.centerId;
+  const centerId = getActiveCenterId();
 
   const fetchData = async () => {
     try {

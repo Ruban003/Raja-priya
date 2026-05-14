@@ -2,18 +2,22 @@ const router = require('express').Router();
 const Staff = require('../models/Staff');
 const { auth } = require('../middleware/auth');
 
-const getCenter = (req) => req.query.centerId || req.body.centerId || req.user.centerId;
+const getCenter = (req) => req.query.centerId || req.body.centerId || req.user.centerId?.toString();
 
 router.get('/', auth, async (req, res) => {
   try {
-    res.json(await Staff.find({ centerId: getCenter(req), isActive: true }));
+    const centerId = getCenter(req);
+    if (!centerId) return res.json([]);
+    res.json(await Staff.find({ centerId, isActive: true }));
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 router.post('/', auth, async (req, res) => {
   try {
     if (req.user.role === 'manager') return res.status(403).json({ message: 'Access denied' });
-    res.status(201).json(await new Staff(req.body).save());
+    const centerId = getCenter(req);
+    if (!centerId) return res.status(400).json({ message: 'centerId is required' });
+    res.status(201).json(await new Staff({ ...req.body, centerId }).save());
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

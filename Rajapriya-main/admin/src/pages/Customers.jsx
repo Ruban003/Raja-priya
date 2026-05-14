@@ -3,14 +3,14 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 export default function Customers() {
-  const { user } = useAuth();
+  const { user, getActiveCenterId } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', phone: '', email: '', gender: 'female', dob: '', notes: '' });
-  const centerId = user?.centerId;
+  const centerId = getActiveCenterId();
 
   const fetch = async () => {
     try {
@@ -51,7 +51,9 @@ export default function Customers() {
           <h1>Customers</h1>
           <p>{customers.length} registered customers</p>
         </div>
-        <button className="btn-primary" onClick={() => { setEditing(null); setForm({ name: '', phone: '', email: '', gender: 'female', dob: '', notes: '' }); setShowModal(true); }}>
+        <div className="header-actions">
+          <button className="btn-secondary" onClick={() => window.location.href=`/api/customers/export/csv?centerId=${centerId}`}>↓ Export CSV</button>
+          <button className="btn-primary" onClick={() => { setEditing(null); setForm({ name: '', phone: '', email: '', gender: 'female', dob: '', notes: '' }); setShowModal(true); }}>
           + Add Customer
         </button>
       </div>

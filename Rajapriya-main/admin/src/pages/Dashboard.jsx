@@ -4,12 +4,12 @@ import api from '../api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, getActiveCenterId } = useAuth();
   const [stats, setStats] = useState(null);
   const [monthly, setMonthly] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const centerId = user?.centerId;
+  const centerId = getActiveCenterId();
 
   useEffect(() => {
     const fetch = async () => {

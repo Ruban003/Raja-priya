@@ -5,7 +5,7 @@ import api from '../api';
 const statusColors = { pending: '#f59e0b', confirmed: '#3b82f6', in_progress: '#8b5cf6', completed: '#10b981', cancelled: '#ef4444' };
 
 export default function Appointments() {
-  const { user } = useAuth();
+  const { user, getActiveCenterId } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [staff, setStaff] = useState([]);
   const [services, setServices] = useState([]);
@@ -13,7 +13,7 @@ export default function Appointments() {
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [form, setForm] = useState({ clientName: '', clientPhone: '', clientGender: 'female', staffId: '', serviceName: '', price: '', date: new Date().toISOString().split('T')[0], time: '10:00', status: 'pending', type: 'walkin', notes: '' });
-  const centerId = user?.centerId;
+  const centerId = getActiveCenterId();
 
   const fetch = async () => {
     try {
