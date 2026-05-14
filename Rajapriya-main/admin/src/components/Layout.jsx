@@ -29,14 +29,32 @@ export default function Layout() {
 
   useEffect(() => {
     if (isRVLevel()) {
-      api.get('/centers').then(r => setCenters(r.data)).catch(() => {});
+      api.get('/centers').then(r => {
+        setCenters(r.data);
+      }).catch(e => console.error(e));
     }
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.target.closest('.center-selector-wrap')) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
   }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const visibleNav = navItems.filter(item => !item.hideFor?.includes(user?.role));
   const activeCenterName = isRVLevel() ? (selectedCenter?.name || 'Select Center') : 'Glam';
   const hasCenter = !!getActiveCenterId();
+
+  const handleCenterClick = (center) => {
+    selectCenter(center);
+    setDropdownOpen(false);
+  };
 
   return (
     <div className={`app-layout ${collapsed ? 'collapsed' : ''}`}>
@@ -64,23 +82,42 @@ export default function Layout() {
           </div>
         )}
 
+        {/* CENTER SELECTOR — only for RV level */}
         {!collapsed && isRVLevel() && (
           <div className="center-selector-wrap">
-            <div className="center-selector" onClick={() => setDropdownOpen(o => !o)}>
-              <span className="center-selector-label">CENTER</span>
-              <span className="center-selector-value">{activeCenterName} ▾</span>
-            </div>
+            <button
+              className="center-selector-btn"
+              onClick={(e) => { e.stopPropagation(); setDropdownOpen(o => !o); }}
+            >
+              <div>
+                <span className="center-selector-label">CENTER</span>
+                <span className="center-selector-value">{activeCenterName}</span>
+              </div>
+              <span className="center-arrow">{dropdownOpen ? '▴' : '▾'}</span>
+            </button>
+
             {dropdownOpen && (
               <div className="center-dropdown">
-                <div className="center-option" onClick={() => { selectCenter(null); setDropdownOpen(false); }}>
+                <div
+                  className={`center-option ${!selectedCenter ? 'selected' : ''}`}
+                  onClick={() => handleCenterClick(null)}
+                >
                   🌐 All Centers
                 </div>
                 {centers.map(c => (
-                  <div key={c._id} className={`center-option ${selectedCenter?._id === c._id ? 'selected' : ''}`}
-                    onClick={() => { selectCenter(c); setDropdownOpen(false); }}>
+                  <div
+                    key={c._id}
+                    className={`center-option ${selectedCenter?._id === c._id ? 'selected' : ''}`}
+                    onClick={() => handleCenterClick(c)}
+                  >
                     🏪 {c.name}
                   </div>
                 ))}
+                {centers.length === 0 && (
+                  <div className="center-option" style={{ color: 'var(--text3)', cursor: 'default' }}>
+                    Loading centers...
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -88,8 +125,12 @@ export default function Layout() {
 
         <nav className="sidebar-nav">
           {visibleNav.map(item => (
-            <NavLink key={item.path} to={item.path} end={item.path === '/'}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === '/'}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
               <span className="nav-icon">{item.icon}</span>
               {!collapsed && <span className="nav-label">{item.label}</span>}
             </NavLink>
@@ -107,9 +148,13 @@ export default function Layout() {
       <main className="main-content">
         <div className="topbar">
           <div className="topbar-left">
-            <div className={`center-badge ${!hasCenter && isRVLevel() ? 'warning' : ''}`}>
-              {hasCenter ? `📍 ${activeCenterName}` : '⚠ Select a center from sidebar to add data'}
-            </div>
+            {hasCenter ? (
+              <div className="center-badge">📍 {activeCenterName}</div>
+            ) : isRVLevel() ? (
+              <div className="center-badge warning">⚠ Select a center from sidebar to add data</div>
+            ) : (
+              <div className="center-badge">📍 Glam</div>
+            )}
           </div>
           <div className="topbar-right">
             <div className="topbar-user">

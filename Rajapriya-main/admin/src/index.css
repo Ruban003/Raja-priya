@@ -281,3 +281,34 @@ td.discount { color: var(--green); }
 .package-items-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .package-total-hint { font-size: 12px; color: var(--amber); margin-top: 8px; padding: 8px; background: var(--amber)10; border-radius: 6px; }
 .gst-badge { background: var(--purple)20; color: var(--purple); }
+
+/* FIXED CENTER SELECTOR */
+.center-selector-wrap { position: relative; margin: 8px; }
+.center-selector { padding: 10px 12px; background: var(--bg3); border: 1px solid var(--gold)40; border-radius: 8px; cursor: pointer; }
+.center-selector:hover { border-color: var(--gold); }
+.center-selector-label { display: block; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+.center-selector-value { display: block; font-size: 13px; color: var(--gold); font-weight: 500; }
+.center-dropdown { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; z-index: 500; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+.center-option { padding: 10px 14px; font-size: 13px; cursor: pointer; color: var(--text2); }
+.center-option:hover { background: var(--bg3); color: var(--text); }
+.center-option.selected { color: var(--gold); background: var(--gold)10; }
+.center-badge.warning { background: var(--amber)15; border-color: var(--amber)40; color: var(--amber); }
+
+/* CENTER SELECTOR BUTTON FIX */
+.center-selector-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--gold)50;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  text-align: left;
+  transition: all 0.15s;
+}
+.center-selector-btn:hover { border-color: var(--gold); }
+.center-arrow { color: var(--gold); font-size: 12px; }
+.center-badge.warning { background: var(--amber)15; border-color: var(--amber)40 !important; color: var(--amber) !important; }
