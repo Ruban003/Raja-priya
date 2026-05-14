@@ -15,14 +15,17 @@ const navItems = [
   { path: '/settings', icon: '◍', label: 'Settings', hideFor: ['manager', 'center_admin'] },
 ];
 
-const roleLabels = { rv_owner: 'RV Owner', rv_admin: 'RV Admin', center_owner: 'Center Owner', center_admin: 'Center Admin', manager: 'Manager' };
+const roleLabels = {
+  rv_owner: 'RV Owner', rv_admin: 'RV Admin',
+  center_owner: 'Center Owner', center_admin: 'Center Admin', manager: 'Manager'
+};
 
 export default function Layout() {
   const { user, logout, isRVLevel, selectedCenter, selectCenter, getActiveCenterId } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [centers, setCenters] = useState([]);
-  const [showCenterPicker, setShowCenterPicker] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isRVLevel()) {
@@ -31,12 +34,9 @@ export default function Layout() {
   }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
-
   const visibleNav = navItems.filter(item => !item.hideFor?.includes(user?.role));
-
-  const activeCenterName = isRVLevel()
-    ? (selectedCenter?.name || 'Select Center')
-    : 'Glam';
+  const activeCenterName = isRVLevel() ? (selectedCenter?.name || 'Select Center') : 'Glam';
+  const hasCenter = !!getActiveCenterId();
 
   return (
     <div className={`app-layout ${collapsed ? 'collapsed' : ''}`}>
@@ -65,17 +65,20 @@ export default function Layout() {
         )}
 
         {!collapsed && isRVLevel() && (
-          <div className="center-selector" onClick={() => setShowCenterPicker(!showCenterPicker)}>
-            <span className="center-selector-label">Center</span>
-            <span className="center-selector-value">{activeCenterName} ▾</span>
-            {showCenterPicker && (
+          <div className="center-selector-wrap">
+            <div className="center-selector" onClick={() => setDropdownOpen(o => !o)}>
+              <span className="center-selector-label">CENTER</span>
+              <span className="center-selector-value">{activeCenterName} ▾</span>
+            </div>
+            {dropdownOpen && (
               <div className="center-dropdown">
-                <div className="center-option" onClick={() => { selectCenter(null); setShowCenterPicker(false); }}>
-                  All Centers
+                <div className="center-option" onClick={() => { selectCenter(null); setDropdownOpen(false); }}>
+                  🌐 All Centers
                 </div>
                 {centers.map(c => (
-                  <div key={c._id} className="center-option" onClick={() => { selectCenter(c); setShowCenterPicker(false); }}>
-                    {c.name}
+                  <div key={c._id} className={`center-option ${selectedCenter?._id === c._id ? 'selected' : ''}`}
+                    onClick={() => { selectCenter(c); setDropdownOpen(false); }}>
+                    🏪 {c.name}
                   </div>
                 ))}
               </div>
@@ -85,7 +88,8 @@ export default function Layout() {
 
         <nav className="sidebar-nav">
           {visibleNav.map(item => (
-            <NavLink key={item.path} to={item.path} end={item.path === '/'} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <NavLink key={item.path} to={item.path} end={item.path === '/'}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <span className="nav-icon">{item.icon}</span>
               {!collapsed && <span className="nav-label">{item.label}</span>}
             </NavLink>
@@ -103,10 +107,9 @@ export default function Layout() {
       <main className="main-content">
         <div className="topbar">
           <div className="topbar-left">
-            <div className="center-badge">{activeCenterName}</div>
-            {!getActiveCenterId() && isRVLevel() && (
-              <span className="center-warning">⚠ Select a center to add data</span>
-            )}
+            <div className={`center-badge ${!hasCenter && isRVLevel() ? 'warning' : ''}`}>
+              {hasCenter ? `📍 ${activeCenterName}` : '⚠ Select a center from sidebar to add data'}
+            </div>
           </div>
           <div className="topbar-right">
             <div className="topbar-user">
