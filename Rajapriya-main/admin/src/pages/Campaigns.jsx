@@ -21,23 +21,23 @@ export default function Campaigns() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [centerId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!centerId) return alert('Please select a center first');
     try {
       if (editing) await api.put(`/campaigns/${editing._id}`, { ...form, centerId });
       else await api.post('/campaigns', { ...form, centerId });
       setShowModal(false); setEditing(null);
       setForm({ name: '', discountType: 'percentage', discountValue: '', startDate: '', endDate: '', applicableServices: [], isActive: true });
       fetchData();
-    } catch (e) { alert('Error saving campaign'); }
+    } catch (e) { alert(e.response?.data?.message || 'Error saving campaign'); }
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this campaign?')) return;
-    await api.delete(`/campaigns/${id}`);
-    fetchData();
+    await api.delete(`/campaigns/${id}`); fetchData();
   };
 
   const toggleService = (id) => {
@@ -60,6 +60,10 @@ export default function Campaigns() {
     setShowModal(true);
   };
 
+  const exportCSV = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/campaigns/export/csv?centerId=${centerId}`;
+  };
+
   const isActive = (c) => c.isActive && new Date(c.startDate) <= new Date() && new Date(c.endDate) >= new Date();
 
   return (
@@ -69,20 +73,25 @@ export default function Campaigns() {
           <h1>Campaigns</h1>
           <p>{campaigns.filter(isActive).length} active campaigns</p>
         </div>
-        {canManage() && (
-          <button className="btn-primary" onClick={() => { setEditing(null); setForm({ name: '', discountType: 'percentage', discountValue: '', startDate: '', endDate: '', applicableServices: [], isActive: true }); setShowModal(true); }}>
-            + New Campaign
-          </button>
-        )}
+        <div className="header-actions">
+          <button className="btn-secondary" onClick={exportCSV}>↓ Export CSV</button>
+          {canManage() && (
+            <button className="btn-primary" onClick={() => {
+              setEditing(null);
+              setForm({ name: '', discountType: 'percentage', discountValue: '', startDate: '', endDate: '', applicableServices: [], isActive: true });
+              setShowModal(true);
+            }}>
+              + New Campaign
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? <div className="page-loading">Loading...</div> : (
         <div className="cards-grid">
           {campaigns.map(c => (
             <div key={c._id} className={`campaign-card ${isActive(c) ? 'active' : ''}`}>
-              <div className="campaign-badge">
-                {isActive(c) ? '🟢 Active' : '⚫ Inactive'}
-              </div>
+              <div className="campaign-badge">{isActive(c) ? '🟢 Active' : '⚫ Inactive'}</div>
               <h3>{c.name}</h3>
               <div className="campaign-discount">
                 {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `₹${c.discountValue} OFF`}
@@ -154,6 +163,7 @@ export default function Campaigns() {
                       <span>{s.name} — ₹{s.price}</span>
                     </label>
                   ))}
+                  {services.length === 0 && <p style={{ color: 'var(--text2)', fontSize: 12 }}>No services added yet</p>}
                 </div>
               </div>
               <div className="form-group">

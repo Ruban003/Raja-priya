@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
@@ -10,9 +10,10 @@ export default function Customers() {
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', phone: '', email: '', gender: 'female', dob: '', notes: '' });
+  const fileRef = useRef();
   const centerId = getActiveCenterId();
 
-  const fetch = async () => {
+  const fetchCustomers = async () => {
     try {
       const { data } = await api.get(`/customers${centerId ? `?centerId=${centerId}` : ''}`);
       setCustomers(data);
@@ -20,17 +21,18 @@ export default function Customers() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { fetchCustomers(); }, [centerId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!centerId) return alert('Please select a center first');
     try {
       if (editing) await api.put(`/customers/${editing._id}`, { ...form, centerId });
       else await api.post('/customers', { ...form, centerId });
       setShowModal(false); setEditing(null);
       setForm({ name: '', phone: '', email: '', gender: 'female', dob: '', notes: '' });
-      fetch();
-    } catch (e) { alert('Error saving customer'); }
+      fetchCustomers();
+    } catch (e) { alert(e.response?.data?.message || 'Error saving customer'); }
   };
 
   const openEdit = (c) => {
@@ -39,9 +41,29 @@ export default function Customers() {
     setShowModal(true);
   };
 
+  const exportCSV = () => {
+    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/customers/export/csv?centerId=${centerId}`;
+  };
+
+  const importCSV = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const lines = ev.target.result.split('\n').slice(1).filter(Boolean);
+      const rows = lines.map(line => {
+        const [name, phone, email, gender] = line.split(',').map(s => s.replace(/"/g, '').trim());
+        return { name, phone, email, gender };
+      });
+      try {
+        await api.post('/customers/import/csv', { rows, centerId });
+        fetchCustomers(); alert(`Imported ${rows.length} customers!`);
+      } catch { alert('Import failed'); }
+    };
+    reader.readAsText(file);
+  };
+
   const filtered = customers.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.includes(search)
+    c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)
   );
 
   return (
@@ -52,10 +74,17 @@ export default function Customers() {
           <p>{customers.length} registered customers</p>
         </div>
         <div className="header-actions">
-          <button className="btn-secondary" onClick={() => window.location.href=`/api/customers/export/csv?centerId=${centerId}`}>↓ Export CSV</button>
-          <button className="btn-primary" onClick={() => { setEditing(null); setForm({ name: '', phone: '', email: '', gender: 'female', dob: '', notes: '' }); setShowModal(true); }}>
-          + Add Customer
-        </button>
+          <button className="btn-secondary" onClick={exportCSV}>↓ Export CSV</button>
+          <button className="btn-secondary" onClick={() => fileRef.current.click()}>↑ Import CSV</button>
+          <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={importCSV} />
+          <button className="btn-primary" onClick={() => {
+            setEditing(null);
+            setForm({ name: '', phone: '', email: '', gender: 'female', dob: '', notes: '' });
+            setShowModal(true);
+          }}>
+            + Add Customer
+          </button>
+        </div>
       </div>
 
       <div className="search-bar">
