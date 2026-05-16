@@ -10,6 +10,7 @@ const customerSchema = new mongoose.Schema({
   loyaltyPoints: { type: Number, default: 0 },
   totalVisits: { type: Number, default: 0 },
   totalSpent: { type: Number, default: 0 },
+  lastVisit: Date,
   notes: String
 }, { timestamps: true });
 

@@ -1,79 +1,135 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
-const HOURS = Array.from({ length: 13 }, (_, i) => i + 9); // 9AM to 9PM
-const SLOT_WIDTH = 120; // px per hour
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 9);
+const SLOT_WIDTH = 120;
 const STATUS_COLORS = {
-  pending: '#f59e0b',
-  confirmed: '#3b82f6',
-  in_progress: '#8b5cf6',
-  completed: '#10b981',
-  cancelled: '#ef4444'
+  pending: '#f59e0b', confirmed: '#3b82f6',
+  in_progress: '#8b5cf6', completed: '#10b981', cancelled: '#ef4444'
 };
 
 function timeToMinutes(t) {
-  const [h, m] = t.split(':').map(Number);
+  const [h, m] = (t || '09:00').split(':').map(Number);
   return h * 60 + m;
 }
-
 function minutesToLeft(minutes) {
-  const startMin = 9 * 60;
-  return ((minutes - startMin) / 60) * SLOT_WIDTH;
+  return ((minutes - 9 * 60) / 60) * SLOT_WIDTH;
+}
+function getNowLeft() {
+  const now = new Date();
+  return minutesToLeft(now.getHours() * 60 + now.getMinutes());
 }
 
 export default function Appointments() {
-  const { user, getActiveCenterId } = useAuth();
+  const { getActiveCenterId } = useAuth();
   const navigate = useNavigate();
+  const centerId = getActiveCenterId();
+
   const [appointments, setAppointments] = useState([]);
   const [staff, setStaff] = useState([]);
   const [services, setServices] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showModal, setShowModal] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(null); // { staffId, time }
   const [viewAppt, setViewAppt] = useState(null);
+  const [nowLeft, setNowLeft] = useState(getNowLeft());
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientSuggestions, setClientSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef();
+
   const [form, setForm] = useState({
-    clientName: '', clientPhone: '', clientGender: 'female',
+    clientName: '', clientPhone: '', clientGender: 'female', customerId: '',
     staffId: '', date: new Date().toISOString().split('T')[0],
     time: '10:00', status: 'pending', type: 'walkin', notes: '',
     services: [{ serviceId: '', serviceName: '', price: 0, duration: 30 }]
   });
-  const centerId = getActiveCenterId();
 
-  const fetchData = async () => {
-    setLoading(true);
+  const isToday = selectedDate === new Date().toISOString().split('T')[0];
+  const totalWidth = HOURS.length * SLOT_WIDTH;
+
+  // Real-time clock - update every minute
+  useEffect(() => {
+    const timer = setInterval(() => setNowLeft(getNowLeft()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto-refresh appointments every minute
+  useEffect(() => {
+    const timer = setInterval(() => fetchData(false), 60000);
+    return () => clearInterval(timer);
+  }, [selectedDate, centerId]);
+
+  const fetchData = useCallback(async (showLoader = true) => {
+    if (showLoader) setLoading(true);
     try {
       const params = new URLSearchParams({ ...(centerId && { centerId }), date: selectedDate });
-      const [a, st, sv] = await Promise.all([
+      const [a, st, sv, cu] = await Promise.all([
         api.get(`/appointments?${params}`),
         api.get(`/staff${centerId ? `?centerId=${centerId}` : ''}`),
-        api.get(`/services${centerId ? `?centerId=${centerId}` : ''}`)
+        api.get(`/services${centerId ? `?centerId=${centerId}` : ''}`),
+        api.get(`/customers${centerId ? `?centerId=${centerId}` : ''}`)
       ]);
-      setAppointments(a.data); setStaff(st.data); setServices(sv.data);
+      setAppointments(a.data); setStaff(st.data);
+      setServices(sv.data); setCustomers(cu.data);
     } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  };
+    finally { if (showLoader) setLoading(false); }
+  }, [selectedDate, centerId]);
 
-  useEffect(() => { fetchData(); }, [selectedDate, centerId]);
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Client search suggestions
+  useEffect(() => {
+    if (!clientSearch.trim()) { setClientSuggestions([]); return; }
+    const q = clientSearch.toLowerCase();
+    const matches = customers.filter(c =>
+      c.name.toLowerCase().includes(q) || c.phone.includes(q)
+    ).slice(0, 6);
+    setClientSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+  }, [clientSearch, customers]);
+
+  const selectClient = (c) => {
+    setForm(f => ({ ...f, clientName: c.name, clientPhone: c.phone, customerId: c._id, clientGender: c.gender || 'female' }));
+    setClientSearch(c.name);
+    setShowSuggestions(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!centerId) return alert('Please select a center first');
+    const validServices = form.services.filter(s => s.serviceId);
+    if (validServices.length === 0) return alert('Add at least one service');
     try {
-      const validServices = form.services.filter(s => s.serviceId);
-      if (validServices.length === 0) return alert('Add at least one service');
       const staffMember = staff.find(s => s._id === form.staffId);
       const totalPrice = validServices.reduce((s, sv) => s + (sv.price || 0), 0);
       const totalDuration = validServices.reduce((s, sv) => s + (sv.duration || 30), 0);
+
+      // Auto-create customer if not existing
+      let customerId = form.customerId;
+      if (!customerId && form.clientName && form.clientPhone) {
+        try {
+          const existing = customers.find(c => c.phone === form.clientPhone);
+          if (existing) {
+            customerId = existing._id;
+          } else {
+            const { data: newCustomer } = await api.post('/customers', {
+              name: form.clientName, phone: form.clientPhone,
+              gender: form.clientGender, centerId
+            });
+            customerId = newCustomer._id;
+          }
+        } catch (e) { console.error('Customer create error', e); }
+      }
+
       await api.post('/appointments', {
-        ...form,
-        centerId,
+        ...form, centerId, customerId,
         services: validServices,
         serviceName: validServices.map(s => s.serviceName).join(', '),
-        price: totalPrice,
-        duration: totalDuration,
+        price: totalPrice, duration: totalDuration,
         staffName: staffMember?.name || 'Unassigned',
         color: staffMember?.color || '#3498db'
       });
@@ -81,30 +137,36 @@ export default function Appointments() {
     } catch (e) { alert('Error saving appointment'); }
   };
 
-  const resetForm = () => setForm({
-    clientName: '', clientPhone: '', clientGender: 'female',
-    staffId: '', date: selectedDate, time: '10:00',
-    status: 'pending', type: 'walkin', notes: '',
-    services: [{ serviceId: '', serviceName: '', price: 0, duration: 30 }]
-  });
+  const resetForm = () => {
+    setClientSearch('');
+    setForm({
+      clientName: '', clientPhone: '', clientGender: 'female', customerId: '',
+      staffId: '', date: selectedDate, time: '10:00',
+      status: 'pending', type: 'walkin', notes: '',
+      services: [{ serviceId: '', serviceName: '', price: 0, duration: 30 }]
+    });
+  };
 
   const updateStatus = async (id, status) => {
-    await api.put(`/appointments/${id}`, { status }); fetchData();
+    await api.put(`/appointments/${id}`, { status });
+    fetchData(false);
+    if (viewAppt?._id === id) setViewAppt(v => ({ ...v, status }));
   };
 
   const handleTakePayment = (appt) => {
-    // Navigate to billing with prefilled data
     navigate('/billing', { state: { prefill: appt } });
   };
 
-  const openSlot = (staffId, hour) => {
+  // Double-click to open booking at that slot
+  const openSlot = (staffId, hour, isDouble = false) => {
+    if (!isDouble) return; // only on double click
     const time = `${String(hour).padStart(2, '0')}:00`;
-    const staffMember = staff.find(s => s._id === staffId);
     setForm(f => ({ ...f, staffId, time, date: selectedDate }));
-    setSelectedSlot({ staffId, time });
+    setClientSearch('');
     setShowModal(true);
   };
 
+  // Single click shows time tooltip (handled inline)
   const addService = () => setForm(f => ({ ...f, services: [...f.services, { serviceId: '', serviceName: '', price: 0, duration: 30 }] }));
   const removeService = (idx) => setForm(f => ({ ...f, services: f.services.filter((_, i) => i !== idx) }));
   const updateService = (idx, field, value) => {
@@ -117,21 +179,15 @@ export default function Appointments() {
     setForm(f => ({ ...f, services: updated }));
   };
 
-  const goToday = () => setSelectedDate(new Date().toISOString().split('T')[0]);
   const goDate = (dir) => {
     const d = new Date(selectedDate); d.setDate(d.getDate() + dir);
     setSelectedDate(d.toISOString().split('T')[0]);
   };
 
-  const formatDate = (d) => new Date(d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-
-  // Get appointments for a staff member
-  const getStaffAppts = (staffId) => appointments.filter(a => a.staffId === staffId || a.staffName === staff.find(s => s._id === staffId)?.name);
-
+  const formatDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const getStaffAppts = (staffId) => appointments.filter(a => a.staffId === staffId);
   const timeSlots = [];
   for (let h = 9; h <= 21; h++) { timeSlots.push(`${String(h).padStart(2,'0')}:00`); timeSlots.push(`${String(h).padStart(2,'0')}:30`); }
-
-  const totalWidth = HOURS.length * SLOT_WIDTH;
 
   return (
     <div className="page appt-page">
@@ -139,7 +195,7 @@ export default function Appointments() {
       <div className="appt-header">
         <div className="appt-nav">
           <button className="appt-nav-btn" onClick={() => goDate(-1)}>‹</button>
-          <button className="appt-today-btn" onClick={goToday}>Today</button>
+          <button className="appt-today-btn" onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}>Today</button>
           <button className="appt-nav-btn" onClick={() => goDate(1)}>›</button>
           <h2 className="appt-date">{formatDate(selectedDate)}</h2>
         </div>
@@ -149,19 +205,21 @@ export default function Appointments() {
         </div>
       </div>
 
-      {/* STATS BAR */}
+      {/* STATS */}
       <div className="appt-stats-bar">
-        <span>Total: <strong>{appointments.length}</strong></span>
-        <span>Pending: <strong>{appointments.filter(a => a.status === 'pending').length}</strong></span>
-        <span>In Progress: <strong>{appointments.filter(a => a.status === 'in_progress').length}</strong></span>
-        <span>Completed: <strong>{appointments.filter(a => a.status === 'completed').length}</strong></span>
-        <span>Services Value: <strong>₹{appointments.reduce((s, a) => s + (a.price || 0), 0).toLocaleString()}</strong></span>
+        <span>Total <strong>{appointments.length}</strong></span>
+        <span>Pending <strong style={{color:'#f59e0b'}}>{appointments.filter(a=>a.status==='pending').length}</strong></span>
+        <span>In Progress <strong style={{color:'#8b5cf6'}}>{appointments.filter(a=>a.status==='in_progress').length}</strong></span>
+        <span>Completed <strong style={{color:'#10b981'}}>{appointments.filter(a=>a.status==='completed').length}</strong></span>
+        <span>Value <strong>₹{appointments.reduce((s,a)=>s+(a.price||0),0).toLocaleString()}</strong></span>
+        {!isToday && <span style={{color:'var(--text3)',fontSize:11}}>Auto-refresh active</span>}
+        {isToday && <span style={{color:'var(--green)',fontSize:11}}>● Live</span>}
       </div>
 
       {loading ? <div className="page-loading">Loading...</div> : (
         <div className="calendar-container">
-          {/* TIME HEADER */}
           <div className="calendar-grid">
+            {/* STAFF COLUMN */}
             <div className="cal-staff-col">
               <div className="cal-header-cell">Therapists</div>
               {staff.map(s => (
@@ -173,52 +231,54 @@ export default function Appointments() {
                   </div>
                 </div>
               ))}
-              {staff.length === 0 && <div className="cal-staff-cell" style={{ color: 'var(--text3)', fontSize: 12 }}>No staff added</div>}
+              {staff.length === 0 && (
+                <div className="cal-staff-cell" style={{color:'var(--text3)',fontSize:12}}>Add staff first</div>
+              )}
             </div>
 
+            {/* SCROLLABLE TIME AREA */}
             <div className="cal-scroll-wrap">
               {/* TIME RULER */}
               <div className="cal-time-ruler" style={{ width: totalWidth }}>
                 {HOURS.map(h => (
                   <div key={h} className="cal-time-cell" style={{ width: SLOT_WIDTH }}>
-                    {String(h).padStart(2,'0')}:00 {h < 12 ? 'AM' : h === 12 ? 'PM' : 'PM'}
+                    {String(h).padStart(2,'0')}:00 {h < 12 ? 'AM' : 'PM'}
                   </div>
                 ))}
               </div>
 
-              {/* CURRENT TIME LINE */}
-              {selectedDate === new Date().toISOString().split('T')[0] && (() => {
-                const now = new Date();
-                const mins = now.getHours() * 60 + now.getMinutes();
-                const left = minutesToLeft(mins);
-                return left > 0 && left < totalWidth ? (
-                  <div className="cal-now-line" style={{ left }} />
-                ) : null;
-              })()}
+              {/* NOW LINE — moves every minute */}
+              {isToday && nowLeft > 0 && nowLeft < totalWidth && (
+                <div className="cal-now-line" style={{ left: nowLeft }}>
+                  <span className="cal-now-label">
+                    {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                  </span>
+                </div>
+              )}
 
               {/* STAFF ROWS */}
               {staff.map(s => {
                 const appts = getStaffAppts(s._id);
                 return (
                   <div key={s._id} className="cal-row" style={{ width: totalWidth }}>
-                    {/* HOUR CELLS — clickable */}
                     {HOURS.map(h => (
                       <div key={h} className="cal-hour-cell" style={{ width: SLOT_WIDTH }}
-                        onClick={() => openSlot(s._id, h)} />
+                        onDoubleClick={() => openSlot(s._id, h, true)}
+                        title="Double-click to book"
+                      />
                     ))}
-                    {/* APPOINTMENT BLOCKS */}
                     {appts.map(a => {
-                      const startMin = timeToMinutes(a.time || '09:00');
+                      const startMin = timeToMinutes(a.time);
                       const dur = a.duration || 30;
                       const left = minutesToLeft(startMin);
-                      const width = (dur / 60) * SLOT_WIDTH - 4;
+                      const width = Math.max((dur / 60) * SLOT_WIDTH - 4, 50);
                       return (
                         <div key={a._id} className="cal-appt-block"
-                          style={{ left, width, backgroundColor: STATUS_COLORS[a.status] + 'cc', borderColor: STATUS_COLORS[a.status] }}
-                          onClick={(e) => { e.stopPropagation(); setViewAppt(a); }}>
+                          style={{ left, width, backgroundColor: STATUS_COLORS[a.status] + 'dd', borderColor: STATUS_COLORS[a.status] }}
+                          onClick={e => { e.stopPropagation(); setViewAppt(a); }}>
                           <div className="cal-appt-client">{a.clientName}</div>
                           <div className="cal-appt-service">{a.serviceName}</div>
-                          <div className="cal-appt-time">{a.time}</div>
+                          <div className="cal-appt-time">{a.time} · ₹{a.price?.toLocaleString()}</div>
                         </div>
                       );
                     })}
@@ -226,35 +286,31 @@ export default function Appointments() {
                 );
               })}
 
-              {/* UNASSIGNED ROW */}
-              {(() => {
-                const unassigned = appointments.filter(a => !a.staffId);
-                return unassigned.length > 0 ? (
-                  <div className="cal-row" style={{ width: totalWidth }}>
-                    {HOURS.map(h => <div key={h} className="cal-hour-cell" style={{ width: SLOT_WIDTH }} />)}
-                    {unassigned.map(a => {
-                      const startMin = timeToMinutes(a.time || '09:00');
-                      const dur = a.duration || 30;
-                      const left = minutesToLeft(startMin);
-                      const width = (dur / 60) * SLOT_WIDTH - 4;
-                      return (
-                        <div key={a._id} className="cal-appt-block"
-                          style={{ left, width, backgroundColor: '#64748bcc', borderColor: '#64748b' }}
-                          onClick={(e) => { e.stopPropagation(); setViewAppt(a); }}>
-                          <div className="cal-appt-client">{a.clientName}</div>
-                          <div className="cal-appt-service">{a.serviceName}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null;
-              })()}
+              {/* UNASSIGNED */}
+              {appointments.filter(a => !a.staffId || a.staffId === '').length > 0 && (
+                <div className="cal-row" style={{ width: totalWidth }}>
+                  {HOURS.map(h => <div key={h} className="cal-hour-cell" style={{ width: SLOT_WIDTH }} />)}
+                  {appointments.filter(a => !a.staffId).map(a => {
+                    const left = minutesToLeft(timeToMinutes(a.time));
+                    const width = Math.max(((a.duration || 30) / 60) * SLOT_WIDTH - 4, 50);
+                    return (
+                      <div key={a._id} className="cal-appt-block"
+                        style={{ left, width, backgroundColor: '#64748bdd', borderColor: '#64748b' }}
+                        onClick={e => { e.stopPropagation(); setViewAppt(a); }}>
+                        <div className="cal-appt-client">{a.clientName}</div>
+                        <div className="cal-appt-service">{a.serviceName}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
+          <div className="cal-hint">💡 Double-click any slot to book · Click appointment to view details</div>
         </div>
       )}
 
-      {/* VIEW APPOINTMENT MODAL */}
+      {/* VIEW APPOINTMENT */}
       {viewAppt && (
         <div className="modal-overlay" onClick={() => setViewAppt(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -263,7 +319,7 @@ export default function Appointments() {
               <button onClick={() => setViewAppt(null)}>✕</button>
             </div>
             <div className="appt-view-body">
-              <div className="appt-view-row"><span>📞 Phone</span><strong>{viewAppt.clientPhone || '—'}</strong></div>
+              {viewAppt.clientPhone && <div className="appt-view-row"><span>📞 Phone</span><strong>{viewAppt.clientPhone}</strong></div>}
               <div className="appt-view-row"><span>✦ Service</span><strong>{viewAppt.serviceName}</strong></div>
               <div className="appt-view-row"><span>◎ Staff</span><strong>{viewAppt.staffName}</strong></div>
               <div className="appt-view-row"><span>◷ Time</span><strong>{viewAppt.date} at {viewAppt.time}</strong></div>
@@ -274,14 +330,14 @@ export default function Appointments() {
                 <span>Status</span>
                 <select className="status-select" value={viewAppt.status}
                   style={{ color: STATUS_COLORS[viewAppt.status] }}
-                  onChange={async e => { await updateStatus(viewAppt._id, e.target.value); setViewAppt({ ...viewAppt, status: e.target.value }); }}>
-                  {Object.keys(STATUS_COLORS).map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                  onChange={e => updateStatus(viewAppt._id, e.target.value)}>
+                  {Object.keys(STATUS_COLORS).map(s => <option key={s} value={s}>{s.replace('_',' ')}</option>)}
                 </select>
               </div>
               <div className="appt-view-actions">
                 <button className="btn-secondary" onClick={() => setViewAppt(null)}>Close</button>
                 <button className="btn-primary" onClick={() => { handleTakePayment(viewAppt); setViewAppt(null); }}>
-                  💳 Take Payment → Billing
+                  💳 Take Payment
                 </button>
               </div>
             </div>
@@ -289,20 +345,47 @@ export default function Appointments() {
         </div>
       )}
 
-      {/* NEW APPOINTMENT MODAL */}
+      {/* BOOK APPOINTMENT MODAL */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>New Appointment</h2>
+              <h2>Book Appointment</h2>
               <button onClick={() => setShowModal(false)}>✕</button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
+
+              {/* CLIENT SEARCH */}
+              <div className="form-group" style={{ position: 'relative' }} ref={searchRef}>
+                <label>Search Client by Name or Phone</label>
+                <input
+                  value={clientSearch}
+                  onChange={e => {
+                    setClientSearch(e.target.value);
+                    setForm(f => ({ ...f, clientName: e.target.value, customerId: '' }));
+                  }}
+                  placeholder="Type name or phone to search, or enter new client..."
+                  autoComplete="off"
+                />
+                {showSuggestions && (
+                  <div className="client-suggestions">
+                    {clientSuggestions.map(c => (
+                      <div key={c._id} className="client-suggestion-item" onClick={() => selectClient(c)}>
+                        <div className="suggestion-name">{c.name}</div>
+                        <div className="suggestion-meta">{c.phone} · {c.totalVisits || 0} visits · ₹{c.totalSpent?.toLocaleString() || 0} spent</div>
+                      </div>
+                    ))}
+                    <div className="client-suggestion-item new-client" onClick={() => {
+                      setForm(f => ({ ...f, clientName: clientSearch }));
+                      setShowSuggestions(false);
+                    }}>
+                      + Add as new client: <strong>{clientSearch}</strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="form-row">
-                <div className="form-group">
-                  <label>Client Name *</label>
-                  <input value={form.clientName} onChange={e => setForm({ ...form, clientName: e.target.value })} required placeholder="Client name" />
-                </div>
                 <div className="form-group">
                   <label>Phone</label>
                   <input value={form.clientPhone} onChange={e => setForm({ ...form, clientPhone: e.target.value })} placeholder="9876543210" />
@@ -351,7 +434,7 @@ export default function Appointments() {
                 </div>
                 {form.services.map((svc, idx) => (
                   <div key={idx} className="service-row">
-                    <select value={svc.serviceId} onChange={e => updateService(idx, 'serviceId', e.target.value)} style={{ flex: 2 }}>
+                    <select value={svc.serviceId} onChange={e => updateService(idx, 'serviceId', e.target.value)}>
                       <option value="">Select service</option>
                       {services.map(s => <option key={s._id} value={s._id}>{s.name} — ₹{s.price} ({s.duration}min)</option>)}
                     </select>
@@ -362,7 +445,7 @@ export default function Appointments() {
                   </div>
                 ))}
                 <div className="services-total">
-                  Total: ₹{form.services.reduce((s, sv) => s + (sv.price || 0), 0).toLocaleString()} •
+                  Total: ₹{form.services.reduce((s, sv) => s + (sv.price || 0), 0).toLocaleString()} ·
                   Duration: {form.services.reduce((s, sv) => s + (sv.duration || 0), 0)} min
                 </div>
               </div>
