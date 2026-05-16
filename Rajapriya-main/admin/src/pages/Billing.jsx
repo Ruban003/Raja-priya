@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
@@ -17,6 +18,21 @@ export default function Billing() {
   const [payment, setPayment] = useState({ method: 'cash', cashAmount: 0, upiAmount: 0, cardAmount: 0 });
   const [gstRate, setGstRate] = useState(18);
   const centerId = getActiveCenterId();
+  const location = useLocation();
+
+  // Auto-open billing modal if coming from appointments
+  useEffect(() => {
+    if (location.state?.prefill) {
+      const appt = location.state.prefill;
+      setClientInfo({ clientName: appt.clientName, clientPhone: appt.clientPhone || '', customerId: '' });
+      if (appt.services && appt.services.length > 0) {
+        setItems(appt.services.map(s => ({ serviceName: s.serviceName, staffName: appt.staffName, originalPrice: s.price, discountedPrice: s.price, discountType: '', discountValue: 0, campaignName: '' })));
+      } else {
+        setItems([{ serviceName: appt.serviceName, staffName: appt.staffName, originalPrice: appt.price, discountedPrice: appt.price, discountType: '', discountValue: 0, campaignName: '' }]);
+      }
+      setShowModal(true);
+    }
+  }, [location.state]);
 
   const fetchData = async () => {
     try {
