@@ -1,20 +1,21 @@
-const router = require('express').Router();
+﻿const router = require('express').Router();
 const Bill = require('../models/Bill');
 const Customer = require('../models/Customer');
-const { auth } = require('../middleware/auth');
-
-const getCenter = (req) => req.query.centerId || req.body.centerId || req.user.centerId?.toString();
+const { auth, getAuthorizedCenterId, ensureRecordCenterAccess, handleAuthzError } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 const generateBillNumber = async (centerId) => {
   const count = await Bill.countDocuments({ centerId });
   const date = new Date();
-  return `RV-${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}-${String(count+1).padStart(4,'0')}`;
+  const centerSuffix = centerId.toString().slice(-4).toUpperCase();
+  return `RV-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}-${centerSuffix}-${String(count + 1).padStart(4, '0')}`;
 };
 
 router.get('/', auth, async (req, res) => {
   try {
-    const centerId = getCenter(req);
+    const centerId = getAuthorizedCenterId(req, { required: false });
     if (!centerId) return res.json([]);
+
     const { date, startDate, endDate } = req.query;
     const query = { centerId };
     if (date) {
@@ -24,31 +25,34 @@ router.get('/', auth, async (req, res) => {
       query.createdAt = { $gte: start, $lt: end };
     }
     if (startDate && endDate) query.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+
     res.json(await Bill.find(query).sort({ createdAt: -1 }));
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { handleAuthzError(res, err); }
+});
+
+router.get('/customer/:customerId', auth, async (req, res) => {
+  try {
+    const centerId = getAuthorizedCenterId(req, { required: false });
+    if (!centerId) return res.json([]);
+
+    const bills = await Bill.find({ customerId: req.params.customerId, centerId }).sort({ createdAt: -1 });
+    res.json(bills);
+  } catch (err) { handleAuthzError(res, err); }
 });
 
 router.get('/:id', auth, async (req, res) => {
-  try { res.json(await Bill.findById(req.params.id)); }
-  catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-// Get bills by customer
-router.get('/customer/:customerId', auth, async (req, res) => {
   try {
-    const bills = await Bill.find({ customerId: req.params.customerId }).sort({ createdAt: -1 });
-    res.json(bills);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    const bill = await Bill.findById(req.params.id);
+    ensureRecordCenterAccess(req, bill);
+    res.json(bill);
+  } catch (err) { handleAuthzError(res, err); }
 });
 
 router.post('/', auth, async (req, res) => {
   try {
-    const centerId = getCenter(req);
-    if (!centerId) return res.status(400).json({ message: 'centerId required' });
-
+    const centerId = getAuthorizedCenterId(req);
     const billNumber = await generateBillNumber(centerId);
 
-    // Build items array properly
     const items = (req.body.items || []).map(item => ({
       serviceName: item.serviceName || '',
       staffName: item.staffName || '',
@@ -85,9 +89,8 @@ router.post('/', auth, async (req, res) => {
       createdBy: req.user._id
     }).save();
 
-    // Update customer history
     if (bill.customerId) {
-      await Customer.findByIdAndUpdate(bill.customerId, {
+      await Customer.findOneAndUpdate({ _id: bill.customerId, centerId }, {
         $inc: { totalVisits: 1, totalSpent: grandTotal },
         $set: { lastVisit: new Date() }
       });
@@ -95,8 +98,8 @@ router.post('/', auth, async (req, res) => {
 
     res.status(201).json(bill);
   } catch (err) {
-    console.error('Bill error:', err);
-    res.status(500).json({ message: err.message });
+    logger.error('Bill create failed', { error: err.message, userId: req.user?._id?.toString() });
+    handleAuthzError(res, err);
   }
 });
 

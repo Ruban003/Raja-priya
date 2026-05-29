@@ -1,23 +1,31 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const logger = require('./utils/logger');
 
 const app = express();
+const allowedOrigins = (process.env.CORS_ORIGINS || 'https://raja-priya.vercel.app,http://localhost:5173')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
 app.use(cors({
-  origin: ['https://raja-priya.vercel.app', 'http://localhost:5173'],
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
-// Connect DB
+if (!process.env.MONGO_URI) {
+  logger.error('MONGO_URI is not configured');
+  process.exit(1);
+}
+
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.error('❌ DB Error:', err));
+  .then(() => logger.info('MongoDB connected'))
+  .catch(err => logger.error('MongoDB connection failed', { error: err.message }));
 
-// Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/centers', require('./routes/centers'));
 app.use('/api/users', require('./routes/users'));
@@ -31,39 +39,10 @@ app.use('/api/reports', require('./routes/reports'));
 
 app.get('/', (req, res) => res.json({ message: 'RV Salon Management API v2.0' }));
 
-// ONE-TIME SEED ROUTE — remove after use
-app.get('/api/seed', async (req, res) => {
-  try {
-    const User = require('./models/User');
-    const Center = require('./models/Center');
-
-    let center = await Center.findOne({ name: 'Glam' });
-    if (!center) {
-      center = await new Center({ name: 'Glam', address: 'Chennai', gstNumber: 'GST000000', gstRate: 18 }).save();
-    }
-
-    const users = [
-      { name: 'RV Owner', username: 'rvowner', password: 'RVOwner@123', role: 'rv_owner' },
-      { name: 'Glam Owner', username: 'glamowner', password: 'GlamOwner@123', role: 'center_owner', centerId: center._id },
-      { name: 'Glam Manager', username: 'glammanager', password: 'GlamMgr@123', role: 'manager', centerId: center._id }
-    ];
-
-    const results = [];
-    for (const u of users) {
-      const exists = await User.findOne({ username: u.username });
-      if (!exists) {
-        await new User(u).save();
-        results.push(`✅ Created: ${u.username}`);
-      } else {
-        results.push(`ℹ️ Exists: ${u.username}`);
-      }
-    }
-
-    res.json({ success: true, center: center.name, users: results });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.use((err, req, res, next) => {
+  logger.error('Unhandled request error', { path: req.path, error: err.message });
+  res.status(500).json({ message: 'Internal server error' });
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => logger.info('Server started', { port: PORT }));

@@ -1,13 +1,31 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('./models/User');
 const Center = require('./models/Center');
 
+const required = ['MONGO_URI', 'SEED_RV_OWNER_PASSWORD', 'SEED_GLAM_OWNER_PASSWORD', 'SEED_GLAM_MANAGER_PASSWORD'];
+for (const key of required) {
+  if (!process.env[key]) {
+    console.error(`${key} is required before running npm run seed`);
+    process.exit(1);
+  }
+}
+
+async function createUserIfMissing(user) {
+  const existing = await User.findOne({ username: user.username });
+  if (existing) {
+    console.log(`${user.username} already exists`);
+    return;
+  }
+
+  await new User(user).save();
+  console.log(`${user.username} created`);
+}
+
 async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
-  console.log('✅ Connected');
+  console.log('Connected to MongoDB');
 
-  // Create Glam center
   let center = await Center.findOne({ name: 'Glam' });
   if (!center) {
     center = await new Center({
@@ -16,57 +34,39 @@ async function seed() {
       gstNumber: 'GST000000',
       gstRate: 18
     }).save();
-    console.log('✅ Glam center created:', center._id);
+    console.log('Glam center created');
   } else {
-    console.log('ℹ️  Glam center exists:', center._id);
+    console.log('Glam center already exists');
   }
 
-  // Create RV Owner
-  const existing = await User.findOne({ username: 'rvowner' });
-  if (!existing) {
-    await new User({
-      name: 'RV Owner',
-      username: 'rvowner',
-      password: 'RVOwner@123',
-      role: 'rv_owner'
-    }).save();
-    console.log('✅ RV Owner created — username: rvowner / password: RVOwner@123');
-  } else {
-    console.log('ℹ️  RV Owner already exists');
-  }
+  await createUserIfMissing({
+    name: 'RV Owner',
+    username: 'rvowner',
+    password: process.env.SEED_RV_OWNER_PASSWORD,
+    role: 'rv_owner'
+  });
 
-  // Create Glam center owner
-  const glamOwner = await User.findOne({ username: 'glamowner' });
-  if (!glamOwner) {
-    await new User({
-      name: 'Glam Owner',
-      username: 'glamowner',
-      password: 'GlamOwner@123',
-      role: 'center_owner',
-      centerId: center._id
-    }).save();
-    console.log('✅ Glam Owner created — username: glamowner / password: GlamOwner@123');
-  } else {
-    console.log('ℹ️  Glam Owner already exists');
-  }
+  await createUserIfMissing({
+    name: 'Glam Owner',
+    username: 'glamowner',
+    password: process.env.SEED_GLAM_OWNER_PASSWORD,
+    role: 'center_owner',
+    centerId: center._id
+  });
 
-  // Create Glam manager
-  const glamMgr = await User.findOne({ username: 'glammanager' });
-  if (!glamMgr) {
-    await new User({
-      name: 'Glam Manager',
-      username: 'glammanager',
-      password: 'GlamMgr@123',
-      role: 'manager',
-      centerId: center._id
-    }).save();
-    console.log('✅ Glam Manager created — username: glammanager / password: GlamMgr@123');
-  } else {
-    console.log('ℹ️  Glam Manager already exists');
-  }
+  await createUserIfMissing({
+    name: 'Glam Manager',
+    username: 'glammanager',
+    password: process.env.SEED_GLAM_MANAGER_PASSWORD,
+    role: 'manager',
+    centerId: center._id
+  });
 
-  console.log('\n🎉 Seed complete!');
+  console.log('Seed complete');
   process.exit(0);
 }
 
-seed().catch(err => { console.error(err); process.exit(1); });
+seed().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

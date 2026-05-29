@@ -1,37 +1,39 @@
-const router = require('express').Router();
+﻿const router = require('express').Router();
 const User = require('../models/User');
-const { auth, isRVOwner, isRVLevel } = require('../middleware/auth');
+const { auth, isRVLevelUser, handleAuthzError } = require('../middleware/auth');
 
-// Get all users (RV level) or center users (center owner)
+const canManageUserRecord = (actor, target) => {
+  if (actor.role === 'rv_owner') return true;
+  if (actor.role === 'center_owner') {
+    return target.centerId?.toString() === actor.centerId?.toString() && !['rv_owner', 'rv_admin', 'center_owner'].includes(target.role);
+  }
+  return false;
+};
+
 router.get('/', auth, async (req, res) => {
   try {
     let query = { isActive: true };
+
     if (req.user.role === 'center_owner') {
       query.centerId = req.user.centerId;
-    } else if (!['rv_owner', 'rv_admin'].includes(req.user.role)) {
+    } else if (!isRVLevelUser(req.user)) {
       return res.status(403).json({ message: 'Access denied' });
     }
+
     const users = await User.find(query).select('-password');
     res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Create user
-// RV Owner can create any role
-// Center Owner can create center_admin and manager for their center
 router.post('/', auth, async (req, res) => {
   try {
     const { role } = req.body;
-    const rvRoles = ['rv_owner', 'rv_admin'];
-    const centerRoles = ['center_owner', 'center_admin', 'manager'];
 
     if (req.user.role === 'rv_owner') {
-      // Can create any role
+      // RV owner can create all roles.
     } else if (req.user.role === 'center_owner') {
       if (!['center_admin', 'manager'].includes(role)) {
-        return res.status(403).json({ message: 'Center owner can only create admin or manager' });
+        return res.status(403).json({ message: 'Center owner can only create center admin or manager users' });
       }
       req.body.centerId = req.user.centerId;
     } else {
@@ -42,44 +44,43 @@ router.post('/', auth, async (req, res) => {
     const userObj = user.toObject();
     delete userObj.password;
     res.status(201).json(userObj);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Update user
 router.put('/:id', auth, async (req, res) => {
   try {
-    if (!['rv_owner', 'center_owner'].includes(req.user.role)) {
-      return res.status(403).json({ message: 'Access denied' });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!canManageUserRecord(req.user, user)) return res.status(403).json({ message: 'Access denied' });
+
+    const updates = { ...req.body };
+
+    if (req.user.role === 'center_owner') {
+      delete updates.centerId;
+      if (updates.role && !['center_admin', 'manager'].includes(updates.role)) {
+        return res.status(403).json({ message: 'Center owner can only manage center admin or manager users' });
+      }
     }
-    if (req.body.password) {
-      const User = require('../models/User');
-      const user = await User.findById(req.params.id);
-      user.set(req.body);
-      await user.save();
-      const userObj = user.toObject();
-      delete userObj.password;
-      return res.json(userObj);
-    }
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+
+    user.set(updates);
+    await user.save();
+
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.json(userObj);
+  } catch (err) { handleAuthzError(res, err); }
 });
 
-// Delete user (soft delete)
 router.delete('/:id', auth, async (req, res) => {
   try {
-    if (!['rv_owner', 'center_owner'].includes(req.user.role)) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    await User.findByIdAndUpdate(req.params.id, { isActive: false });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!canManageUserRecord(req.user, user)) return res.status(403).json({ message: 'Access denied' });
+
+    user.isActive = false;
+    await user.save();
     res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  } catch (err) { handleAuthzError(res, err); }
 });
 
 module.exports = router;

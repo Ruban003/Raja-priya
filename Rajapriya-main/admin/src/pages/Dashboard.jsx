@@ -1,39 +1,53 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 export default function Dashboard() {
-  const { user, getActiveCenterId } = useAuth();
+  const { getActiveCenterId } = useAuth();
   const [stats, setStats] = useState(null);
   const [monthly, setMonthly] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const centerId = getActiveCenterId();
 
   useEffect(() => {
-    const fetch = async () => {
+    let active = true;
+
+    const fetchDashboard = async () => {
+      setLoading(true);
+      setError('');
+
       try {
         const params = centerId ? `?centerId=${centerId}` : '';
         const [s, m] = await Promise.all([
           api.get(`/reports/dashboard${params}`),
           api.get(`/reports/monthly${params}`)
         ]);
+
+        if (!active) return;
         setStats(s.data);
         setMonthly(m.data);
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
+      } catch (e) {
+        if (active) setError('Unable to load dashboard data');
+      } finally {
+        if (active) setLoading(false);
+      }
     };
-    fetch();
-  }, []);
+
+    fetchDashboard();
+    return () => { active = false; };
+  }, [centerId]);
 
   if (loading) return <div className="page-loading">Loading dashboard...</div>;
+  if (error) return <div className="page-loading">{error}</div>;
 
   const cards = [
-    { label: "Today's Revenue", value: `₹${stats?.todayRevenue?.toLocaleString() || 0}`, icon: '₹', color: 'green' },
-    { label: "Today's Bills", value: stats?.todayBills || 0, icon: '◈', color: 'blue' },
-    { label: "Appointments", value: stats?.todayAppointments || 0, icon: '◷', color: 'purple' },
-    { label: "Month Revenue", value: `₹${stats?.monthRevenue?.toLocaleString() || 0}`, icon: '◐', color: 'amber' },
+    { label: "Today's Revenue", value: `Rs.${stats?.todayRevenue?.toLocaleString() || 0}`, icon: 'Rs', color: 'green' },
+    { label: "Today's Bills", value: stats?.todayBills || 0, icon: '#', color: 'blue' },
+    { label: 'Appointments', value: stats?.todayAppointments || 0, icon: 'Ap', color: 'purple' },
+    { label: 'Month Revenue', value: `Rs.${stats?.monthRevenue?.toLocaleString() || 0}`, icon: 'Mo', color: 'amber' },
   ];
 
   return (
@@ -58,13 +72,13 @@ export default function Dashboard() {
       {monthly && (
         <div className="charts-grid">
           <div className="chart-card">
-            <h3>Monthly Revenue — {new Date().toLocaleString('default', { month: 'long' })}</h3>
+            <h3>Monthly Revenue - {new Date().toLocaleString('default', { month: 'long' })}</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={monthly.dailyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`₹${v}`, 'Revenue']} />
+                <Tooltip formatter={(v) => [`Rs.${v}`, 'Revenue']} />
                 <Bar dataKey="revenue" fill="#c9a96e" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -77,7 +91,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`₹${v}`, 'Revenue']} />
+                <Tooltip formatter={(v) => [`Rs.${v}`, 'Revenue']} />
                 <Line type="monotone" dataKey="revenue" stroke="#c9a96e" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -90,7 +104,7 @@ export default function Dashboard() {
           <h3>Month Summary</h3>
           <div className="summary-item">
             <span>Total Revenue</span>
-            <strong>₹{monthly?.totalRevenue?.toLocaleString() || 0}</strong>
+            <strong>Rs.{monthly?.totalRevenue?.toLocaleString() || 0}</strong>
           </div>
           <div className="summary-item">
             <span>Total Bills</span>
@@ -98,7 +112,7 @@ export default function Dashboard() {
           </div>
           <div className="summary-item">
             <span>Avg per Bill</span>
-            <strong>₹{monthly?.totalBills ? Math.round(monthly.totalRevenue / monthly.totalBills).toLocaleString() : 0}</strong>
+            <strong>Rs.{monthly?.totalBills ? Math.round(monthly.totalRevenue / monthly.totalBills).toLocaleString() : 0}</strong>
           </div>
         </div>
 
@@ -106,7 +120,7 @@ export default function Dashboard() {
           <h3>Today's Summary</h3>
           <div className="summary-item">
             <span>Revenue</span>
-            <strong>₹{stats?.todayRevenue?.toLocaleString() || 0}</strong>
+            <strong>Rs.{stats?.todayRevenue?.toLocaleString() || 0}</strong>
           </div>
           <div className="summary-item">
             <span>Bills Generated</span>
