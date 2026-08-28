@@ -1,4 +1,4 @@
-﻿const router = require('express').Router();
+const router = require('express').Router();
 const User = require('../models/User');
 const { auth, isRVLevelUser, handleAuthzError } = require('../middleware/auth');
 
@@ -27,20 +27,22 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { role } = req.body;
+    const { name, username, password, role, isActive, centerId } = req.body;
+    const userData = { name, username, password, role, isActive };
 
     if (req.user.role === 'rv_owner') {
       // RV owner can create all roles.
+      if (centerId) userData.centerId = centerId;
     } else if (req.user.role === 'center_owner') {
       if (!['center_admin', 'manager'].includes(role)) {
         return res.status(403).json({ message: 'Center owner can only create center admin or manager users' });
       }
-      req.body.centerId = req.user.centerId;
+      userData.centerId = req.user.centerId;
     } else {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const user = await new User(req.body).save();
+    const user = await new User(userData).save();
     const userObj = user.toObject();
     delete userObj.password;
     res.status(201).json(userObj);
@@ -53,10 +55,19 @@ router.put('/:id', auth, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     if (!canManageUserRecord(req.user, user)) return res.status(403).json({ message: 'Access denied' });
 
-    const updates = { ...req.body };
+    const { name, username, role, isActive, password } = req.body;
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (username !== undefined) updates.username = username;
+    if (role !== undefined) updates.role = role;
+    if (isActive !== undefined) updates.isActive = isActive;
+    
+    // Only RV Owner or the user themselves can change passwords directly this way
+    if (password && (req.user.role === 'rv_owner' || req.user._id.toString() === user._id.toString())) {
+      updates.password = password;
+    }
 
     if (req.user.role === 'center_owner') {
-      delete updates.centerId;
       if (updates.role && !['center_admin', 'manager'].includes(updates.role)) {
         return res.status(403).json({ message: 'Center owner can only manage center admin or manager users' });
       }

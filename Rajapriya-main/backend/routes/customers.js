@@ -1,4 +1,4 @@
-﻿const router = require('express').Router();
+const router = require('express').Router();
 const Customer = require('../models/Customer');
 const { auth, getAuthorizedCenterId, ensureRecordCenterAccess, handleAuthzError } = require('../middleware/auth');
 
@@ -8,14 +8,17 @@ router.get('/', auth, async (req, res) => {
   try {
     const centerId = getAuthorizedCenterId(req, { required: false });
     if (!centerId) return res.json([]);
-    res.json(await Customer.find({ centerId }).sort({ name: 1 }));
+    const limit = Number(req.query.limit) || 1000;
+    res.json(await Customer.find({ centerId }).sort({ name: 1 }).limit(limit));
   } catch (err) { handleAuthzError(res, err); }
 });
 
 router.post('/', auth, async (req, res) => {
   try {
     const centerId = getAuthorizedCenterId(req);
-    res.status(201).json(await new Customer({ ...req.body, centerId }).save());
+    const { name, phone, email, gender, dob } = req.body;
+    const customer = new Customer({ name, phone, email, gender, dob, centerId });
+    res.status(201).json(await customer.save());
   } catch (err) { handleAuthzError(res, err); }
 });
 
@@ -24,8 +27,13 @@ router.put('/:id', auth, async (req, res) => {
     const existing = await Customer.findById(req.params.id);
     ensureRecordCenterAccess(req, existing);
 
-    const updates = { ...req.body };
-    delete updates.centerId;
+    const { name, phone, email, gender, dob } = req.body;
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (phone !== undefined) updates.phone = phone;
+    if (email !== undefined) updates.email = email;
+    if (gender !== undefined) updates.gender = gender;
+    if (dob !== undefined) updates.dob = dob;
 
     res.json(await Customer.findByIdAndUpdate(req.params.id, updates, { new: true }));
   } catch (err) { handleAuthzError(res, err); }
