@@ -3,18 +3,18 @@
 :root {
   /* High-Tech Midnight Blue base */
   --bg: #0b1120;
-  /* True Liquid Glass Base - ultra transparent */
-  --bg2: rgba(10, 15, 30, 0.35);
-  /* Hover states - slightly more opaque cyan */
-  --bg3: rgba(56, 189, 248, 0.12); 
+  /* Hyper-Realistic Liquid Glass: Glossy specular highlight over a dark refractive base */
+  --bg2: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0.2) 100%), rgba(10, 15, 30, 0.25);
+  /* Hover states - slightly brighter highlight */
+  --bg3: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 40%, rgba(0, 0, 0, 0.1) 100%), rgba(56, 189, 248, 0.1); 
   
   /* Text - crisp cool white */
   --text: #ffffff;
   --text2: #94a3b8;
   --text3: #64748b;
   
-  /* Borders - semi-transparent white for glass edge reflection */
-  --border: rgba(255, 255, 255, 0.1);
+  /* Borders - highly refractive sharp edge */
+  --border: rgba(255, 255, 255, 0.15);
   
   /* Brand colors */
   --primary: #38bdf8;
@@ -33,11 +33,11 @@
   --radius: 16px;
   
   /* Extreme blur for liquid refraction */
-  --glass-blur: blur(40px);
-  /* Inner white rim lighting + deep drop shadow */
-  --glass-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.15), 
-                  inset -1px -1px 1px rgba(255, 255, 255, 0.02),
-                  0 16px 40px 0 rgba(0, 0, 0, 0.6);
+  --glass-blur: blur(48px);
+  /* Intense 3D Bevel: Sharp top-left light, dark bottom-right shadow, plus outer drop shadow */
+  --glass-shadow: inset 1px 1px 0px rgba(255, 255, 255, 0.25), 
+                  inset -1px -1px 0px rgba(0, 0, 0, 0.4),
+                  0 20px 40px -10px rgba(0, 0, 0, 0.7);
   
   color-scheme: dark;
 }
