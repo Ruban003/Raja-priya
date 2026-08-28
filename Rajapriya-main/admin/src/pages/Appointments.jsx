@@ -488,12 +488,23 @@ export default function Appointments() {
                   <button type="button" className="btn-secondary sm" onClick={addService}>+ Add Service</button>
                 </div>
                 {form.services.map((svc, idx) => (
-                  <div key={idx} className="service-row">
-                    <select value={svc.serviceId} onChange={e => updateService(idx, 'serviceId', e.target.value)}>
+                  <div key={idx} className="service-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                    <select style={{ flex: 1 }} value={svc.serviceId} onChange={e => updateService(idx, 'serviceId', e.target.value)}>
                       <option value="">Select service</option>
                       {services.map(s => <option key={s._id} value={s._id}>{s.name} — ₹{s.price} ({s.duration}min)</option>)}
                     </select>
-                    <div className="service-row-price">₹{svc.price || 0}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text2)' }}>⏱</span>
+                      <input 
+                        type="number" 
+                        value={svc.duration || 30} 
+                        onChange={e => updateService(idx, 'duration', parseInt(e.target.value) || 0)} 
+                        style={{ width: '60px', padding: '4px' }} 
+                        min="5" step="5"
+                      />
+                      <span style={{ fontSize: '12px', color: 'var(--text2)' }}>min</span>
+                    </div>
+                    <div className="service-row-price" style={{ width: '60px', textAlign: 'right' }}>₹{svc.price || 0}</div>
                     {form.services.length > 1 && (
                       <button type="button" className="btn-delete sm" onClick={() => removeService(idx)}>✕</button>
                     )}
