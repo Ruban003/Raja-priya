@@ -62,9 +62,16 @@ export default function Customers() {
     reader.readAsText(file);
   };
 
+  const [sortBy, setSortBy] = useState('recent');
+
   const filtered = customers.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)
-  );
+  ).sort((a, b) => {
+    if (sortBy === 'spent-desc') return (b.totalSpent || 0) - (a.totalSpent || 0);
+    if (sortBy === 'visits-desc') return (b.totalVisits || 0) - (a.totalVisits || 0);
+    if (sortBy === 'points-desc') return (b.loyaltyPoints || 0) - (a.loyaltyPoints || 0);
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); // default 'recent'
+  });
 
   return (
     <div className="page">
@@ -87,8 +94,14 @@ export default function Customers() {
         </div>
       </div>
 
-      <div className="search-bar">
-        <input placeholder="Search by name or phone..." value={search} onChange={e => setSearch(e.target.value)} />
+      <div className="search-bar" style={{ display: 'flex', gap: '16px' }}>
+        <input style={{ flex: 1 }} placeholder="Search by name or phone..." value={search} onChange={e => setSearch(e.target.value)} />
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: '0 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', width: '200px' }}>
+          <option value="recent">Recently Added</option>
+          <option value="spent-desc">Highest Spenders</option>
+          <option value="visits-desc">Most Visits</option>
+          <option value="points-desc">Highest Loyalty Points</option>
+        </select>
       </div>
 
       {loading ? <div className="page-loading">Loading...</div> : (
