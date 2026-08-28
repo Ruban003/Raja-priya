@@ -4,7 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 export default function Billing() {
-  const { user, getActiveCenterId } = useAuth();
+  const { user, getActiveCenterId, centers, selectedCenter } = useAuth();
+  const currentCenter = user?.centerId ? centers?.find(c => c._id === user.centerId) : selectedCenter;
+  
   const [bills, setBills] = useState([]);
   const [services, setServices] = useState([]);
   const [staff, setStaff] = useState([]);
@@ -263,9 +265,27 @@ export default function Billing() {
               <h2>Bill — {viewBill.billNumber}</h2>
               <button onClick={() => setViewBill(null)}>✕</button>
             </div>
-            <div className="bill-view">
-              <p><strong>Client:</strong> {viewBill.clientName}</p>
-              {viewBill.clientPhone && <p><strong>Phone:</strong> {viewBill.clientPhone}</p>}
+            <div className="bill-view" id="printable-receipt">
+              <div className="receipt-header" style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <h3 style={{ margin: 0, color: 'var(--primary)', fontSize: '24px' }}>{currentCenter?.name || 'RV Salon'}</h3>
+                {currentCenter?.address && <p style={{ margin: '4px 0', fontSize: '12px', color: 'var(--text2)' }}>{currentCenter.address}</p>}
+                {currentCenter?.gstNumber && <p style={{ margin: '4px 0', fontSize: '12px', color: 'var(--text2)' }}>GST: {currentCenter.gstNumber}</p>}
+                <p style={{ margin: '12px 0 8px 0', fontSize: '14px', fontWeight: 'bold' }}>TAX INVOICE</p>
+              </div>
+
+              <div className="receipt-meta" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '13px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                <div>
+                  <p style={{ margin: '2px 0' }}><strong>Bill No:</strong> {viewBill.billNumber}</p>
+                  <p style={{ margin: '2px 0' }}><strong>Date:</strong> {new Date(viewBill.createdAt).toLocaleDateString('en-IN')}</p>
+                  <p style={{ margin: '2px 0' }}><strong>Time:</strong> {new Date(viewBill.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ margin: '2px 0' }}><strong>Client:</strong> {viewBill.clientName}</p>
+                  {viewBill.clientPhone && <p style={{ margin: '2px 0' }}><strong>Phone:</strong> {viewBill.clientPhone}</p>}
+                  <p style={{ margin: '2px 0' }}><strong>Payment:</strong> {viewBill.paymentMethod?.toUpperCase()}</p>
+                </div>
+              </div>
+
               <table className="data-table">
                 <thead><tr><th>Service</th><th>Staff</th><th>Original</th><th>Discount</th><th>Final</th></tr></thead>
                 <tbody>
@@ -280,13 +300,18 @@ export default function Billing() {
                   ))}
                 </tbody>
               </table>
+              
               <div className="bill-summary">
                 <div className="summary-row-item"><span>Subtotal</span><span>₹{viewBill.subtotal?.toLocaleString()}</span></div>
                 {viewBill.totalDiscount > 0 && <div className="summary-row-item discount"><span>Discount</span><span>-₹{viewBill.totalDiscount?.toLocaleString()}</span></div>}
                 <div className="summary-row-item"><span>GST ({viewBill.gstRate}%)</span><span>₹{viewBill.gstAmount?.toFixed(2)}</span></div>
                 <div className="summary-row-item total"><span>Grand Total</span><span>₹{viewBill.grandTotal?.toFixed(2)}</span></div>
               </div>
-              <p><strong>Payment:</strong> {viewBill.paymentMethod?.toUpperCase()}</p>
+
+              <div className="receipt-footer print-only" style={{ textAlign: 'center', marginTop: '40px', fontSize: '12px', color: 'var(--text2)', display: 'none' }}>
+                <p style={{ margin: '4px 0', fontWeight: 'bold' }}>Thank you for visiting {currentCenter?.name || 'RV Salon'}!</p>
+                <p style={{ margin: '4px 0' }}>Please visit again.</p>
+              </div>
               
               <div className="modal-actions no-print" style={{ marginTop: '24px' }}>
                 <button className="btn-secondary" onClick={() => window.print()}>🖨 Print Receipt</button>
