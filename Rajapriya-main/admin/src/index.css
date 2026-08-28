@@ -396,7 +396,7 @@ td.discount { color: var(--green); font-weight: 500; }
 .center-selector-label { display: block; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
 .center-selector-value { display: block; font-size: 13px; color: var(--primary); font-weight: 500; }
 .center-selector-wrap { position: relative; margin: 8px; }
-.center-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; z-index: 500; overflow: hidden; margin-top: 4px; box-shadow: 0 12px 32px rgba(0,0,0,0.6); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
+.center-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: rgba(11, 17, 32, 0.98); border: 1px solid var(--border); border-radius: 8px; z-index: 500; overflow: hidden; margin-top: 4px; box-shadow: 0 12px 32px rgba(0,0,0,0.8); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 .center-option { padding: 10px 14px; font-size: 13px; cursor: pointer; color: var(--text2); }
 .center-option:hover { background: var(--bg3); color: var(--text); }
 .center-option.selected { color: var(--primary); background: rgba(56, 189, 248, 0.1); }
