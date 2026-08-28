@@ -36,6 +36,30 @@ export default function Settings() {
   };
 
   const roleLabels = { rv_owner: 'RV Owner', rv_admin: 'RV Admin', center_owner: 'Center Owner', center_admin: 'Center Admin', manager: 'Manager' };
+  
+  const [newRoleStr, setNewRoleStr] = useState({});
+
+  const handleAddRole = async (cId, currentRoles) => {
+    if (!newRoleStr[cId]) return;
+    const roleName = newRoleStr[cId].trim();
+    if (!roleName || currentRoles.includes(roleName)) return;
+    const newRoles = [...currentRoles, roleName];
+    try {
+      await api.put(`/centers/${cId}`, { staffRoles: newRoles });
+      setNewRoleStr(prev => ({ ...prev, [cId]: '' }));
+      fetch();
+    } catch(e) { alert('Error updating roles'); }
+  };
+
+  const handleRemoveRole = async (cId, currentRoles, roleToRemove) => {
+    if (!confirm(`Remove role "${roleToRemove}"?`)) return;
+    const newRoles = currentRoles.filter(r => r !== roleToRemove);
+    try {
+      await api.put(`/centers/${cId}`, { staffRoles: newRoles });
+      fetch();
+    } catch(e) { alert('Error removing role'); }
+  };
+
   const roleColors = { rv_owner: '#8b5cf6', rv_admin: '#6366f1', center_owner: '#38bdf8', center_admin: '#3b82f6', manager: '#10b981' };
 
   return (
@@ -60,7 +84,7 @@ export default function Settings() {
             <tbody>
               {users.map(u => (
                 <tr key={u._id}>
-                  <td><div className="customer-name"><div className="avatar-sm" style={{ backgroundColor: roleColors[u.role] }}>{u.name.charAt(0)}</div><strong>{u.name}</strong></div></td>
+                  <td><div className="customer-name"><div className="avatar-sm" style={{ backgroundColor: roleColors[u.role] + '20', color: roleColors[u.role], border: '1px solid ' + roleColors[u.role] + '40' }}>{u.name.charAt(0).toUpperCase()}</div><strong>{u.name}</strong></div></td>
                   <td>@{u.username}</td>
                   <td><span className="badge" style={{ backgroundColor: roleColors[u.role] + '30', color: roleColors[u.role] }}>{roleLabels[u.role]}</span></td>
                   <td>{u.centerId ? centers.find(c => c._id === u.centerId)?.name || 'Assigned' : 'All Centers'}</td>

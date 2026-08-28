@@ -44,7 +44,20 @@ export default function Staff() {
     setShowModal(true);
   };
 
-  const roles = ['Stylist', 'Therapist', 'Makeup Artist', 'Nail Tech', 'Receptionist', 'Manager'];
+  
+  const [centers, setCenters] = useState([]);
+  const [roles, setRoles] = useState(['Stylist', 'Therapist', 'Makeup Artist', 'Nail Tech', 'Receptionist', 'Manager']);
+
+  useEffect(() => {
+    api.get('/centers').then(res => {
+      setCenters(res.data);
+      const c = res.data.find(c => c._id === centerId) || res.data[0];
+      if (c && c.staffRoles && c.staffRoles.length > 0) {
+        setRoles(c.staffRoles);
+      }
+    }).catch(console.error);
+  }, [centerId]);
+
 
   return (
     <div className="page">
@@ -65,7 +78,7 @@ export default function Staff() {
           {staff.map(s => (
             <div key={s._id} className="staff-card" style={{ flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div className="staff-avatar" style={{ backgroundColor: s.color }}>
+                <div className="staff-avatar" style={{ backgroundColor: (s.color || '#38bdf8') + '30', color: s.color || '#38bdf8', border: `1px solid ${s.color || '#38bdf8'}50` }}>
                   {s.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="staff-info">
@@ -105,6 +118,7 @@ export default function Staff() {
                 <div className="form-group">
                   <label>Role</label>
                   <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                    {!roles.includes(form.role) && form.role && <option value={form.role}>{form.role}</option>}
                     {roles.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>

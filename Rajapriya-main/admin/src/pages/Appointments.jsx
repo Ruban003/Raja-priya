@@ -286,6 +286,19 @@ export default function Appointments() {
   });
   const unassignedTracks = Math.max(1, unassignedEndTimes.length);
 
+  
+  const allowedStaff = staff.filter(s => {
+    const selectedServiceIds = form.services.map(svc => svc.serviceId).filter(Boolean);
+    if (selectedServiceIds.length === 0) return true;
+    
+    return selectedServiceIds.every(sid => {
+      const svc = services.find(x => x._id === sid);
+      if (!svc) return true;
+      if (!svc.allowedRoles || svc.allowedRoles.length === 0) return true; 
+      return svc.allowedRoles.includes(s.role);
+    });
+  });
+
   const timeSlots = [];
   for (let h = 9; h <= 21; h++) { timeSlots.push(`${String(h).padStart(2,'0')}:00`); timeSlots.push(`${String(h).padStart(2,'0')}:30`); }
 
@@ -502,7 +515,7 @@ export default function Appointments() {
                   <label>Staff</label>
                   <select value={form.staffId} onChange={e => setForm({ ...form, staffId: e.target.value })}>
                     <option value="">Any / Unassigned</option>
-                    {staff.map(s => <option key={s._id} value={s._id}>{s.name} — {s.role}</option>)}
+                    {allowedStaff.map(s => <option key={s._id} value={s._id}>{s.name} — {s.role}</option>)}
                   </select>
                 </div>
                 <div className="form-group">

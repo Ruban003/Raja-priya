@@ -15,7 +15,8 @@ const serviceSchema = new mongoose.Schema({
     serviceName: String,
     originalPrice: Number
   }],
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  allowedRoles: { type: [String], default: [] }
 }, { timestamps: true });
 
 module.exports = mongoose.models.Service || mongoose.model('Service', serviceSchema);

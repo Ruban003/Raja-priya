@@ -10,11 +10,23 @@ export default function Services() {
   const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState('all');
   const [showPackage, setShowPackage] = useState(false);
-  const [form, setForm] = useState({ name: '', category: '', gender: 'unisex', price: '', duration: 30, gstRate: 0, description: '', isPackage: false, packageItems: [] });
+  const [form, setForm] = useState({ name: '', category: '', gender: 'unisex', price: '', duration: 30, gstRate: 0, description: '', isPackage: false, packageItems: [], allowedRoles: [] });
   const fileRef = useRef();
   const categories = ['Hair', 'Skin', 'Nail', 'Spa', 'Makeup', 'Other'];
 
   const centerId = getActiveCenterId();
+
+  const [roles, setRoles] = useState(['Stylist', 'Therapist', 'Makeup Artist', 'Nail Tech', 'Receptionist', 'Manager']);
+
+  useEffect(() => {
+    api.get('/centers').then(res => {
+      const c = res.data.find(c => c._id === centerId) || res.data[0];
+      if (c && c.staffRoles && c.staffRoles.length > 0) {
+        setRoles(c.staffRoles);
+      }
+    }).catch(console.error);
+  }, [centerId]);
+
 
   const fetchServices = async () => {
     try {
@@ -44,12 +56,12 @@ export default function Services() {
 
   const openEdit = (s) => {
     setEditing(s);
-    setForm({ name: s.name, category: s.category, gender: s.gender, price: s.price, duration: s.duration, gstRate: s.gstRate || 0, description: s.description || '', isPackage: s.isPackage || false, packageItems: s.packageItems || [] });
+    setForm({ name: s.name, category: s.category, gender: s.gender, price: s.price, duration: s.duration, gstRate: s.gstRate || 0, description: s.description || '', isPackage: s.isPackage || false, packageItems: s.packageItems || [], allowedRoles: s.allowedRoles || [] });
     setShowPackage(s.isPackage || false);
     setShowModal(true);
   };
 
-  const resetForm = () => setForm({ name: '', category: '', gender: 'unisex', price: '', duration: 30, gstRate: 0, description: '', isPackage: false, packageItems: [] });
+  const resetForm = () => setForm({ name: '', category: '', gender: 'unisex', price: '', duration: 30, gstRate: 0, description: '', isPackage: false, packageItems: [], allowedRoles: [] });
 
   // Package: add individual services
   const addPackageItem = () => setForm(f => ({ ...f, packageItems: [...f.packageItems, { serviceName: '', originalPrice: 0 }] }));
