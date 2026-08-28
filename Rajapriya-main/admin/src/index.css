@@ -3,18 +3,18 @@
 :root {
   /* High-Tech Midnight Blue base */
   --bg: #0b1120;
-  /* Frosted Icy Glass */
-  --bg2: rgba(15, 23, 42, 0.55);
-  /* Hover states - Cyan tint */
-  --bg3: rgba(56, 189, 248, 0.08); 
+  /* True Liquid Glass Base - ultra transparent */
+  --bg2: rgba(10, 15, 30, 0.35);
+  /* Hover states - slightly more opaque cyan */
+  --bg3: rgba(56, 189, 248, 0.12); 
   
   /* Text - crisp cool white */
-  --text: #f8fafc;
+  --text: #ffffff;
   --text2: #94a3b8;
   --text3: #64748b;
   
-  /* Borders - subtle icy cyan tint */
-  --border: rgba(56, 189, 248, 0.15);
+  /* Borders - semi-transparent white for glass edge reflection */
+  --border: rgba(255, 255, 255, 0.1);
   
   /* Brand colors */
   --primary: #38bdf8;
@@ -32,8 +32,12 @@
   --topbar-h: 64px;
   --radius: 16px;
   
-  --glass-blur: blur(20px);
-  --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  /* Extreme blur for liquid refraction */
+  --glass-blur: blur(40px);
+  /* Inner white rim lighting + deep drop shadow */
+  --glass-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.15), 
+                  inset -1px -1px 1px rgba(255, 255, 255, 0.02),
+                  0 16px 40px 0 rgba(0, 0, 0, 0.6);
   
   color-scheme: dark;
 }
