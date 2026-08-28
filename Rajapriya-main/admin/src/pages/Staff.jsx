@@ -63,18 +63,22 @@ export default function Staff() {
       {loading ? <div className="page-loading">Loading...</div> : (
         <div className="staff-grid">
           {staff.map(s => (
-            <div key={s._id} className="staff-card">
-              <div className="staff-avatar" style={{ backgroundColor: s.color }}>
-                {s.name.charAt(0).toUpperCase()}
+            <div key={s._id} className="staff-card" style={{ flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <div className="staff-avatar" style={{ backgroundColor: s.color }}>
+                  {s.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="staff-info">
+                  <h3>{s.name}</h3>
+                  <span className="badge" style={{ backgroundColor: 'var(--bg3)', color: 'var(--text)', border: '1px solid var(--border)' }}>{s.role}</span>
+                </div>
               </div>
-              <div className="staff-info">
-                <h3>{s.name}</h3>
-                <span className="badge">{s.role}</span>
-                {s.phone && <p className="staff-phone">📞 {s.phone}</p>}
-                <p className="staff-commission">Commission: {s.commissionRate}%</p>
+              <div style={{ paddingLeft: '68px' }}>
+                {s.phone && <p className="staff-phone" style={{ marginTop: '0', fontSize: '13px' }}>📞 {s.phone}</p>}
+                <p className="staff-commission" style={{ marginTop: '4px', fontSize: '13px' }}>Commission: <strong style={{ color: 'var(--gold)' }}>{s.commissionRate}%</strong></p>
               </div>
               {canManage() && (
-                <div className="card-actions">
+                <div className="card-actions" style={{ paddingLeft: '68px', paddingTop: '8px', borderTop: '1px solid var(--border)', marginTop: '4px' }}>
                   <button className="btn-edit" onClick={() => openEdit(s)}>Edit</button>
                   <button className="btn-delete" onClick={() => handleDelete(s._id)}>Remove</button>
                 </div>
