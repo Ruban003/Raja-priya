@@ -304,8 +304,39 @@ export default function Billing() {
               <div className="bill-summary">
                 <div className="summary-row-item"><span>Subtotal</span><span>₹{viewBill.subtotal?.toLocaleString()}</span></div>
                 {viewBill.totalDiscount > 0 && <div className="summary-row-item discount"><span>Discount</span><span>-₹{viewBill.totalDiscount?.toLocaleString()}</span></div>}
-                <div className="summary-row-item"><span>GST ({viewBill.gstRate}%)</span><span>₹{viewBill.gstAmount?.toFixed(2)}</span></div>
-                <div className="summary-row-item total"><span>Grand Total</span><span>₹{viewBill.grandTotal?.toFixed(2)}</span></div>
+                
+                {viewBill.gstAmount > 0 && (
+                  <>
+                    <div className="summary-row-item" style={{ fontSize: '11px', color: 'var(--text2)' }}>
+                      <span>CGST ({(viewBill.gstRate / 2).toFixed(1)}%)</span>
+                      <span>₹{(viewBill.gstAmount / 2).toFixed(2)}</span>
+                    </div>
+                    <div className="summary-row-item" style={{ fontSize: '11px', color: 'var(--text2)' }}>
+                      <span>SGST ({(viewBill.gstRate / 2).toFixed(1)}%)</span>
+                      <span>₹{(viewBill.gstAmount / 2).toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+                
+                <div className="summary-row-item total" style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
+                  <span>Grand Total</span><span>₹{viewBill.grandTotal?.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="print-only" style={{ display: 'none', marginTop: '30px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text2)', marginBottom: '40px' }}>
+                  <p style={{ fontWeight: 'bold', margin: '0 0 4px 0' }}>Terms & Conditions:</p>
+                  <ol style={{ margin: 0, paddingLeft: '16px' }}>
+                    <li>All sales are final. No refunds or exchanges.</li>
+                    <li>Please present this invoice for any queries.</li>
+                    <li>Services once rendered cannot be disputed.</li>
+                  </ol>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '60px', borderTop: '1px solid #ccc', paddingTop: '10px', fontSize: '12px' }}>
+                  <div style={{ width: '120px', textAlign: 'center' }}>Customer Signature</div>
+                  <div style={{ width: '120px', textAlign: 'center' }}>Authorized Signatory</div>
+                </div>
               </div>
 
               <div className="receipt-footer print-only" style={{ textAlign: 'center', marginTop: '40px', fontSize: '12px', color: 'var(--text2)', display: 'none' }}>
