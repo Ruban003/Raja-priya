@@ -40,6 +40,7 @@ export default function Appointments() {
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef();
+  const [editingId, setEditingId] = useState(null);
 
   const [form, setForm] = useState({
     clientName: '', clientPhone: '', clientGender: 'female', customerId: '',
@@ -98,6 +99,59 @@ export default function Appointments() {
     setShowSuggestions(false);
   };
 
+  const openEdit = (appt) => {
+    setViewAppt(null);
+    setEditingId(appt._id);
+    setForm({
+      clientName: appt.clientName,
+      clientPhone: appt.clientPhone || '',
+      clientGender: appt.clientGender || 'female',
+      customerId: appt.customerId || '',
+      staffId: appt.staffId,
+      date: appt.date?.split('T')[0] || selectedDate,
+      time: appt.time,
+      status: appt.status,
+      type: appt.type || 'walkin',
+      notes: appt.notes || '',
+      services: appt.services || []
+    });
+    setShowModal(true);
+  };
+
+  const handleDrop = async (e, targetStaffId, targetStaffName) => {
+    e.preventDefault();
+    const apptId = e.dataTransfer.getData('apptId');
+    if (!apptId) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const minutesFromStart = (x / 120) * 60; // SLOT_WIDTH = 120
+    const totalMinutes = (9 * 60) + minutesFromStart;
+    const roundedMinutes = Math.round(totalMinutes / 15) * 15;
+    const h = Math.floor(roundedMinutes / 60);
+    const m = roundedMinutes % 60;
+    
+    if (h < 9 || h > 21) return;
+    
+    const newTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    const apptToUpdate = appointments.find(a => a._id === apptId);
+    if (!apptToUpdate) return;
+    const staffMember = staff.find(s => s._id === targetStaffId);
+
+    setAppointments(prev => prev.map(a => a._id === apptId ? { 
+      ...a, staffId: targetStaffId, staffName: targetStaffName, time: newTime, color: staffMember?.color || '#3498db'
+    } : a));
+
+    try {
+      await api.put(`/appointments/${apptId}`, {
+        ...apptToUpdate, staffId: targetStaffId, staffName: targetStaffName, time: newTime, color: staffMember?.color || '#3498db'
+      });
+    } catch (err) {
+      alert('Error updating via drag drop.');
+      fetchData(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!centerId) return alert('Please select a center first');
@@ -138,6 +192,7 @@ export default function Appointments() {
   };
 
   const resetForm = () => {
+    setEditingId(null);
     setClientSearch('');
     setForm({
       clientName: '', clientPhone: '', clientGender: 'female', customerId: '',
