@@ -240,7 +240,52 @@ export default function Appointments() {
   };
 
   const formatDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const getStaffAppts = (staffId) => appointments.filter(a => a.staffId === staffId);
+  
+  const staffData = staff.map(s => {
+    const appts = appointments.filter(a => a.staffId === s._id).sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+    const endTimes = [];
+    appts.forEach(appt => {
+      const start = timeToMinutes(appt.time);
+      const end = start + (appt.duration || 30);
+      let placed = false;
+      for (let i = 0; i < endTimes.length; i++) {
+        if (endTimes[i] <= start) {
+          endTimes[i] = end;
+          appt.track = i;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        appt.track = endTimes.length;
+        endTimes.push(end);
+      }
+    });
+    return { ...s, appts, tracks: Math.max(1, endTimes.length) };
+  });
+
+  
+  const unassignedAppts = appointments.filter(a => !a.staffId || !staff.find(s => s._id === a.staffId)).sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+  const unassignedEndTimes = [];
+  unassignedAppts.forEach(appt => {
+    const start = timeToMinutes(appt.time);
+    const end = start + (appt.duration || 30);
+    let placed = false;
+    for (let i = 0; i < unassignedEndTimes.length; i++) {
+      if (unassignedEndTimes[i] <= start) {
+        unassignedEndTimes[i] = end;
+        appt.track = i;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      appt.track = unassignedEndTimes.length;
+      unassignedEndTimes.push(end);
+    }
+  });
+  const unassignedTracks = Math.max(1, unassignedEndTimes.length);
+
   const timeSlots = [];
   for (let h = 9; h <= 21; h++) { timeSlots.push(`${String(h).padStart(2,'0')}:00`); timeSlots.push(`${String(h).padStart(2,'0')}:30`); }
 
@@ -277,8 +322,8 @@ export default function Appointments() {
             {/* STAFF COLUMN */}
             <div className="cal-staff-col">
               <div className="cal-header-cell">Therapists</div>
-              {staff.map(s => (
-                <div key={s._id} className="cal-staff-cell">
+              {staffData.map(s => (
+                <div key={s._id} className="cal-staff-cell" style={{ height: `${s.tracks * 72}px` }}>
                   <div className="cal-staff-avatar" style={{ backgroundColor: s.color }}>{s.name.charAt(0)}</div>
                   <div>
                     <div className="cal-staff-name">{s.name}</div>
@@ -286,7 +331,7 @@ export default function Appointments() {
                   </div>
                 </div>
               ))}
-              {staff.length === 0 && (
+              {staffData.length === 0 && (
                 <div className="cal-staff-cell" style={{color:'var(--text3)',fontSize:12}}>Add staff first</div>
               )}
             </div>
@@ -312,10 +357,8 @@ export default function Appointments() {
               )}
 
               {/* STAFF ROWS */}
-              {staff.map(s => {
-                const appts = getStaffAppts(s._id);
-                return (
-                  <div key={s._id} className="cal-row" style={{ width: totalWidth }}>
+              {staffData.map(s => { const appts = s.appts; return (
+                  <div key={s._id} className="cal-row" style={{ width: totalWidth, height: `${s.tracks * 72}px` }}>
                     {HOURS.map(h => (
                       <div key={h} className="cal-hour-cell" style={{ width: SLOT_WIDTH }}
                         onDoubleClick={() => openSlot(s._id, h, true)}
@@ -329,7 +372,7 @@ export default function Appointments() {
                       const width = Math.max((dur / 60) * SLOT_WIDTH - 4, 50);
                       return (
                         <div key={a._id} className="cal-appt-block"
-                          style={{ left, width, backgroundColor: STATUS_COLORS[a.status] + 'dd', borderColor: STATUS_COLORS[a.status] }}
+                          style={{ left, width, top: `${(a.track || 0) * 72 + 6}px`, height: "60px", backgroundColor: STATUS_COLORS[a.status] + 'dd', borderColor: STATUS_COLORS[a.status] }}
                           onClick={e => { e.stopPropagation(); setViewAppt(a); }}>
                           <div className="cal-appt-client">{a.clientName}</div>
                           <div className="cal-appt-service">{a.serviceName}</div>
@@ -350,7 +393,7 @@ export default function Appointments() {
                     const width = Math.max(((a.duration || 30) / 60) * SLOT_WIDTH - 4, 50);
                     return (
                       <div key={a._id} className="cal-appt-block"
-                        style={{ left, width, backgroundColor: '#64748bdd', borderColor: '#64748b' }}
+                        style={{ left, width, top: `${(a.track || 0) * 72 + 6}px`, height: "60px", backgroundColor: '#64748bdd', borderColor: '#64748b' }}
                         onClick={e => { e.stopPropagation(); setViewAppt(a); }}>
                         <div className="cal-appt-client">{a.clientName}</div>
                         <div className="cal-appt-service">{a.serviceName}</div>
