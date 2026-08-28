@@ -115,6 +115,14 @@ export default function Billing() {
     } catch (e) { alert('Error creating bill'); }
   };
 
+  const [search, setSearch] = useState('');
+
+  const filteredBills = bills.filter(b => 
+    (b.clientName && b.clientName.toLowerCase().includes(search.toLowerCase())) || 
+    (b.billNumber && b.billNumber.toLowerCase().includes(search.toLowerCase())) ||
+    (b.clientPhone && b.clientPhone.includes(search))
+  );
+
   return (
     <div className="page">
       <div className="page-header">
@@ -126,6 +134,10 @@ export default function Billing() {
           + New Bill
         </button>
       </div>
+      
+      <div className="search-bar">
+        <input placeholder="Search by bill no, client name, or phone..." value={search} onChange={e => setSearch(e.target.value)} />
+      </div>
 
       {loading ? <div className="page-loading">Loading...</div> : (
         <div className="table-container">
@@ -134,7 +146,7 @@ export default function Billing() {
               <tr><th>Bill No</th><th>Client</th><th>Items</th><th>Discount</th><th>GST</th><th>Total</th><th>Payment</th><th>Time</th></tr>
             </thead>
             <tbody>
-              {bills.map(b => (
+              {filteredBills.map(b => (
                 <tr key={b._id} onClick={() => setViewBill(b)} style={{ cursor: 'pointer' }}>
                   <td><strong>{b.billNumber}</strong></td>
                   <td>{b.clientName}</td>
@@ -148,7 +160,7 @@ export default function Billing() {
               ))}
             </tbody>
           </table>
-          {bills.length === 0 && <div className="empty-state">No bills today</div>}
+          {filteredBills.length === 0 && <div className="empty-state">No bills found</div>}
         </div>
       )}
 
@@ -275,6 +287,10 @@ export default function Billing() {
                 <div className="summary-row-item total"><span>Grand Total</span><span>₹{viewBill.grandTotal?.toFixed(2)}</span></div>
               </div>
               <p><strong>Payment:</strong> {viewBill.paymentMethod?.toUpperCase()}</p>
+              
+              <div className="modal-actions no-print" style={{ marginTop: '24px' }}>
+                <button className="btn-secondary" onClick={() => window.print()}>🖨 Print Receipt</button>
+              </div>
             </div>
           </div>
         </div>

@@ -501,3 +501,16 @@ td.discount { color: var(--green); font-weight: 500; }
 
 /* CALENDAR HINT */
 .cal-hint { text-align: center; padding: 8px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); }
+
+/* PRINT STYLES */
+@media print {
+  body * { visibility: hidden; }
+  .modal-overlay, .modal-overlay * { visibility: visible; }
+  .modal-overlay { position: absolute; left: 0; top: 0; background: #fff !important; backdrop-filter: none !important; width: 100%; height: 100%; z-index: 9999; }
+  .modal { background: #fff !important; border: none !important; box-shadow: none !important; color: #000 !important; width: 100%; max-width: 100%; padding: 20px; }
+  .modal h2 { color: #000 !important; }
+  .bill-view, .bill-view * { color: #000 !important; }
+  .data-table th, .data-table td { border-color: #ddd !important; background: transparent !important; }
+  .data-table th { color: #555 !important; }
+  .no-print, .modal-header button { display: none !important; }
+}
