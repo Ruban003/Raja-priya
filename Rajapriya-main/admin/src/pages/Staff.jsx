@@ -75,7 +75,7 @@ export default function Staff() {
               </div>
               <div style={{ paddingLeft: '68px' }}>
                 {s.phone && <p className="staff-phone" style={{ marginTop: '0', fontSize: '13px' }}>📞 {s.phone}</p>}
-                <p className="staff-commission" style={{ marginTop: '4px', fontSize: '13px' }}>Commission: <strong style={{ color: 'var(--gold)' }}>{s.commissionRate}%</strong></p>
+                <p className="staff-commission" style={{ marginTop: '4px', fontSize: '13px' }}>Commission: <strong style={{ color: 'var(--primary)' }}>{s.commissionRate}%</strong></p>
               </div>
               {canManage() && (
                 <div className="card-actions" style={{ paddingLeft: '68px', paddingTop: '8px', borderTop: '1px solid var(--border)', marginTop: '4px' }}>

@@ -80,12 +80,12 @@ export default function Dashboard() {
                 <YAxis tick={{ fontSize: 11, fill: 'var(--text2)' }} axisLine={false} tickLine={false} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '12px', backdropFilter: 'var(--glass-blur)', color: 'var(--text)' }}
-                  itemStyle={{ color: 'var(--gold)', fontWeight: '600' }}
+                  itemStyle={{ color: 'var(--primary)', fontWeight: '600' }}
                   labelStyle={{ color: 'var(--text2)', marginBottom: '4px' }}
                   cursor={{ fill: 'var(--bg3)' }}
                   formatter={(v) => [`Rs.${v}`, 'Revenue']} 
                 />
-                <Bar dataKey="revenue" fill="var(--gold)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -99,11 +99,11 @@ export default function Dashboard() {
                 <YAxis tick={{ fontSize: 11, fill: 'var(--text2)' }} axisLine={false} tickLine={false} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '12px', backdropFilter: 'var(--glass-blur)', color: 'var(--text)' }}
-                  itemStyle={{ color: 'var(--gold)', fontWeight: '600' }}
+                  itemStyle={{ color: 'var(--primary)', fontWeight: '600' }}
                   labelStyle={{ color: 'var(--text2)', marginBottom: '4px' }}
                   formatter={(v) => [`Rs.${v}`, 'Revenue']} 
                 />
-                <Line type="monotone" dataKey="revenue" stroke="var(--gold)" strokeWidth={3} dot={{ r: 4, fill: 'var(--bg)', stroke: 'var(--gold)', strokeWidth: 2 }} activeDot={{ r: 6, fill: 'var(--gold)', stroke: 'var(--bg)', strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="revenue" stroke="var(--primary)" strokeWidth={3} dot={{ r: 4, fill: 'var(--bg)', stroke: 'var(--primary)', strokeWidth: 2 }} activeDot={{ r: 6, fill: 'var(--primary)', stroke: 'var(--bg)', strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
