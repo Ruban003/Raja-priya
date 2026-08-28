@@ -85,12 +85,37 @@ body::after {
 .app-layout.collapsed .main-content { margin-left: var(--sidebar-collapsed); }
 
 /* SIDEBAR */
-.sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 20px 16px; border-bottom: 1px solid var(--border); }
+.sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 20px 16px; border-bottom: 1px solid var(--border); position: relative; }
+.app-layout.collapsed .sidebar-brand { padding: 20px 0; justify-content: center; }
 .sidebar-logo { width: 36px; height: 36px; background: var(--primary); color: #000; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 16px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
 .sidebar-title { flex: 1; overflow: hidden; }
 .brand-name { display: block; font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; }
 .brand-sub { display: block; font-size: 10px; color: var(--text2); white-space: nowrap; }
-.collapse-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px; padding: 4px; margin-left: auto; }
+
+.collapse-btn { 
+  position: absolute; 
+  right: -12px; 
+  top: 26px; 
+  width: 24px; 
+  height: 24px; 
+  border-radius: 50%; 
+  background: var(--bg2); 
+  border: 1px solid var(--border); 
+  color: var(--text); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  cursor: pointer; 
+  padding: 0;
+  font-size: 16px;
+  z-index: 110;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: all 0.2s;
+}
+.collapse-btn:hover { background: var(--primary); color: #000; }
+.app-layout.collapsed .collapse-btn { right: -12px; }
 
 .sidebar-user { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
 .user-avatar { width: 32px; height: 32px; background: var(--primary); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0; }
