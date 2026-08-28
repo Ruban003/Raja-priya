@@ -36,7 +36,7 @@ export default function Settings() {
   };
 
   const roleLabels = { rv_owner: 'RV Owner', rv_admin: 'RV Admin', center_owner: 'Center Owner', center_admin: 'Center Admin', manager: 'Manager' };
-  const roleColors = { rv_owner: '#8b5cf6', rv_admin: '#6366f1', center_owner: '#c9a96e', center_admin: '#3b82f6', manager: '#10b981' };
+  const roleColors = { rv_owner: '#8b5cf6', rv_admin: '#6366f1', center_owner: '#38bdf8', center_admin: '#3b82f6', manager: '#10b981' };
 
   return (
     <div className="page">

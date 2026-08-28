@@ -76,7 +76,7 @@ export default function Reports() {
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(v) => [`₹${v.toLocaleString()}`, 'Revenue']} />
-                <Bar dataKey="revenue" fill="#c9a96e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" fill="#38bdf8" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

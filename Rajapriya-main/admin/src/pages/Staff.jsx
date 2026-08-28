@@ -8,7 +8,7 @@ export default function Staff() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', role: 'Stylist', phone: '', color: '#c9a96e', commissionRate: 0 });
+  const [form, setForm] = useState({ name: '', role: 'Stylist', phone: '', color: '#38bdf8', commissionRate: 0 });
   const centerId = getActiveCenterId();
 
   const fetch = async () => {
@@ -27,7 +27,7 @@ export default function Staff() {
       if (editing) await api.put(`/staff/${editing._id}`, { ...form, centerId });
       else await api.post('/staff', { ...form, centerId });
       setShowModal(false); setEditing(null);
-      setForm({ name: '', role: 'Stylist', phone: '', color: '#c9a96e', commissionRate: 0 });
+      setForm({ name: '', role: 'Stylist', phone: '', color: '#38bdf8', commissionRate: 0 });
       fetch();
     } catch (e) { alert('Error saving staff'); }
   };
@@ -54,7 +54,7 @@ export default function Staff() {
           <p>{staff.length} active members</p>
         </div>
         {canManage() && (
-          <button className="btn-primary" onClick={() => { setEditing(null); setForm({ name: '', role: 'Stylist', phone: '', color: '#c9a96e', commissionRate: 0 }); setShowModal(true); }}>
+          <button className="btn-primary" onClick={() => { setEditing(null); setForm({ name: '', role: 'Stylist', phone: '', color: '#38bdf8', commissionRate: 0 }); setShowModal(true); }}>
             + Add Staff
           </button>
         )}
