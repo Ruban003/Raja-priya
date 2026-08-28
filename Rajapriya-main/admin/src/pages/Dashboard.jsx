@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
@@ -75,11 +75,17 @@ export default function Dashboard() {
             <h3>Monthly Revenue - {new Date().toLocaleString('default', { month: 'long' })}</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={monthly.dailyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`Rs.${v}`, 'Revenue']} />
-                <Bar dataKey="revenue" fill="#c9a96e" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--text2)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--text2)' }} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '12px', backdropFilter: 'var(--glass-blur)', color: 'var(--text)' }}
+                  itemStyle={{ color: 'var(--gold)', fontWeight: '600' }}
+                  labelStyle={{ color: 'var(--text2)', marginBottom: '4px' }}
+                  cursor={{ fill: 'var(--bg3)' }}
+                  formatter={(v) => [`Rs.${v}`, 'Revenue']} 
+                />
+                <Bar dataKey="revenue" fill="var(--gold)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -88,11 +94,16 @@ export default function Dashboard() {
             <h3>Revenue Trend</h3>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={monthly.dailyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`Rs.${v}`, 'Revenue']} />
-                <Line type="monotone" dataKey="revenue" stroke="#c9a96e" strokeWidth={2} dot={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--text2)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--text2)' }} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '12px', backdropFilter: 'var(--glass-blur)', color: 'var(--text)' }}
+                  itemStyle={{ color: 'var(--gold)', fontWeight: '600' }}
+                  labelStyle={{ color: 'var(--text2)', marginBottom: '4px' }}
+                  formatter={(v) => [`Rs.${v}`, 'Revenue']} 
+                />
+                <Line type="monotone" dataKey="revenue" stroke="var(--gold)" strokeWidth={3} dot={{ r: 4, fill: 'var(--bg)', stroke: 'var(--gold)', strokeWidth: 2 }} activeDot={{ r: 6, fill: 'var(--gold)', stroke: 'var(--bg)', strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
