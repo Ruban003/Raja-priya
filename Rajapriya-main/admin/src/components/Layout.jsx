@@ -110,7 +110,15 @@ export default function Layout() {
                     className={`center-option ${selectedCenter?._id === c._id ? 'selected' : ''}`}
                     onClick={() => handleCenterClick(c)}
                   >
-                    🏪 {c.name}
+                    <div style={{ fontWeight: 500 }}>🏪 {c.name}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text2)', marginLeft: '22px', marginTop: '2px' }}>
+                      {c.address}
+                    </div>
+                    {c.gstNumber && (
+                      <div style={{ fontSize: '9px', color: 'var(--text3)', marginLeft: '22px' }}>
+                        GST: {c.gstNumber}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {centers.length === 0 && (
