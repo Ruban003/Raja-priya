@@ -24,6 +24,7 @@ export default function Layout() {
   const { user, logout, isRVLevel, selectedCenter, selectCenter, getActiveCenterId } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [centers, setCenters] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -58,7 +59,12 @@ export default function Layout() {
 
   return (
     <div className={`app-layout ${collapsed ? 'collapsed' : ''}`}>
-      <aside className="sidebar">
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
+      <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-brand">
           <div className="sidebar-logo">RV</div>
           {!collapsed && (
@@ -67,8 +73,11 @@ export default function Layout() {
               <span className="brand-sub">Management</span>
             </div>
           )}
-          <button className="collapse-btn" onClick={() => setCollapsed(!collapsed)}>
+          <button className="collapse-btn desktop-only" onClick={() => setCollapsed(!collapsed)}>
             {collapsed ? '›' : '‹'}
+          </button>
+          <button className="collapse-btn mobile-only" onClick={() => setMobileMenuOpen(false)}>
+            ✕
           </button>
         </div>
 
@@ -138,6 +147,7 @@ export default function Layout() {
               to={item.path}
               end={item.path === '/'}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => setMobileMenuOpen(false)}
             >
               <span className="nav-icon">{item.icon}</span>
               {!collapsed && <span className="nav-label">{item.label}</span>}
@@ -156,6 +166,9 @@ export default function Layout() {
       <main className="main-content">
         <div className="topbar">
           <div className="topbar-left">
+            <button className="mobile-menu-btn mobile-only" onClick={() => setMobileMenuOpen(true)}>
+              ☰
+            </button>
             {hasCenter ? (
               <div className="center-badge">📍 {activeCenterName}</div>
             ) : isRVLevel() ? (

@@ -105,6 +105,7 @@ body::after {
 
 /* TOPBAR */
 .topbar { height: var(--topbar-h); background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shadow); position: sticky; top: 0; z-index: 90; }
+.topbar-left { display: flex; align-items: center; }
 .center-badge { background: color-mix(in srgb, var(--gold) 20%, transparent); color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
 .topbar-user { display: flex; align-items: center; gap: 8px; }
 .topbar-avatar { width: 28px; height: 28px; background: var(--gold); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
@@ -316,11 +317,30 @@ td.discount { color: var(--green); font-weight: 500; }
 .dashboard-page { display: flex; flex-direction: column; gap: 24px; }
 
 /* RESPONSIVE */
+.desktop-only { display: block; }
+.mobile-only { display: none; }
+.mobile-overlay { display: none; }
+
 @media (max-width: 768px) {
-  .charts-grid, .summary-row { grid-template-columns: 1fr; }
+  .desktop-only { display: none !important; }
+  .mobile-only { display: block; }
+  .mobile-menu-btn { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; padding: 4px; margin-right: 12px; }
+  
+  .charts-grid, .summary-row, .staff-grid { grid-template-columns: 1fr; }
   .login-left { display: none; }
   .login-right { width: 100%; border-left: none; }
   .form-row { flex-direction: column; }
+  
+  .sidebar { transform: translateX(-100%); width: 280px; z-index: 1000; box-shadow: 4px 0 24px rgba(0,0,0,0.5); }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .main-content { margin-left: 0 !important; }
+  
+  .mobile-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 900; }
+  
+  .page-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .header-actions { width: 100%; justify-content: stretch; }
+  .header-actions button { flex: 1; }
+  .topbar { padding: 0 16px; }
 }
 
 /* CENTER SELECTOR */
