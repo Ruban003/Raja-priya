@@ -40,21 +40,48 @@ router.get('/monthly', auth, async (req, res) => {
 
     const start = new Date(y, m - 1, 1);
     const end = new Date(y, m, 1);
-    const bills = await Bill.find({ centerId, createdAt: { $gte: start, $lt: end } });
+    const Staff = require('../models/Staff');
+    const [bills, staffMembers] = await Promise.all([
+      Bill.find({ centerId, createdAt: { $gte: start, $lt: end } }),
+      Staff.find({ centerId })
+    ]);
+    const staffMap = {};
+    staffMembers.forEach(s => staffMap[s._id.toString()] = s);
     const totalRevenue = bills.reduce((sum, b) => sum + (b.grandTotal || 0), 0);
-
     const dailyMap = {};
+    const staffCommissions = {};
     bills.forEach(b => {
       const day = new Date(b.createdAt).getDate();
       dailyMap[day] = (dailyMap[day] || 0) + (b.grandTotal || 0);
+      if (b.items) {
+        b.items.forEach(item => {
+          if (item.staffId) {
+            const sId = item.staffId.toString();
+            if (!staffCommissions[sId]) {
+              staffCommissions[sId] = {
+                staffId: sId,
+                staffName: item.staffName || staffMap[sId]?.name || 'Unknown',
+                servicesRendered: 0,
+                revenueGenerated: 0,
+                commissionRate: staffMap[sId]?.commissionRate || 0,
+                commissionEarned: 0
+              };
+            }
+            const rev = item.discountedPrice !== undefined ? item.discountedPrice : (item.originalPrice || 0);
+            staffCommissions[sId].servicesRendered += 1;
+            staffCommissions[sId].revenueGenerated += rev;
+          }
+        });
+      }
     });
-
+    Object.values(staffCommissions).forEach(sc => {
+      sc.commissionEarned = Math.round(sc.revenueGenerated * (sc.commissionRate / 100));
+    });
     const dailyData = Array.from({ length: daysInMonth }, (_, i) => ({
       day: i + 1,
       revenue: dailyMap[i + 1] || 0
     }));
-
-    res.json({ month: m, year: y, totalRevenue, totalBills: bills.length, dailyData });
+    res.json({ month: m, year: y, totalRevenue, totalBills: bills.length, dailyData, staffCommissions: Object.values(staffCommissions).sort((a,b) => b.commissionEarned - a.commissionEarned) });
   } catch (err) { handleAuthzError(res, err); }
 });
 
