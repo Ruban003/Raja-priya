@@ -73,15 +73,51 @@ export default function Reports() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={monthly.dailyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`₹${v.toLocaleString()}`, 'Revenue']} />
-                <Bar dataKey="revenue" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--text2)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--text2)' }} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '12px', backdropFilter: 'var(--glass-blur)', color: 'var(--text)' }}
+                  itemStyle={{ color: 'var(--primary)', fontWeight: '600' }}
+                  labelStyle={{ color: 'var(--text2)', marginBottom: '4px' }}
+                  cursor={{ fill: 'var(--bg3)' }}
+                  formatter={(v) => [`₹${v.toLocaleString()}`, 'Revenue']} 
+                />
+                <Bar dataKey="revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="table-container">
+
+          {monthly.staffCommissions && monthly.staffCommissions.length > 0 && (
+            <div className="table-container" style={{ marginTop: '24px' }}>
+              <h3>Staff Commissions</h3>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Staff Name</th>
+                    <th>Services Rendered</th>
+                    <th>Revenue Generated</th>
+                    <th>Commission Rate</th>
+                    <th>Commission Earned</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {monthly.staffCommissions.map(sc => (
+                    <tr key={sc.staffId}>
+                      <td><strong>{sc.staffName}</strong></td>
+                      <td>{sc.servicesRendered}</td>
+                      <td>₹{sc.revenueGenerated.toLocaleString()}</td>
+                      <td>{sc.commissionRate}%</td>
+                      <td style={{ color: 'var(--green)', fontWeight: 'bold' }}>₹{sc.commissionEarned.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="table-container" style={{ marginTop: '24px' }}>
+            <h3>Daily Breakdown</h3>
             <table className="data-table">
               <thead><tr><th>Day</th><th>Revenue</th></tr></thead>
               <tbody>
