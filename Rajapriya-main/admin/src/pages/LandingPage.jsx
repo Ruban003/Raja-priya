@@ -185,6 +185,9 @@ export default function LandingPage() {
 
             <div className="sim-footer-bar">
               <input 
+                id="simulator-input"
+                name="simulator-input"
+                aria-label="Simulated AI dialogue description"
                 type="text" 
                 readOnly 
                 value="Simulated AI dialogue based on Anthropic API function calling" 
