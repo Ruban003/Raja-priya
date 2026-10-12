@@ -34,7 +34,9 @@ export default function LandingPage() {
       <header className="landing-header">
         <div className="landing-nav-container">
           <div className="landing-brand">
-            <div className="brand-badge-icon">RV</div>
+            <div className="brand-badge-icon">
+              <img src="/rvsmps-logo.png" alt="RVSMPS Logo" className="brand-logo-img" />
+            </div>
             <div className="brand-text-block">
               <span className="brand-title">RVSMPS</span>
               <span className="brand-tag">GLAM PRO AI</span>
@@ -312,7 +314,9 @@ export default function LandingPage() {
         <div className="landing-footer-container">
           <div className="footer-col-main">
             <div className="landing-brand">
-              <div className="brand-badge-icon">RV</div>
+              <div className="brand-badge-icon">
+                <img src="/rvsmps-logo.png" alt="RVSMPS Logo" className="brand-logo-img" />
+              </div>
               <div className="brand-text-block">
                 <span className="brand-title">RVSMPS</span>
                 <span className="brand-tag">GLAM PRO AI</span>
