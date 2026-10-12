@@ -15,7 +15,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(form.username, form.password);
-      navigate('/');
+      navigate('/dashboard');
     } catch {
       setError('Invalid username or password');
     } finally {

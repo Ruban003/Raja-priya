@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Appointments from './pages/Appointments';
@@ -23,18 +24,27 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public AI Startup Landing Page (Anthropic Reviewer & Visitors) */}
+          <Route path="/" element={<LandingPage />} />
+          
+          {/* Employee & Center Login */}
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Protected><Layout /></Protected>}>
-            <Route index element={<Dashboard />} />
-            <Route path="appointments" element={<Appointments />} />
-            <Route path="billing" element={<Billing />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="services" element={<Services />} />
-            <Route path="staff" element={<Staff />} />
-            <Route path="campaigns" element={<Campaigns />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="settings" element={<Settings />} />
+          
+          {/* Protected Salon ERP Suite */}
+          <Route element={<Protected><Layout /></Protected>}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/appointments" element={<Appointments />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/staff" element={<Staff />} />
+            <Route path="/campaigns" element={<Campaigns />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
+
+          {/* Fallback alias */}
+          <Route path="/app" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
