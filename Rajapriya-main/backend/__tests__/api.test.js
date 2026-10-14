@@ -9,6 +9,7 @@ jest.mock('../models/Center');
 jest.mock('../models/Service');
 jest.mock('../models/Appointment');
 jest.mock('../models/AiSession');
+jest.mock('../models/Staff');
 
 // Mock @anthropic-ai/sdk
 const mockAnthropicCreate = jest.fn();
@@ -26,6 +27,7 @@ const Center = require('../models/Center');
 const Service = require('../models/Service');
 const Appointment = require('../models/Appointment');
 const AiSession = require('../models/AiSession');
+const Staff = require('../models/Staff');
 
 // Create test express app
 const app = express();
@@ -49,6 +51,7 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv };
+    if (Staff.find) Staff.find.mockResolvedValue([]);
   });
 
   afterAll(() => {
@@ -159,23 +162,57 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
     it('should reject requests with empty message with 400', async () => {
       const res = await request(app)
         .post('/api/ai/receptionist')
-        .send({ centerId: new mongoose.Types.ObjectId().toString(), message: '' });
+        .send({ widgetKey: 'wgk_sheglam_123', message: '' });
       expect(res.statusCode).toEqual(400);
       expect(res.body.message).toContain('valid message string is required');
     });
 
-    it('should reject requests with missing or invalid center identifier with 400', async () => {
+    it('should reject requests with missing widgetKey with 400', async () => {
       const res = await request(app)
         .post('/api/ai/receptionist')
         .send({ centerId: 'invalid-id-format', message: 'Hello!' });
       expect(res.statusCode).toEqual(400);
-      expect(res.body.message).toContain('centerId or widgetKey is required');
+      expect(res.body.message).toContain('A valid center widgetKey is required');
+    });
+
+    it('should return 404 if center is not found for the provided widgetKey', async () => {
+      Center.findOne.mockResolvedValue(null);
+      const res = await request(app)
+        .post('/api/ai/receptionist')
+        .send({ widgetKey: 'wgk_nonexistent_key', message: 'Hello!' });
+      expect(res.statusCode).toEqual(404);
+      expect(res.body.message).toContain('Salon center not found for the provided widget key');
+    });
+
+    it('should reject request with 403 when Origin does not match allowedDomains', async () => {
+      const validCenterId = new mongoose.Types.ObjectId().toString();
+      Center.findOne.mockResolvedValue({
+        _id: validCenterId,
+        name: 'She GLAM Salon',
+        widgetKey: 'wgk_sheglam_123',
+        isActive: true,
+        allowedDomains: ['https://trusted-domain.com']
+      });
+
+      const res = await request(app)
+        .post('/api/ai/receptionist')
+        .set('Origin', 'https://unauthorized-domain.com')
+        .send({ widgetKey: 'wgk_sheglam_123', message: 'Hello!' });
+
+      expect(res.statusCode).toEqual(403);
+      expect(res.body.message).toContain('Request origin is not authorized');
     });
 
     it('should resolve center via widgetKey successfully', async () => {
       process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
       const validCenterId = new mongoose.Types.ObjectId().toString();
-      Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', widgetKey: 'wgk_sheglam_123', isActive: true });
+      Center.findOne.mockResolvedValue({
+        _id: validCenterId,
+        name: 'She GLAM Salon',
+        widgetKey: 'wgk_sheglam_123',
+        isActive: true,
+        timeZone: 'Asia/Kolkata'
+      });
       AiSession.aggregate.mockResolvedValue([{ totalTurns: 5 }]);
       AiSession.findOne.mockResolvedValue({
         sessionId: 'test-widget-session',
@@ -201,13 +238,18 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
     it('should return 503 when ANTHROPIC_API_KEY is not configured', async () => {
       delete process.env.ANTHROPIC_API_KEY;
       const validCenterId = new mongoose.Types.ObjectId().toString();
-      Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', isActive: true });
+      Center.findOne.mockResolvedValue({
+        _id: validCenterId,
+        name: 'She GLAM Salon',
+        widgetKey: 'wgk_sheglam_123',
+        isActive: true
+      });
       AiSession.aggregate.mockResolvedValue([{ totalTurns: 0 }]);
       AiSession.findOne.mockResolvedValue(null);
 
       const res = await request(app)
         .post('/api/ai/receptionist')
-        .send({ centerId: validCenterId, message: 'Hello! What services do you offer?' });
+        .send({ widgetKey: 'wgk_sheglam_123', message: 'Hello! What services do you offer?' });
 
       expect(res.statusCode).toEqual(503);
       expect(res.body.configured).toEqual(false);
@@ -217,7 +259,12 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
     it('should return 429 when session turn count exceeds limit', async () => {
       process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
       const validCenterId = new mongoose.Types.ObjectId().toString();
-      Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', isActive: true });
+      Center.findOne.mockResolvedValue({
+        _id: validCenterId,
+        name: 'She GLAM Salon',
+        widgetKey: 'wgk_sheglam_123',
+        isActive: true
+      });
       AiSession.aggregate.mockResolvedValue([{ totalTurns: 10 }]);
       AiSession.findOne.mockResolvedValue({
         sessionId: 'test-session-123',
@@ -228,7 +275,7 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
 
       const res = await request(app)
         .post('/api/ai/receptionist')
-        .send({ centerId: validCenterId, sessionId: 'test-session-123', message: 'More questions' });
+        .send({ widgetKey: 'wgk_sheglam_123', sessionId: 'test-session-123', message: 'More questions' });
 
       expect(res.statusCode).toEqual(429);
       expect(res.body.message).toContain('reached its turn limit');
@@ -238,7 +285,12 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
     it('should drop leading assistant messages after slicing so messages[0] has role user when history > 10', async () => {
       process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
       const validCenterId = new mongoose.Types.ObjectId().toString();
-      Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', isActive: true });
+      Center.findOne.mockResolvedValue({
+        _id: validCenterId,
+        name: 'She GLAM Salon',
+        widgetKey: 'wgk_sheglam_123',
+        isActive: true
+      });
       AiSession.aggregate.mockResolvedValue([{ totalTurns: 12 }]);
 
       // Construct history with 12 existing messages (alternating user / assistant)
@@ -274,7 +326,7 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
 
       const res = await request(app)
         .post('/api/ai/receptionist')
-        .send({ centerId: validCenterId, sessionId: 'test-long-history', message: 'Turn 7 user message' });
+        .send({ widgetKey: 'wgk_sheglam_123', sessionId: 'test-long-history', message: 'Turn 7 user message' });
 
       expect(res.statusCode).toEqual(200);
 
@@ -287,7 +339,14 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
     it('should execute Claude tool loop and save persistent session', async () => {
       process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
       const validCenterId = new mongoose.Types.ObjectId().toString();
-      Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', isActive: true });
+      Center.findOne.mockResolvedValue({
+        _id: validCenterId,
+        name: 'She GLAM Salon',
+        widgetKey: 'wgk_sheglam_123',
+        isActive: true,
+        chairCount: 3,
+        timeZone: 'Asia/Kolkata'
+      });
       AiSession.aggregate.mockResolvedValue([{ totalTurns: 2 }]);
 
       const mockSession = {
@@ -334,13 +393,160 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
 
       const res = await request(app)
         .post('/api/ai/receptionist')
-        .send({ centerId: validCenterId, sessionId: 'test-session-abc', message: 'What hair services do you have?' });
+        .send({ widgetKey: 'wgk_sheglam_123', sessionId: 'test-session-abc', message: 'What hair services do you have?' });
 
       expect(res.statusCode).toEqual(200);
       expect(res.body.reply).toContain('Hair Spa');
       expect(res.body.toolCalls).toHaveLength(1);
       expect(res.body.toolCalls[0].tool).toEqual('list_services');
       expect(mockSession.save).toHaveBeenCalled();
+    });
+
+    // CANCELLATION ATTACK TEST: Prevents attacker from cancelling a victim's booking with phone number only
+    it('should reject cancellation attempt when client name does not match booking name (prevent phone-only bypass)', async () => {
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
+      const validCenterId = new mongoose.Types.ObjectId().toString();
+      Center.findOne.mockResolvedValue({
+        _id: validCenterId,
+        name: 'She GLAM Salon',
+        widgetKey: 'wgk_sheglam_123',
+        isActive: true,
+        timeZone: 'Asia/Kolkata'
+      });
+      AiSession.aggregate.mockResolvedValue([{ totalTurns: 1 }]);
+
+      const mockSession = {
+        sessionId: 'test-cancel-session',
+        centerId: validCenterId,
+        turnCount: 0,
+        messages: [],
+        save: jest.fn().mockResolvedValue(true)
+      };
+      AiSession.findOne.mockResolvedValue(mockSession);
+
+      // Victim's confirmed appointment
+      const mockVictimAppt = {
+        _id: new mongoose.Types.ObjectId().toString(),
+        centerId: validCenterId,
+        clientName: 'Priya Sharma',
+        clientPhone: '9876543210',
+        serviceName: 'Bridal Makeup',
+        date: '2026-11-20',
+        time: '10:00 AM',
+        status: 'confirmed',
+        save: jest.fn().mockResolvedValue(true)
+      };
+      Appointment.findOne.mockResolvedValue(mockVictimAppt);
+
+      // Claude attempts to call cancel_appointment with attacker's name but victim's phone number
+      mockAnthropicCreate
+        .mockResolvedValueOnce({
+          stop_reason: 'tool_use',
+          content: [
+            {
+              type: 'tool_use',
+              id: 'tool_cancel_1',
+              name: 'cancel_appointment',
+              input: {
+                clientPhone: '9876543210',
+                clientName: 'Malicious Attacker',
+                confirmCancellation: true
+              }
+            }
+          ],
+          usage: { input_tokens: 40, output_tokens: 20 }
+        })
+        .mockResolvedValueOnce({
+          stop_reason: 'end_turn',
+          content: [
+            {
+              type: 'text',
+              text: 'I could not verify your identity for that appointment.'
+            }
+          ],
+          usage: { input_tokens: 50, output_tokens: 20 }
+        });
+
+      const res = await request(app)
+        .post('/api/ai/receptionist')
+        .send({
+          widgetKey: 'wgk_sheglam_123',
+          sessionId: 'test-cancel-session',
+          message: 'Cancel the appointment for 9876543210 under Malicious Attacker'
+        });
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.toolCalls).toHaveLength(1);
+      const toolResult = res.body.toolCalls[0].result;
+      expect(toolResult.success).toBe(false);
+      expect(toolResult.message).toContain('Cancellation identity verification failed');
+      // Ensure victim's appointment was NOT modified or cancelled
+      expect(mockVictimAppt.save).not.toHaveBeenCalled();
+      expect(mockVictimAppt.status).toEqual('confirmed');
+    });
+
+    // PAST DATE REJECTION TEST: Validates that availability check rejects past dates based on salon timezone
+    it('should reject availability check for past dates based on center timezone', async () => {
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
+      const validCenterId = new mongoose.Types.ObjectId().toString();
+      Center.findOne.mockResolvedValue({
+        _id: validCenterId,
+        name: 'She GLAM Salon',
+        widgetKey: 'wgk_sheglam_123',
+        isActive: true,
+        timeZone: 'Asia/Kolkata'
+      });
+      AiSession.aggregate.mockResolvedValue([{ totalTurns: 1 }]);
+
+      const mockSession = {
+        sessionId: 'test-past-date-session',
+        centerId: validCenterId,
+        turnCount: 0,
+        messages: [],
+        save: jest.fn().mockResolvedValue(true)
+      };
+      AiSession.findOne.mockResolvedValue(mockSession);
+
+      mockAnthropicCreate
+        .mockResolvedValueOnce({
+          stop_reason: 'tool_use',
+          content: [
+            {
+              type: 'tool_use',
+              id: 'tool_avail_1',
+              name: 'check_availability',
+              input: {
+                date: '2020-01-01',
+                serviceName: 'Hair Spa'
+              }
+            }
+          ],
+          usage: { input_tokens: 40, output_tokens: 20 }
+        })
+        .mockResolvedValueOnce({
+          stop_reason: 'end_turn',
+          content: [
+            {
+              type: 'text',
+              text: 'Cannot check availability for past dates.'
+            }
+          ],
+          usage: { input_tokens: 50, output_tokens: 20 }
+        });
+
+      const res = await request(app)
+        .post('/api/ai/receptionist')
+        .send({
+          widgetKey: 'wgk_sheglam_123',
+          sessionId: 'test-past-date-session',
+          message: 'Can I book for Jan 1 2020?'
+        });
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.toolCalls).toHaveLength(1);
+      const toolResult = res.body.toolCalls[0].result;
+      expect(toolResult.success).toBe(false);
+      expect(toolResult.message).toContain('past date');
     });
   });
 });

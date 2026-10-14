@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('./models/User');
 const Center = require('./models/Center');
@@ -32,11 +32,22 @@ async function seed() {
       name: 'Glam',
       address: 'Chennai',
       gstNumber: 'GST000000',
-      gstRate: 18
+      gstRate: 18,
+      widgetKey: 'wgk_sheglam_pilot_2026',
+      allowedDomains: ['https://rvsmps.store', 'https://sheglam.rvsmps.store', 'http://localhost:5173'],
+      chairCount: 3,
+      timeZone: 'Asia/Kolkata'
     }).save();
-    console.log('Glam center created');
+    console.log('Glam center created with widgetKey');
   } else {
-    console.log('Glam center already exists');
+    if (!center.widgetKey) {
+      center.widgetKey = 'wgk_sheglam_pilot_2026';
+      center.allowedDomains = ['https://rvsmps.store', 'https://sheglam.rvsmps.store', 'http://localhost:5173'];
+      await center.save();
+      console.log('Glam center updated with widgetKey');
+    } else {
+      console.log('Glam center already exists with widgetKey:', center.widgetKey);
+    }
   }
 
   await createUserIfMissing({

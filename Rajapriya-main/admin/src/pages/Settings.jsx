@@ -98,14 +98,46 @@ export default function Settings() {
 
       {centers.length > 0 && (
         <div className="settings-section">
-          <h2>Centers</h2>
+          <h2>Centers & AI Receptionist Widget</h2>
           <div className="cards-grid">
             {centers.map(c => (
-              <div key={c._id} className="service-card">
-                <h3>{c.name}</h3>
-                {c.address && <p>{c.address}</p>}
-                {c.gstNumber && <p>GST: {c.gstNumber}</p>}
-                <p>GST Rate: {c.gstRate}%</p>
+              <div key={c._id} className="service-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0 }}>{c.name}</h3>
+                  <span className="badge" style={{ backgroundColor: '#10b98120', color: '#10b981' }}>Active</span>
+                </div>
+                {c.address && <p style={{ margin: '4px 0', color: '#94a3b8' }}>📍 {c.address}</p>}
+                {c.gstNumber && <p style={{ margin: '2px 0' }}>GST: {c.gstNumber} ({c.gstRate || 18}%)</p>}
+                <div style={{ marginTop: '8px', padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#38bdf8', fontWeight: 600, marginBottom: '4px' }}>
+                    🤖 Claude AI Widget Key (Public)
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <code style={{ fontSize: '12px', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {c.widgetKey || 'Auto-generated on save'}
+                    </code>
+                    {c.widgetKey && (
+                      <button
+                        type="button"
+                        className="btn-secondary sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(c.widgetKey);
+                          alert('Widget Key copied to clipboard!');
+                        }}
+                      >
+                        Copy
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '6px' }}>
+                    Chairs: <strong>{c.chairCount || 3}</strong> | Timezone: <strong>{c.timeZone || 'Asia/Kolkata'}</strong>
+                  </div>
+                  {c.allowedDomains && c.allowedDomains.length > 0 && (
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                      Allowed Domains: {c.allowedDomains.join(', ')}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

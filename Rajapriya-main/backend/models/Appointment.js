@@ -20,15 +20,19 @@ const appointmentSchema = new mongoose.Schema({
   color: { type: String, default: '#3498db' }
 }, { timestamps: true });
 
-// Unique partial index for active appointment slots: guarantees atomic double-booking prevention under concurrent requests
+// Unique partial index per stylist: prevents double-booking a stylist at the same slot while allowing parallel bookings across multiple stylists/chairs
 appointmentSchema.index(
-  { centerId: 1, date: 1, time: 1 },
+  { centerId: 1, staffId: 1, date: 1, time: 1 },
   {
     unique: true,
     partialFilterExpression: {
+      staffId: { $type: 'objectId' },
       status: { $in: ['pending', 'confirmed', 'in_progress'] }
     }
   }
 );
+
+// General compound index for slot availability lookups and calendar queries
+appointmentSchema.index({ centerId: 1, date: 1, time: 1 });
 
 module.exports = mongoose.models.Appointment || mongoose.model('Appointment', appointmentSchema);

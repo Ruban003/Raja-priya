@@ -1,15 +1,27 @@
-﻿const router = require('express').Router();
+const router = require('express').Router();
+const crypto = require('crypto');
 const Center = require('../models/Center');
 const { auth, isRVOwner, isRVLevelUser, canUseCenterId, handleAuthzError } = require('../middleware/auth');
 
 router.get('/', auth, async (req, res) => {
   try {
+    let centers;
     if (isRVLevelUser(req.user)) {
-      return res.json(await Center.find({ isActive: true }));
+      centers = await Center.find({ isActive: true });
+    } else {
+      const center = await Center.findOne({ _id: req.user.centerId, isActive: true });
+      centers = center ? [center] : [];
     }
 
-    const center = await Center.findOne({ _id: req.user.centerId, isActive: true });
-    res.json(center ? [center] : []);
+    // Auto-generate widgetKey for existing centers that may not have one yet
+    for (const c of centers) {
+      if (!c.widgetKey) {
+        c.widgetKey = 'wgk_' + crypto.randomBytes(16).toString('hex');
+        await c.save();
+      }
+    }
+
+    res.json(centers);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

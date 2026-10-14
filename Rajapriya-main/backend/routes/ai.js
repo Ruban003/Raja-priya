@@ -5,6 +5,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const Service = require('../models/Service');
 const Appointment = require('../models/Appointment');
 const Center = require('../models/Center');
+const Staff = require('../models/Staff');
 const AiSession = require('../models/AiSession');
 const logger = require('../utils/logger');
 
@@ -20,6 +21,33 @@ function maskPhone(phone) {
   return phone.replace(/(\d{2,3})\d+(\d{4})/, '$1****$2');
 }
 
+// Parse standard 12-hour salon time string to minutes from midnight
+function timeToMinutes(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return -1;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return -1;
+  let [_, hours, mins, modifier] = match;
+  hours = parseInt(hours, 10);
+  mins = parseInt(mins, 10);
+  if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+  return hours * 60 + mins;
+}
+
+// Get center local date (YYYY-MM-DD) and current minutes in center's timezone (default: Asia/Kolkata)
+function getCenterDateTime(timeZone = 'Asia/Kolkata') {
+  const now = new Date();
+  const todayDate = now.toLocaleDateString('en-CA', { timeZone });
+  const timeStr = now.toLocaleTimeString('en-US', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+  const currentMinutes = timeToMinutes(timeStr);
+  return { todayDate, currentMinutes };
+}
+
 // Standard salon operating hours (30-min intervals) including 01:30 PM
 const STANDARD_SALON_SLOTS = [
   '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
@@ -28,7 +56,7 @@ const STANDARD_SALON_SLOTS = [
   '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM'
 ];
 
-// Helper: Calculate sequential 30-min slots occupied by a service given duration
+// Calculate sequential 30-min slots occupied by a service duration
 function getOccupiedSlots(startTime, durationMinutes = 30) {
   const startIdx = STANDARD_SALON_SLOTS.indexOf(startTime);
   if (startIdx === -1) return [];
@@ -53,7 +81,7 @@ const receptionistTools = [
   },
   {
     name: 'check_availability',
-    description: 'Checks available appointment time slots on a given date for a requested service, accounting for service duration.',
+    description: 'Checks available appointment time slots on a given date for a requested service, taking into account service duration, stylist capacity, and current local time.',
     input_schema: {
       type: 'object',
       properties: {
@@ -71,7 +99,7 @@ const receptionistTools = [
   },
   {
     name: 'create_appointment',
-    description: 'Books and reserves a confirmed appointment slot for the client in the salon calendar after validating slot availability and rejecting double-bookings.',
+    description: 'Books and reserves a confirmed appointment slot for the client in the salon calendar after validating slot availability and salon chair capacity.',
     input_schema: {
       type: 'object',
       properties: {
@@ -87,13 +115,13 @@ const receptionistTools = [
   },
   {
     name: 'cancel_appointment',
-    description: 'Cancels an existing appointment. Explicit confirmation from the client and identity verification (phone + name matching active session) are required.',
+    description: 'Cancels an existing appointment. Strict identity verification requires the exact client name and phone number on the booking, plus explicit confirmation.',
     input_schema: {
       type: 'object',
       properties: {
         appointmentId: { type: 'string', description: 'Optional specific appointment ID' },
-        clientPhone: { type: 'string', description: 'Client phone number to verify appointment ownership' },
-        clientName: { type: 'string', description: 'Full name of the client on the booking for identity verification' },
+        clientPhone: { type: 'string', description: 'Client phone number on the booking' },
+        clientName: { type: 'string', description: 'Full name of the client on the booking for identity verification (minimum 2 characters)' },
         confirmCancellation: {
           type: 'boolean',
           description: 'Must be explicitly true after the client has confirmed they want to cancel'
@@ -105,9 +133,13 @@ const receptionistTools = [
   }
 ];
 
-// Tool Execution Dispatcher (strictly isolated to resolved centerId)
-async function executeTool(name, input, centerId, session) {
+// Tool Execution Dispatcher (strictly isolated to resolved center)
+async function executeTool(name, input, center, session) {
   try {
+    const centerId = center._id;
+    const timeZone = center.timeZone || 'Asia/Kolkata';
+    const { todayDate, currentMinutes } = getCenterDateTime(timeZone);
+
     if (name === 'list_services') {
       const query = { centerId, isActive: true };
       if (input.category && typeof input.category === 'string') {
@@ -129,12 +161,11 @@ async function executeTool(name, input, centerId, session) {
         return { success: false, message: 'Invalid date format. Expected YYYY-MM-DD.' };
       }
 
-      // 2. Reject past dates
-      const todayStr = new Date().toISOString().split('T')[0];
-      if (input.date < todayStr) {
+      // 2. Reject past dates using center's timezone
+      if (input.date < todayDate) {
         return {
           success: false,
-          message: `Cannot check availability for past date "${input.date}". Please request today (${todayStr}) or a future date.`
+          message: `Cannot check availability for past date "${input.date}". Please request today (${todayDate}) or a future date.`
         };
       }
 
@@ -154,27 +185,45 @@ async function executeTool(name, input, centerId, session) {
 
       const blocksNeeded = Math.max(1, Math.ceil(durationMinutes / 30));
 
-      // 4. Retrieve existing bookings on that date
+      // 4. Retrieve active staff & salon chair capacity
+      const activeStaff = await Staff.find({ centerId, isActive: true });
+      const totalChairs = Math.max(1, activeStaff.length || (center.chairCount || 3));
+
+      // 5. Retrieve existing active bookings on that date
       const existing = await Appointment.find({
         centerId,
         date: input.date,
         status: { $in: ['pending', 'confirmed', 'in_progress'] }
       }).select('time duration');
 
-      // Build set of all booked 30-min intervals
-      const bookedSlots = new Set();
+      // Count overlapping bookings per 30-min interval
+      const slotBookingCounts = {};
+      STANDARD_SALON_SLOTS.forEach(s => { slotBookingCounts[s] = 0; });
+
       for (const appt of existing) {
-        const slots = getOccupiedSlots(appt.time, appt.duration || 30);
-        slots.forEach(s => bookedSlots.add(s));
+        const occupied = getOccupiedSlots(appt.time, appt.duration || 30);
+        occupied.forEach(s => {
+          if (slotBookingCounts[s] !== undefined) slotBookingCounts[s]++;
+        });
       }
 
-      // A slot is available only if ALL required consecutive blocks are free
+      // Filter available slots: must have capacity across all required consecutive blocks, and not be in past
       const availableSlots = [];
+      const isToday = input.date === todayDate;
+
       for (let i = 0; i <= STANDARD_SALON_SLOTS.length - blocksNeeded; i++) {
+        const slotTime = STANDARD_SALON_SLOTS[i];
+
+        // Reject times that have already passed if checking today
+        if (isToday && timeToMinutes(slotTime) <= currentMinutes) {
+          continue;
+        }
+
         const potentialSlots = STANDARD_SALON_SLOTS.slice(i, i + blocksNeeded);
-        const isFree = potentialSlots.every(s => !bookedSlots.has(s));
-        if (isFree) {
-          availableSlots.push(STANDARD_SALON_SLOTS[i]);
+        const hasCapacity = potentialSlots.every(s => (slotBookingCounts[s] || 0) < totalChairs);
+
+        if (hasCapacity) {
+          availableSlots.push(slotTime);
         }
       }
 
@@ -182,6 +231,7 @@ async function executeTool(name, input, centerId, session) {
         success: true,
         date: input.date,
         durationMinutes,
+        salonChairs: totalChairs,
         availableSlots,
         totalBookedOnDate: existing.length
       };
@@ -194,12 +244,11 @@ async function executeTool(name, input, centerId, session) {
         return { success: false, message: 'Invalid date format. Expected YYYY-MM-DD.' };
       }
 
-      // 2. Reject past dates
-      const todayStr = new Date().toISOString().split('T')[0];
-      if (input.date < todayStr) {
+      // 2. Reject past dates using center's timezone
+      if (input.date < todayDate) {
         return {
           success: false,
-          message: `Cannot book an appointment for past date "${input.date}". Please select today or a future date.`
+          message: `Cannot book an appointment for past date "${input.date}". Please select today (${todayDate}) or a future date.`
         };
       }
 
@@ -211,19 +260,27 @@ async function executeTool(name, input, centerId, session) {
         };
       }
 
-      // 4. Validate client phone (10-15 digits)
+      // 4. Reject past times on today's date
+      if (input.date === todayDate && timeToMinutes(input.time) <= currentMinutes) {
+        return {
+          success: false,
+          message: `The time slot ${input.time} has already passed for today. Please select an upcoming slot or another date.`
+        };
+      }
+
+      // 5. Validate client phone (10-15 digits)
       const cleanPhone = (input.clientPhone || '').replace(/[\s-]/g, '');
       const phoneRegex = /^\+?[0-9]{10,15}$/;
       if (!phoneRegex.test(cleanPhone)) {
         return { success: false, message: 'Invalid client phone number. Please provide a 10 to 15 digit phone number.' };
       }
 
-      // 5. Validate client name
+      // 6. Validate client name (at least 2 characters)
       if (!input.clientName || input.clientName.trim().length < 2) {
-        return { success: false, message: 'Please provide a valid client name.' };
+        return { success: false, message: 'Please provide a valid client name (minimum 2 characters).' };
       }
 
-      // 6. Look up service by safely escaped regex
+      // 7. Look up service by safely escaped regex
       const safeServiceName = escapeRegex(input.serviceName.trim());
       let service = await Service.findOne({
         centerId,
@@ -252,26 +309,49 @@ async function executeTool(name, input, centerId, session) {
 
       const requestedSlots = STANDARD_SALON_SLOTS.slice(startIdx, startIdx + blocksNeeded);
 
-      // 7. Multi-slot Double-Booking Check: verify none of the requested blocks are occupied
+      // 8. Multi-chair & stylist capacity verification
+      const activeStaff = await Staff.find({ centerId, isActive: true });
+      const totalChairs = Math.max(1, activeStaff.length || (center.chairCount || 3));
+
       const existing = await Appointment.find({
         centerId,
         date: input.date,
         status: { $in: ['pending', 'confirmed', 'in_progress'] }
-      }).select('time duration');
+      }).select('time duration staffId');
 
-      const bookedSlots = new Set();
+      // Check slot capacity
+      const slotBookingCounts = {};
+      STANDARD_SALON_SLOTS.forEach(s => { slotBookingCounts[s] = 0; });
       for (const appt of existing) {
-        const slots = getOccupiedSlots(appt.time, appt.duration || 30);
-        slots.forEach(s => bookedSlots.add(s));
+        const occupied = getOccupiedSlots(appt.time, appt.duration || 30);
+        occupied.forEach(s => {
+          if (slotBookingCounts[s] !== undefined) slotBookingCounts[s]++;
+        });
       }
 
-      const hasConflict = requestedSlots.some(s => bookedSlots.has(s));
-      if (hasConflict) {
+      const hasCapacity = requestedSlots.every(s => (slotBookingCounts[s] || 0) < totalChairs);
+      if (!hasCapacity) {
         return {
           success: false,
           conflict: true,
-          message: `The time slot around ${input.time} on ${input.date} is already occupied. Please ask the client to select another available time.`
+          message: `All styling chairs are occupied around ${input.time} on ${input.date}. Please choose another available time slot.`
         };
+      }
+
+      // Assign an available stylist who is free across all requested slots
+      let assignedStaff = null;
+      if (activeStaff.length > 0) {
+        for (const st of activeStaff) {
+          const isBusy = existing.some(a => {
+            if (!a.staffId || a.staffId.toString() !== st._id.toString()) return false;
+            const apptSlots = getOccupiedSlots(a.time, a.duration || 30);
+            return apptSlots.some(s => requestedSlots.includes(s));
+          });
+          if (!isBusy) {
+            assignedStaff = st;
+            break;
+          }
+        }
       }
 
       const newAppt = new Appointment({
@@ -280,6 +360,8 @@ async function executeTool(name, input, centerId, session) {
         clientPhone: cleanPhone,
         serviceId: service ? service._id : null,
         serviceName: service ? service.name : input.serviceName.trim(),
+        staffId: assignedStaff ? assignedStaff._id : null,
+        staffName: assignedStaff ? assignedStaff.name : 'Salon Team',
         price: service ? service.price : 0,
         date: input.date,
         time: input.time,
@@ -289,7 +371,7 @@ async function executeTool(name, input, centerId, session) {
         notes: `AI Receptionist booking: ${input.notes || 'Confirmed via Claude AI'}`
       });
 
-      // Atomic save with MongoDB duplicate key conflict handling (unique partial index)
+      // Atomic save with MongoDB duplicate key conflict handling (stylist-specific unique partial index)
       try {
         await newAppt.save();
       } catch (err) {
@@ -303,15 +385,16 @@ async function executeTool(name, input, centerId, session) {
         throw err;
       }
 
-      // Bind verified phone number and client name to session
+      // Note: Do NOT treat self-reported booking phone as an unverified cancellation bypass
       if (session) {
-        session.clientPhone = cleanPhone;
-        session.clientName = newAppt.clientName;
+        session.lastBookedPhone = cleanPhone;
+        session.lastBookedName = newAppt.clientName;
       }
 
       logger.info('Appointment created by Claude receptionist', {
         appointmentId: newAppt._id,
         centerId,
+        staffName: newAppt.staffName,
         maskedPhone: maskPhone(cleanPhone),
         date: newAppt.date,
         time: newAppt.time
@@ -322,6 +405,7 @@ async function executeTool(name, input, centerId, session) {
         appointmentId: newAppt._id,
         clientName: newAppt.clientName,
         serviceName: newAppt.serviceName,
+        stylist: newAppt.staffName,
         date: newAppt.date,
         time: newAppt.time,
         durationMinutes: duration,
@@ -342,11 +426,12 @@ async function executeTool(name, input, centerId, session) {
         };
       }
 
-      // 2. Identity Verification: If session already has a verified phone, ensure it matches
-      if (session && session.clientPhone && session.clientPhone !== cleanPhone) {
+      // 2. Validate client name minimum length (prevent single-letter wildcard matching)
+      const inputName = (input.clientName || '').trim().toLowerCase();
+      if (!inputName || inputName.length < 2) {
         return {
           success: false,
-          message: 'Cancellation rejected: The provided phone number does not match the verified client phone for this active chat session.'
+          message: 'Client name verification required: Please provide the client full name (minimum 2 characters) used during booking.'
         };
       }
 
@@ -369,20 +454,23 @@ async function executeTool(name, input, centerId, session) {
         };
       }
 
-      // 3. Name Verification: If session phone wasn't set yet, require matching client name to prevent unauthorized cancellation
-      if (!session || !session.clientPhone) {
-        const inputName = (input.clientName || '').trim().toLowerCase();
-        const apptName = (appt.clientName || '').toLowerCase();
-        if (!inputName || !apptName.includes(inputName)) {
-          return {
-            success: false,
-            message: 'Client name verification failed for the booking under this phone number. Please provide the exact client name used during booking.'
-          };
-        }
-        if (session) {
-          session.clientPhone = cleanPhone;
-          session.clientName = appt.clientName;
-        }
+      // 3. Strict Name Verification: Always verify exact client name or first-and-last match (NEVER bypass based on self-reported session phone)
+      const apptName = (appt.clientName || '').trim().toLowerCase();
+      const exactMatch = apptName === inputName;
+      const apptParts = apptName.split(/\s+/);
+      const inputParts = inputName.split(/\s+/);
+      const firstLastMatch = (inputParts.length >= 2 && apptParts.length >= 2) &&
+        (inputParts[0] === apptParts[0] && inputParts[inputParts.length - 1] === apptParts[apptParts.length - 1]);
+
+      if (!exactMatch && !firstLastMatch) {
+        logger.warn('Cancellation rejected: Client name mismatch', {
+          centerId,
+          maskedPhone: maskPhone(cleanPhone)
+        });
+        return {
+          success: false,
+          message: 'Cancellation identity verification failed: The client name provided does not match the name on the appointment booking.'
+        };
       }
 
       appt.status = 'cancelled';
@@ -414,30 +502,47 @@ async function executeTool(name, input, centerId, session) {
 // POST /api/ai/receptionist
 router.post('/receptionist', async (req, res) => {
   try {
-    const { centerId, widgetKey, sessionId: reqSessionId, message } = req.body;
+    const { widgetKey, sessionId: reqSessionId, message } = req.body;
 
     // 1. Validate user message input
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({ message: 'A valid message string is required.' });
     }
 
-    // 2. Resolve center server-side via widgetKey (public widget key) OR verified centerId
+    // 2. Strict Widget Key Requirement: public widget callers MUST supply a valid widgetKey (drop raw centerId public fallback)
     const resolvedWidgetKey = widgetKey || req.headers['x-widget-key'];
-    let center = null;
-
-    if (resolvedWidgetKey && typeof resolvedWidgetKey === 'string' && resolvedWidgetKey.trim().length > 0) {
-      center = await Center.findOne({ widgetKey: resolvedWidgetKey.trim(), isActive: { $ne: false } });
-    } else if (centerId && mongoose.Types.ObjectId.isValid(centerId)) {
-      center = await Center.findOne({ _id: centerId, isActive: { $ne: false } });
-    }
-
-    if (!center) {
+    if (!resolvedWidgetKey || typeof resolvedWidgetKey !== 'string' || resolvedWidgetKey.trim().length === 0) {
       return res.status(400).json({
-        message: 'A valid, active salon centerId or widgetKey is required.'
+        message: 'A valid center widgetKey is required. Direct access via centerId is not permitted for public client widgets.'
       });
     }
 
-    // 3. Per-Center Daily Turn Cap to protect salon token budget from multiple sessions
+    const center = await Center.findOne({ widgetKey: resolvedWidgetKey.trim(), isActive: { $ne: false } });
+    if (!center) {
+      return res.status(404).json({
+        message: 'Salon center not found for the provided widget key or center is inactive.'
+      });
+    }
+
+    // 3. Enforce Origin / Referer against center.allowedDomains if configured
+    if (center.allowedDomains && center.allowedDomains.length > 0) {
+      const originHeader = req.headers.origin || req.headers.referer;
+      if (originHeader) {
+        let requestHost = '';
+        try {
+          requestHost = new URL(originHeader).origin;
+        } catch {
+          requestHost = originHeader;
+        }
+        const isAllowed = center.allowedDomains.some(d => requestHost.includes(d) || d.includes(requestHost));
+        if (!isAllowed) {
+          logger.warn('AI receptionist call rejected: Origin not authorized', { origin: originHeader, widgetKey: resolvedWidgetKey });
+          return res.status(403).json({ message: 'Request origin is not authorized for this salon widget.' });
+        }
+      }
+    }
+
+    // 4. Per-Center Daily Turn Cap to protect salon token budget from runaway spend
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -455,12 +560,12 @@ router.post('/receptionist', async (req, res) => {
       });
     }
 
-    // 4. Generate crypto UUID for session ID if not provided
+    // 5. Generate crypto UUID for session ID if not provided
     const sessionId = (reqSessionId && typeof reqSessionId === 'string' && reqSessionId.trim().length > 0)
       ? reqSessionId.trim()
       : crypto.randomUUID();
 
-    // 5. Load or initialize persistent session in MongoDB (with automatic 24-hr TTL)
+    // 6. Load or initialize persistent session in MongoDB (with automatic 24-hr TTL)
     let session = await AiSession.findOne({ sessionId, centerId: center._id });
     if (!session) {
       session = new AiSession({
@@ -479,7 +584,7 @@ router.post('/receptionist', async (req, res) => {
       });
     }
 
-    // 6. Check if Claude API key is configured
+    // 7. Check if Claude API key is configured
     if (!process.env.ANTHROPIC_API_KEY) {
       logger.warn('Anthropic API key is not configured');
       return res.status(503).json({
@@ -493,13 +598,13 @@ router.post('/receptionist', async (req, res) => {
     session.turnCount += 1;
     session.lastActive = new Date();
 
-    // 7. Prepare message history for Claude: last 10 messages, strictly guaranteed to start with role 'user'
+    // 8. Prepare message history for Claude: last 10 messages, strictly guaranteed to start with role 'user'
     let contextMessages = session.messages.slice(-10).map(m => ({
       role: m.role,
       content: m.content
     }));
 
-    // Anthropic Messages API strictly requires messages[0] to be from 'user'
+    // Anthropic Messages API strictly requires messages[0] to have role 'user'
     while (contextMessages.length > 0 && contextMessages[0].role !== 'user') {
       contextMessages.shift();
     }
@@ -509,7 +614,7 @@ router.post('/receptionist', async (req, res) => {
       contextMessages.push({ role: 'user', content: message.trim() });
     }
 
-    // 8. Initialize Anthropic Client with current model
+    // 9. Initialize Anthropic Client with current model
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 
@@ -518,13 +623,14 @@ Your job is to greet clients, answer questions about beauty, skin, and hair serv
 Operating Center: ${center.name}
 Phone: ${center.phone || 'Available at desk'}
 Address: ${center.address || 'In salon'}
+Timezone: ${center.timeZone || 'Asia/Kolkata'}
 
 Rules:
 - Be courteous, warm, and helpful with appropriate salon emojis (✨, 💇‍♀️, 💅).
 - Always use the tools provided to look up service prices and check slot availability before confirming an appointment.
 - Double booking is strictly prevented: always verify availability using check_availability.
 - Never make medical or clinical diagnoses for dermatological issues; recommend a consultation with a master stylist or aesthetician.
-- For cancellations, verify the client's phone number and confirm their intent before executing cancel_appointment.
+- For cancellations, strictly verify the client's registered name and phone number before executing cancel_appointment.
 - Keep responses concise, clear, and easy to read on mobile or WhatsApp.`;
 
     // Multi-turn tool execution loop (max 5 rounds)
@@ -552,7 +658,7 @@ Rules:
       const toolResults = [];
 
       for (const block of toolUseBlocks) {
-        const result = await executeTool(block.name, block.input, center._id, session);
+        const result = await executeTool(block.name, block.input, center, session);
         toolCallsExecuted.push({ tool: block.name, input: block.input, result });
         toolResults.push({
           type: 'tool_result',

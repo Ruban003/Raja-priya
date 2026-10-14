@@ -1,4 +1,4 @@
-﻿const router = require('express').Router();
+const router = require('express').Router();
 const Appointment = require('../models/Appointment');
 const { auth, getAuthorizedCenterId, ensureRecordCenterAccess, handleAuthzError } = require('../middleware/auth');
 
@@ -20,7 +20,12 @@ router.post('/', auth, async (req, res) => {
     const centerId = getAuthorizedCenterId(req);
     const appointment = await new Appointment({ ...req.body, centerId }).save();
     res.status(201).json(appointment);
-  } catch (err) { handleAuthzError(res, err); }
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'This stylist or chair is already booked for the selected date and time slot.' });
+    }
+    handleAuthzError(res, err);
+  }
 });
 
 router.put('/:id', auth, async (req, res) => {
@@ -32,7 +37,12 @@ router.put('/:id', auth, async (req, res) => {
     delete updates.centerId;
 
     res.json(await Appointment.findByIdAndUpdate(req.params.id, updates, { new: true }));
-  } catch (err) { handleAuthzError(res, err); }
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'This stylist or chair is already booked for the updated date and time slot.' });
+    }
+    handleAuthzError(res, err);
+  }
 });
 
 router.delete('/:id', auth, async (req, res) => {
