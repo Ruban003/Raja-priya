@@ -45,8 +45,9 @@ export default function LandingPage() {
 
           <nav className="landing-nav-links">
             <a href="#features">AI Features</a>
-            <a href="#simulator">Live Agent Demo</a>
+            <a href="#simulator">Agent Demo</a>
             <a href="#architecture">Architecture</a>
+            <a href="#about">About &amp; Contact</a>
             <a href="https://github.com/Ruban003/Raja-priya" target="_blank" rel="noopener noreferrer" className="github-nav-link">
               <span>GitHub</span>
               <span className="gh-badge">v2.0</span>
@@ -86,8 +87,9 @@ export default function LandingPage() {
           </h1>
 
           <p className="hero-subhead">
-            RVSMPS Glam Pro automates client bookings, 24/7 WhatsApp AI receptionist dialogues, 
-            predictive client retention, and multi-branch operations with intelligent Claude agents.
+            RVSMPS Glam Pro streamlines salon and spa operations with intelligent appointment booking, 
+            real-time double-booking prevention, GST POS billing, and multi-branch franchise sync — with 
+            conversational AI reception powered by Anthropic Claude.
           </p>
 
           <div className="hero-cta-group">
@@ -113,8 +115,8 @@ export default function LandingPage() {
 
           <div className="hero-metrics-bar">
             <div className="metric-box">
-              <div className="metric-val">99.4%</div>
-              <div className="metric-lbl">Booking Intent Accuracy</div>
+              <div className="metric-val">24/7</div>
+              <div className="metric-lbl">Autonomous Front Desk</div>
             </div>
             <div className="metric-divider" />
             <div className="metric-box">
@@ -123,13 +125,13 @@ export default function LandingPage() {
             </div>
             <div className="metric-divider" />
             <div className="metric-box">
-              <div className="metric-val">3.8x</div>
-              <div className="metric-lbl">Client Retention Lift</div>
+              <div className="metric-val">100%</div>
+              <div className="metric-lbl">Double-Booking Prevention</div>
             </div>
             <div className="metric-divider" />
             <div className="metric-box">
-              <div className="metric-val">100%</div>
-              <div className="metric-lbl">Multi-Branch Sync</div>
+              <div className="metric-val">Live</div>
+              <div className="metric-lbl">She GLAM Pilot Deployment</div>
             </div>
           </div>
         </div>
@@ -138,9 +140,9 @@ export default function LandingPage() {
       {/* Live AI Agent Interactive Simulator */}
       <section className="landing-simulator-section" id="simulator">
         <div className="landing-section-header">
-          <span className="section-eyebrow">INTERACTIVE AGENT DEMO</span>
-          <h2>Autonomous Customer Dialogue Powered by Claude</h2>
-          <p>See how our integrated Claude 3.5 Sonnet agent handles natural, multi-turn appointment scheduling and client consultations.</p>
+          <span className="section-eyebrow">INTERACTIVE DEMO (ILLUSTRATIVE)</span>
+          <h2>Illustrative Claude AI Scheduling Dialogue</h2>
+          <p>Explore simulated dialogues demonstrating how Claude 3.5 Sonnet handles natural, multi-turn appointment scheduling and consultations via structured function calling.</p>
         </div>
 
         <div className="simulator-card">
@@ -149,13 +151,13 @@ export default function LandingPage() {
               className={`sim-tab ${activeTab === 'receptionist' ? 'active' : ''}`}
               onClick={() => setActiveTab('receptionist')}
             >
-              <span>🤖 WhatsApp Receptionist</span>
+              <span>🤖 AI Receptionist</span>
             </button>
             <button 
               className={`sim-tab ${activeTab === 'retention' ? 'active' : ''}`}
               onClick={() => setActiveTab('retention')}
             >
-              <span>📈 Smart Retention Follow-Up</span>
+              <span>📈 Retention Follow-Up (Preview)</span>
             </button>
             <button 
               className={`sim-tab ${activeTab === 'consultation' ? 'active' : ''}`}
@@ -170,7 +172,7 @@ export default function LandingPage() {
               <div className="sim-avatar">✦</div>
               <div>
                 <div className="sim-agent-name">Glam Pro AI Assistant</div>
-                <div className="sim-agent-status">Powered by Claude 3.5 Sonnet • Online</div>
+                <div className="sim-agent-status">Simulating Claude 3.5 Sonnet • Interactive Preview</div>
               </div>
             </div>
 
@@ -192,10 +194,10 @@ export default function LandingPage() {
                 aria-label="Simulated AI dialogue description"
                 type="text" 
                 readOnly 
-                value="Simulated AI dialogue based on Anthropic API function calling" 
+                value="Illustrative dialogue demonstrating Anthropic Claude function calling" 
                 className="sim-input-mock"
               />
-              <span className="sim-tag-live">LIVE MOCKUP</span>
+              <span className="sim-tag-live">ILLUSTRATIVE DEMO</span>
             </div>
           </div>
         </div>
@@ -206,26 +208,26 @@ export default function LandingPage() {
         <div className="landing-section-header">
           <span className="section-eyebrow">INTELLIGENT SUITE</span>
           <h2>Enterprise Salon Operations Reimagined with AI</h2>
-          <p>Full-stack salon and spa automation engineered for single boutique studios and 50+ branch franchises.</p>
+          <p>Full-stack salon and spa automation engineered for single boutique studios and multi-branch franchises.</p>
         </div>
 
         <div className="features-grid">
           <div className="feature-card">
             <div className="feature-icon-box">💬</div>
-            <h3>Claude WhatsApp Receptionist</h3>
+            <h3>Claude AI Receptionist</h3>
             <p>
-              Autonomous 24/7 client booking, cancellations, slot rescheduling, and answers to pricing inquiries without requiring front-desk staff.
+              Autonomous booking, cancellations, slot rescheduling, and answers to pricing inquiries via multi-turn function calling. Web receptionist live; WhatsApp integration in pilot development.
             </p>
-            <div className="feature-code-tag">model: claude-3-5-sonnet-latest</div>
+            <div className="feature-code-tag">model: claude-3-5-sonnet-20241022</div>
           </div>
 
           <div className="feature-card">
             <div className="feature-icon-box">🧠</div>
             <h3>Predictive Retention Engine</h3>
             <p>
-              Analyzes historical service cadences and client preferences to dispatch automated, personalized WhatsApp VIP reminders right when roots or treatments need refresh.
+              Calculates service intervals to generate personalized VIP recall reminders when roots or treatments need refresh. Live pilot testing at She GLAM Salon.
             </p>
-            <div className="feature-code-tag">Prompt: Client Lifecycle Optimization</div>
+            <div className="feature-code-tag">Pilot: She GLAM Salon &amp; Academy</div>
           </div>
 
           <div className="feature-card">
@@ -289,6 +291,55 @@ export default function LandingPage() {
             <div className="arch-title">Global Edge & DNS</div>
             <p>Cloudflare Anycast DNS with automated SSL/TLS termination, DDoS protection, and Vercel edge deployment.</p>
             <div className="arch-pill">Cloudflare / Vercel</div>
+          </div>
+        </div>
+      </section>
+
+      {/* About & Pilot Program Section */}
+      <section className="landing-about-section" id="about" style={{ padding: '60px 24px', maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="landing-section-header">
+          <span className="section-eyebrow">ABOUT &amp; PILOT PROGRAM</span>
+          <h2>Built by RVSMPS Technologies for Real-World Salons</h2>
+          <p>
+            Founded by Rubanraj V in 2024, RVSMPS Technologies develops enterprise-grade, AI-native software. 
+            Glam Pro AI is actively deployed in a commercial pilot at She GLAM Salon &amp; Academy to solve peak-hour scheduling contention and front-desk automation.
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '32px' }}>
+          <div className="feature-card">
+            <div className="feature-icon-box">🏢</div>
+            <h3>Company Overview</h3>
+            <p>
+              <strong>Legal Entity:</strong> RVSMPS Technologies<br />
+              <strong>Founder &amp; Principal Architect:</strong> Rubanraj V<br />
+              <strong>HQ:</strong> Tamil Nadu, India<br />
+              <strong>Focus:</strong> AI Operating Systems for Service Businesses
+            </p>
+            <div className="feature-code-tag">Claude for Startups Program</div>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon-box">💇‍♀️</div>
+            <h3>Flagship Pilot Partner</h3>
+            <p>
+              <strong>Partner:</strong> She GLAM Salon &amp; Academy<br />
+              <strong>Scope:</strong> Multi-stylist scheduling, POS billing, automated GST invoicing, and Claude AI reception.<br />
+              <strong>Live Deployment:</strong> <a href="https://sheglam.rvsmps.store" target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'underline' }}>sheglam.rvsmps.store</a>
+            </p>
+            <div className="feature-code-tag">Active Commercial Pilot</div>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon-box">📬</div>
+            <h3>Direct Contact &amp; Inquiries</h3>
+            <p>
+              <strong>Official Email:</strong> <a href="mailto:contact@rvsmps.store" style={{ color: '#60a5fa', textDecoration: 'underline' }}>contact@rvsmps.store</a><br />
+              <strong>Domain:</strong> <a href="https://rvsmps.store" style={{ color: '#60a5fa', textDecoration: 'underline' }}>rvsmps.store</a><br />
+              <strong>Response Time:</strong> Within 24 business hours<br />
+              <strong>Founder Profile:</strong> <a href="https://linkedin.com/in/rubanrajv" target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'underline' }}>linkedin.com/in/rubanrajv</a>
+            </p>
+            <div className="feature-code-tag">contact@rvsmps.store</div>
           </div>
         </div>
       </section>

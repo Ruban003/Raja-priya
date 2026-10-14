@@ -5,29 +5,44 @@
 [![Platform](https://img.shields.io/badge/Platform-Vercel%20%7C%20Cloudflare-black?style=flat-square)](https://rvsmps.store)
 [![Status](https://img.shields.io/badge/Status-Commercial%20Pilot%20Live-emerald?style=flat-square)](https://rvsmps.store)
 
-> **Next-generation autonomous salon, spa, and wellness operating system powered by the Anthropic Claude API.** RVSMPS Glam Pro automates multi-turn client bookings, 24/7 WhatsApp AI front-desk receptionist dialogues, predictive client retention, and multi-branch franchise operations.
+> **Next-generation autonomous salon, spa, and wellness operating system powered by the Anthropic Claude API.** RVSMPS Glam Pro automates multi-turn client bookings, double-booking prevention, GST POS billing, staff commissions, and multi-branch franchise operations.
 
 ---
 
 ## 🌐 Live Deployments
 
 - **Live Production Platform**: [https://rvsmps.store](https://rvsmps.store) (and [https://www.rvsmps.store](https://www.rvsmps.store))
-- **Flagship Client Deployment**: [https://sheglam.rvsmps.store](https://sheglam.rvsmps.store) *(She GLAM Salon & Academy)*
+- **Commercial Pilot Deployment**: [https://sheglam.rvsmps.store](https://sheglam.rvsmps.store) *(She GLAM Salon & Academy)*
 - **Administrative Portal**: [https://rvsmps.store/login](https://rvsmps.store/login)
-- **Official Contact**: `contact@rvsmps.store`
+- **Legal & Compliance**: [Privacy Policy](https://rvsmps.store/privacy) • [Terms of Service](https://rvsmps.store/terms)
+- **Official Inquiries**: `contact@rvsmps.store`
+
+---
+
+## 📊 Feature Status: Live Today vs Roadmap
+
+| Capability | Status | Description |
+|------------|--------|-------------|
+| **Visual Appointment Matrix** | 🟢 **Live in Production** | Interactive calendar with real-time double-booking prevention and stylist chair allocation. |
+| **Instant POS & GST Invoicing** | 🟢 **Live in Production** | Sub-second billing with auto GST calculation (CGST+SGST), custom payments, and digital receipts. |
+| **Multi-Branch Operations & RBAC** | 🟢 **Live in Production** | Multi-tier permissions (`RV Owner`, `Center Admin`, `Manager`, `Receptionist`) with staff commission tracking. |
+| **Claude AI Receptionist API** | 🟢 **Live in Production** | REST API (`/api/ai/receptionist`) powered by Claude 3.5 Sonnet with multi-turn tool calling (up to 5 rounds), persistent MongoDB sessions, server-side center verification, and slot rechecking. |
+| **Interactive Showcase Demo** | 🟢 **Live on Website** | Illustrative multi-turn dialogue simulator showcasing Claude tool use and booking flows. |
+| **Meta WhatsApp Cloud API Relay** | 🟡 **In Development / Pilot Roadmap** | Webhook verification and HMAC-SHA256 signature verification implemented and tested. Bidirectional message relay awaiting Meta business verification. |
+| **Automated Outbound Retention Campaigns** | 🟡 **In Development / Pilot Roadmap** | Periodic service recall notifications and VIP re-engagement broadcasts. |
 
 ---
 
 ## 💡 Why Anthropic Claude 3.5 Sonnet?
 
-Modern beauty salons and wellness chains lose up to 35% of inbound booking inquiries due to busy front desks during peak hours and unassisted queries after closing. 
+Salons and spas face intense booking contention during peak hours, while front-desk staff juggle walk-in clients, phone calls, and checkout queues.
 
-RVSMPS Glam Pro leverages **Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-latest`)** to power an end-to-end autonomous business copilot:
+RVSMPS Glam Pro integrates **Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-20241022`)** as an autonomous front-desk receptionist:
 
-1. **Autonomous WhatsApp Receptionist**: Claude handles natural-language booking dialogues, reschedules appointments, answers service pricing questions, and checks stylist availability via function calling in real time.
-2. **Predictive Client Retention Engine**: Analyzes historical visit cycles (hair spa, coloring, facials) and synthesizes hyper-personalized re-engagement messages via Claude to boost repeat client visits by 3.8x.
-3. **AI Stylist & Treatment Copilot**: Recommends customized hair and skin service packages based on client history, allergies, and seasonal trends.
-4. **Franchise Intelligence**: Summarizes branch performance, stylist commissions, and peak booking hours for multi-center operators.
+1. **Multi-Turn Tool Calling**: Claude inspects live service menus (`list_services`), verifies available calendar slots (`check_availability`), reserves confirmed slots with zero double-booking (`create_appointment`), and manages confirmed cancellations (`cancel_appointment`).
+2. **Deterministic Center Tenancy**: All tool operations are cryptographically and server-side scoped to verified salon centers.
+3. **Session Continuity**: Multi-turn conversation history is persisted in MongoDB with automatic 24-hour TTL expiration and per-session turn capping (max 25 turns) to prevent token abuse.
+4. **Resilient Availability**: Built-in slot rechecking ensures race conditions between simultaneous bookings are caught and rejected gracefully.
 
 ---
 
@@ -36,52 +51,40 @@ RVSMPS Glam Pro leverages **Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-late
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        CLIENT / GUEST TOUCHPOINTS                     │
-│  • Public Web Showcase (https://rvsmps.store)                          │
-│  • Client Booking Portal (https://sheglam.rvsmps.store)                │
-│  • 24/7 WhatsApp AI Receptionist Channel                               │
+│  • Public Web Platform (https://rvsmps.store)                          │
+│  • Client Booking Web Portal (https://sheglam.rvsmps.store)            │
+│  • Meta WhatsApp Webhook Gateway (/api/whatsapp/webhook)               │
 └───────────────────────────────────┬────────────────────────────────────┘
-                                    │ HTTPS / Webhook
+                                    │ HTTPS (Strict Rate Limited)
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │                    INTELLIGENCE & BACKEND SERVICES                     │
 │                                                                        │
 │   ┌────────────────────────┐         ┌─────────────────────────────┐   │
-│   │   Anthropic Claude API │ ◄─────► │  Node.js / Express Gateway  │   │
-│   │   (Claude 3.5 Sonnet)  │         │  • Booking Conflict Engine  │   │
-│   │   • Agentic Reasoning  │         │  • GST Invoicing & POS      │   │
-│   │   • Tool/Function Call │         │  • Stylist Roster & RBAC    │   │
+│   │  Anthropic Claude API  │ ◄─────► │  Node.js / Express Gateway  │   │
+│   │  (Claude 3.5 Sonnet)   │         │  • Trust Proxy & Rate Limit │   │
+│   │  • Multi-Turn Tool Use │         │  • Server-Side Center Auth  │   │
+│   │  • Up to 5 Rounds Loop │         │  • Double-Booking Engine    │   │
+│   │  • Structured Outputs  │         │  • GST Invoicing & POS      │   │
 │   └────────────────────────┘         └──────────────┬──────────────┘   │
-└─────────────────────────────────────────────────────┼──────────────────┘
+│                                                     │                  │
+│                                                     ▼                  │
+│                                      ┌─────────────────────────────┐   │
+│                                      │     MongoDB Database        │   │
+│                                      │  • Centers & Services       │   │
+│                                      │  • Appointments (Indexed)   │   │
+│                                      │  • AiSessions (TTL 24h)     │   │
+│                                      └─────────────────────────────┘   │
+└─────────────────────────────────────────────────────┬──────────────────┘
                                                       │
                                                       ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │                    ADMINISTRATION & OPERATIONS SUITE                   │
-│  • React 18 / Vite Responsive Dashboard (https://rvsmps.store/dashboard)│
-│  • Real-time Appointment Matrix & Stylist Chair Allocator             │
+│  • React 18 / Vite Dashboard (https://rvsmps.store/dashboard)          │
+│  • Visual Stylist Chair & Appointment Scheduler                       │
 │  • Multi-branch Revenue Analytics & Automated Staff Commissions        │
 └────────────────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## 🚀 Key Features
-
-- **24/7 WhatsApp AI Receptionist**: Powered by Claude with zero latency drop-offs. Handles slot booking, reschedules, and cancellations.
-- **Visual Appointment Calendar**: Interactive scheduling with automated conflict detection, buffer management, and stylist chair assignment.
-- **Split-Second GST Billing & POS**: Automated tax calculations, digital invoices, customer receipts, and instant WhatsApp delivery.
-- **Role-Based Access Control (RBAC)**: Secure multi-tier permissions (`RV Owner`, `Center Admin`, `Manager`, `Receptionist`).
-- **Predictive Retention & VIP Care**: Proactive client lifecycle notifications dispatched at the optimal time.
-- **Multi-Branch Franchise Sync**: Single unified glass cockpit for chain owners managing multiple salon locations.
-
----
-
-## 🛠️ Tech Stack
-
-- **AI Core**: [Anthropic Claude 3.5 Sonnet API](https://docs.anthropic.com/) (`@anthropic-ai/sdk`)
-- **Frontend**: React 18, Vite, TailwindCSS, Lucide Icons, Recharts
-- **Backend**: Node.js, Express, REST APIs
-- **Hosting & Edge**: Vercel (Edge CDN), Cloudflare Anycast DNS & SSL/TLS
-- **Email Infrastructure**: Cloudflare Email Routing (`contact@rvsmps.store`)
 
 ---
 
@@ -89,27 +92,43 @@ RVSMPS Glam Pro leverages **Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-late
 
 ```text
 Raja-priya/
-├── README.md                          # Project documentation & overview
+├── LICENSE                            # MIT License
+├── README.md                          # Technical overview & architecture
 └── Rajapriya-main/
-    └── admin/                         # Frontend & SaaS Application
-        ├── index.html                 # Entry point with SEO metadata
-        ├── package.json               # Dependencies & scripts
-        ├── vite.config.js             # Vite build configuration
-        ├── tailwind.config.js         # Design token configuration
-        └── src/
-            ├── App.jsx                # Application routes (/ & /login & /dashboard)
-            ├── main.jsx               # React DOM hydration
-            ├── index.css              # Global styles & glassmorphic themes
-            ├── pages/
-            │   ├── LandingPage.jsx    # Public AI SaaS Showcase & Demo Simulator
-            │   ├── Login.jsx          # Secure staff & admin authentication
-            │   ├── Dashboard.jsx      # Salon KPIs & executive summary
-            │   ├── Appointments.jsx   # Visual appointment calendar
-            │   ├── Billing.jsx        # GST invoice generation & POS
-            │   ├── Clients.jsx        # Client directory & retention profiles
-            │   ├── Services.jsx       # Salon service menu & pricing
-            │   └── Settings.jsx       # Branch configuration & roles
-            └── components/            # Reusable UI elements & layouts
+    ├── package.json                   # Root workspace scripts
+    ├── admin/                         # Frontend Single Page App
+    │   ├── index.html                 # Open Graph, Twitter & SEO metadata
+    │   ├── package.json               # Frontend dependencies & scripts
+    │   ├── vite.config.js             # Vite production bundler config
+    │   └── src/
+    │       ├── App.jsx                # Router (/dashboard, /login, /privacy, /terms)
+    │       ├── pages/
+    │       │   ├── LandingPage.jsx    # Public showcase, interactive demo & about
+    │       │   ├── Login.jsx          # Secure employee / admin sign-in
+    │       │   ├── Dashboard.jsx      # Salon executive KPI dashboard
+    │       │   ├── Appointments.jsx   # Visual appointment calendar
+    │       │   ├── Billing.jsx        # POS & GST invoice generator
+    │       │   ├── PrivacyPolicy.jsx  # Legal privacy disclosures
+    │       │   └── TermsOfService.jsx # Terms of service & service agreements
+    │       └── context/               # AuthContext & state providers
+    └── backend/                       # REST API & Claude AI Engine
+        ├── server.js                  # Express app, helmet, trust proxy, rate limiters
+        ├── .env.example               # Documented environment template
+        ├── models/
+        │   ├── AiSession.js           # Conversation session model with 24h TTL
+        │   ├── Appointment.js         # Appointment schema with compound index
+        │   ├── Center.js              # Multi-branch salon configuration & GST
+        │   ├── Service.js             # Salon service catalog & pricing
+        │   ├── Staff.js               # Staff roles & commission rates
+        │   └── User.js                # Authenticated users & RBAC
+        ├── routes/
+        │   ├── ai.js                  # Claude receptionist agent & tool execution loop
+        │   ├── whatsapp.js            # Meta webhook with HMAC-SHA256 signature check
+        │   ├── appointments.js        # Appointment CRUD & calendar feed
+        │   ├── billing.js             # Server-side GST invoice creation
+        │   └── auth.js                # JWT authentication & session issuance
+        └── __tests__/
+            └── api.test.js            # Comprehensive Jest / Supertest test suite
 ```
 
 ---
@@ -119,48 +138,56 @@ Raja-priya/
 ### Prerequisites
 - Node.js (v18.0.0 or higher)
 - npm or yarn
+- MongoDB Atlas or local MongoDB instance
 - Anthropic API Key (from [Anthropic Console](https://console.anthropic.com/))
 
-### Installation
+### 1. Backend Setup
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Ruban003/Raja-priya.git
-   cd Raja-priya/Rajapriya-main/admin
-   ```
+```bash
+cd Rajapriya-main/backend
+cp .env.example .env
+# Edit .env with your MONGO_URI, JWT_SECRET, and ANTHROPIC_API_KEY
+npm install
+npm test
+npm start
+```
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+### 2. Frontend Setup
 
-3. **Configure Environment Variables**:
-   Create a `.env` file in `Rajapriya-main/admin/`:
-   ```env
-   VITE_APP_NAME="RVSMPS Glam Pro AI"
-   VITE_API_BASE_URL="https://api.rvsmps.store"
-   # Anthropic Claude API Key (for local testing / backend)
-   ANTHROPIC_API_KEY=your_anthropic_api_key_here
-   ```
+```bash
+cd Rajapriya-main/admin
+npm install
+npm run dev
+```
 
-4. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
-   Open `http://localhost:5173` in your browser.
-
-5. **Build for production**:
-   ```bash
-   npm run build
-   ```
+Visit `http://localhost:5173` to view the local development application.
 
 ---
 
-## 🔒 Security & Verification
+## 🧪 Testing & Quality Assurance
 
-- **Zero Secrets in Repository**: All sensitive credentials, API keys, and tokens are injected securely via Vercel and production environment variables.
-- **Public Open-Source Verification**: This repository is maintained publicly for verification by developer programs and partner evaluations.
-- **Custom Domain Validation**: Domain ownership is verified via Cloudflare DNS and Vercel HSTS SSL certificates.
+The backend includes a comprehensive Jest test suite verifying:
+- Root API health
+- Meta WhatsApp webhook verification & HMAC-SHA256 signature enforcement
+- Server-side center resolution and tenant isolation
+- Service unavailability (503) handling when Claude credentials are absent
+- Multi-turn Claude tool execution loops (mocked Anthropic client)
+- Session turn caps and MongoDB TTL session persistence
+
+Run tests locally:
+```bash
+cd Rajapriya-main/backend
+npm test
+```
+
+---
+
+## 🔒 Security & Privacy
+
+- **Zero Secrets in Repository**: All sensitive credentials (`ANTHROPIC_API_KEY`, `JWT_SECRET`, `WHATSAPP_APP_SECRET`) are injected via production environment variables.
+- **Reverse Proxy Protection**: `app.set('trust proxy', 1)` enables accurate IP-based rate limiting behind Vercel and Cloudflare.
+- **Strict Endpoint Limiting**: Global API rate limiter + strict authentication limiter + dedicated AI limiter (30 queries/15m) protect against token exhaustion and DDoS.
+- **Data Protection Compliance**: Audit logs mask client phone numbers (`+9198****3210`) to safeguard customer privacy under applicable data protection regulations.
 
 ---
 

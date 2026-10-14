@@ -8,6 +8,9 @@ const logger = require('./utils/logger');
 
 const app = express();
 
+// Trust reverse proxy (Vercel, Cloudflare, AWS ALB) for accurate client IP rate limiting
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
@@ -28,6 +31,15 @@ const authLimiter = rateLimit({
   message: { message: 'Too many login attempts, please try again in 15 minutes.' }
 });
 
+// Dedicated strict rate limiter for AI Receptionist to prevent token/spend abuse
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // 30 AI receptionist queries per 15 mins per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'AI receptionist query limit reached. Please try again in 15 minutes.' }
+});
+
 const allowedOrigins = (process.env.CORS_ORIGINS || 'https://rvsmps.store,https://www.rvsmps.store,https://sheglam.rvsmps.store,https://raja-priya.vercel.app,http://localhost:5173')
   .split(',')
   .map(origin => origin.trim())
@@ -38,7 +50,14 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
-app.use(express.json({ limit: '1mb' }));
+
+// Capture raw body for webhook HMAC signature verification (e.g. Meta WhatsApp)
+app.use(express.json({
+  limit: '1mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 if (!process.env.MONGO_URI) {
   logger.error('MONGO_URI is not configured');
@@ -50,7 +69,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => logger.error('MongoDB connection failed', { error: err.message }));
 
 app.use('/api/auth', authLimiter, require('./routes/auth'));
-app.use('/api/ai', require('./routes/ai'));
+app.use('/api/ai', aiLimiter, require('./routes/ai'));
 app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use('/api/centers', require('./routes/centers'));
 app.use('/api/users', require('./routes/users'));

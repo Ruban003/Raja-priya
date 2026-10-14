@@ -20,4 +20,8 @@ const appointmentSchema = new mongoose.Schema({
   color: { type: String, default: '#3498db' }
 }, { timestamps: true });
 
+// Compound index for slot availability and double-booking conflict detection
+appointmentSchema.index({ centerId: 1, date: 1, time: 1 });
+
 module.exports = mongoose.models.Appointment || mongoose.model('Appointment', appointmentSchema);
+

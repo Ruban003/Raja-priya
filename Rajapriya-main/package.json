@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node backend/server.js",
     "start": "node backend/server.js",
-    "build-css": "node scripts/build-css.js"
+    "test": "npm --prefix backend test"
   },
   "dependencies": {
     "cors": "^2.8.5",
