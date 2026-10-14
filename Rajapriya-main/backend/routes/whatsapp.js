@@ -12,39 +12,44 @@ function maskPhone(phone) {
 function verifyMetaSignature(req, res, next) {
   const appSecret = process.env.WHATSAPP_APP_SECRET;
 
-  // In production, when WHATSAPP_APP_SECRET is set, strictly enforce HMAC-SHA256
-  if (appSecret) {
-    const signature = req.headers['x-hub-signature-256'];
-    if (!signature) {
-      logger.warn('Meta WhatsApp webhook rejected: Missing x-hub-signature-256 header');
-      return res.status(401).json({ message: 'Missing webhook signature' });
-    }
+  // Reject unsigned requests with 503 if WHATSAPP_APP_SECRET is not configured
+  if (!appSecret) {
+    logger.warn('WHATSAPP_APP_SECRET is not configured on this server');
+    return res.status(503).json({
+      message: 'WhatsApp webhook signature verification is not configured on this server.'
+    });
+  }
 
-    const [prefix, hash] = signature.split('=');
-    if (prefix !== 'sha256' || !hash) {
-      logger.warn('Meta WhatsApp webhook rejected: Malformed signature header');
-      return res.status(401).json({ message: 'Malformed signature header' });
-    }
+  const signature = req.headers['x-hub-signature-256'];
+  if (!signature) {
+    logger.warn('Meta WhatsApp webhook rejected: Missing x-hub-signature-256 header');
+    return res.status(401).json({ message: 'Missing webhook signature' });
+  }
 
-    const payload = req.rawBody || JSON.stringify(req.body);
-    const expectedHash = crypto
-      .createHmac('sha256', appSecret)
-      .update(payload)
-      .digest('hex');
+  const [prefix, hash] = signature.split('=');
+  if (prefix !== 'sha256' || !hash) {
+    logger.warn('Meta WhatsApp webhook rejected: Malformed signature header');
+    return res.status(401).json({ message: 'Malformed signature header' });
+  }
 
-    try {
-      const isMatch = crypto.timingSafeEqual(
-        Buffer.from(hash, 'utf8'),
-        Buffer.from(expectedHash, 'utf8')
-      );
-      if (!isMatch) {
-        logger.warn('Meta WhatsApp webhook rejected: Invalid signature');
-        return res.status(403).json({ message: 'Invalid webhook signature' });
-      }
-    } catch {
-      logger.warn('Meta WhatsApp webhook rejected: Signature comparison error');
-      return res.status(403).json({ message: 'Invalid webhook signature length' });
+  const payload = req.rawBody || JSON.stringify(req.body);
+  const expectedHash = crypto
+    .createHmac('sha256', appSecret)
+    .update(payload)
+    .digest('hex');
+
+  try {
+    const isMatch = crypto.timingSafeEqual(
+      Buffer.from(hash, 'utf8'),
+      Buffer.from(expectedHash, 'utf8')
+    );
+    if (!isMatch) {
+      logger.warn('Meta WhatsApp webhook rejected: Invalid signature');
+      return res.status(403).json({ message: 'Invalid webhook signature' });
     }
+  } catch {
+    logger.warn('Meta WhatsApp webhook rejected: Signature comparison error');
+    return res.status(403).json({ message: 'Invalid webhook signature length' });
   }
 
   next();

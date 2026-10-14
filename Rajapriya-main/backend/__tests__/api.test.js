@@ -67,7 +67,7 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
   });
 
   // ==========================================
-  // 2. WhatsApp Webhook Security (Items 10, 11, 12)
+  // 2. WhatsApp Webhook Security (Items 10, 11, 12, Fix 5)
   // ==========================================
   describe('WhatsApp Webhook Verification & Security', () => {
     it('should respond 503 when WHATSAPP_VERIFY_TOKEN is not configured', async () => {
@@ -93,6 +93,15 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
         .query({ 'hub.mode': 'subscribe', 'hub.verify_token': 'expected_secret_token_2026', 'hub.challenge': 'CHALLENGE_ACCEPTED' });
       expect(res.statusCode).toEqual(200);
       expect(res.text).toEqual('CHALLENGE_ACCEPTED');
+    });
+
+    it('should reject POST webhook with 503 if WHATSAPP_APP_SECRET is not configured (no fail-open)', async () => {
+      delete process.env.WHATSAPP_APP_SECRET;
+      const res = await request(app)
+        .post('/api/whatsapp/webhook')
+        .send({ object: 'whatsapp_business_account' });
+      expect(res.statusCode).toEqual(503);
+      expect(res.body.message).toContain('WhatsApp webhook signature verification is not configured');
     });
 
     it('should reject POST webhook with 401 if WHATSAPP_APP_SECRET is set but signature is missing', async () => {
@@ -155,30 +164,45 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
       expect(res.body.message).toContain('valid message string is required');
     });
 
-    it('should reject requests with missing or invalid centerId with 400', async () => {
+    it('should reject requests with missing or invalid center identifier with 400', async () => {
       const res = await request(app)
         .post('/api/ai/receptionist')
         .send({ centerId: 'invalid-id-format', message: 'Hello!' });
       expect(res.statusCode).toEqual(400);
-      expect(res.body.message).toContain('valid centerId is required');
+      expect(res.body.message).toContain('centerId or widgetKey is required');
     });
 
-    it('should return 404 when centerId is not found in database', async () => {
-      const validId = new mongoose.Types.ObjectId().toString();
-      Center.findOne.mockResolvedValue(null);
+    it('should resolve center via widgetKey successfully', async () => {
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
+      const validCenterId = new mongoose.Types.ObjectId().toString();
+      Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', widgetKey: 'wgk_sheglam_123', isActive: true });
+      AiSession.aggregate.mockResolvedValue([{ totalTurns: 5 }]);
+      AiSession.findOne.mockResolvedValue({
+        sessionId: 'test-widget-session',
+        centerId: validCenterId,
+        turnCount: 0,
+        messages: [],
+        save: jest.fn().mockResolvedValue(true)
+      });
+      mockAnthropicCreate.mockResolvedValue({
+        stop_reason: 'end_turn',
+        content: [{ type: 'text', text: 'Hello! Welcome to She GLAM Salon.' }],
+        usage: { input_tokens: 20, output_tokens: 15 }
+      });
 
       const res = await request(app)
         .post('/api/ai/receptionist')
-        .send({ centerId: validId, message: 'Hello, are you open?' });
+        .send({ widgetKey: 'wgk_sheglam_123', message: 'Hi there!' });
 
-      expect(res.statusCode).toEqual(404);
-      expect(res.body.message).toContain('Salon center not found');
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.reply).toContain('She GLAM Salon');
     });
 
     it('should return 503 when ANTHROPIC_API_KEY is not configured', async () => {
       delete process.env.ANTHROPIC_API_KEY;
       const validCenterId = new mongoose.Types.ObjectId().toString();
       Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', isActive: true });
+      AiSession.aggregate.mockResolvedValue([{ totalTurns: 0 }]);
       AiSession.findOne.mockResolvedValue(null);
 
       const res = await request(app)
@@ -194,6 +218,7 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
       process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
       const validCenterId = new mongoose.Types.ObjectId().toString();
       Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', isActive: true });
+      AiSession.aggregate.mockResolvedValue([{ totalTurns: 10 }]);
       AiSession.findOne.mockResolvedValue({
         sessionId: 'test-session-123',
         centerId: validCenterId,
@@ -209,10 +234,61 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
       expect(res.body.message).toContain('reached its turn limit');
     });
 
+    // CRITICAL FIX 1: History Slicing with 12+ messages guarantees messages[0].role === 'user'
+    it('should drop leading assistant messages after slicing so messages[0] has role user when history > 10', async () => {
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
+      const validCenterId = new mongoose.Types.ObjectId().toString();
+      Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', isActive: true });
+      AiSession.aggregate.mockResolvedValue([{ totalTurns: 12 }]);
+
+      // Construct history with 12 existing messages (alternating user / assistant)
+      const existingMessages = [
+        { role: 'user', content: 'Turn 1 user' },
+        { role: 'assistant', content: 'Turn 1 assistant' },
+        { role: 'user', content: 'Turn 2 user' },
+        { role: 'assistant', content: 'Turn 2 assistant' },
+        { role: 'user', content: 'Turn 3 user' },
+        { role: 'assistant', content: 'Turn 3 assistant' },
+        { role: 'user', content: 'Turn 4 user' },
+        { role: 'assistant', content: 'Turn 4 assistant' },
+        { role: 'user', content: 'Turn 5 user' },
+        { role: 'assistant', content: 'Turn 5 assistant' },
+        { role: 'user', content: 'Turn 6 user' },
+        { role: 'assistant', content: 'Turn 6 assistant' }
+      ];
+
+      const mockSession = {
+        sessionId: 'test-long-history',
+        centerId: validCenterId,
+        turnCount: 6,
+        messages: [...existingMessages],
+        save: jest.fn().mockResolvedValue(true)
+      };
+      AiSession.findOne.mockResolvedValue(mockSession);
+
+      mockAnthropicCreate.mockResolvedValueOnce({
+        stop_reason: 'end_turn',
+        content: [{ type: 'text', text: 'Turn 7 response!' }],
+        usage: { input_tokens: 150, output_tokens: 25 }
+      });
+
+      const res = await request(app)
+        .post('/api/ai/receptionist')
+        .send({ centerId: validCenterId, sessionId: 'test-long-history', message: 'Turn 7 user message' });
+
+      expect(res.statusCode).toEqual(200);
+
+      // Verify that the call to Anthropic API started strictly with role 'user'
+      expect(mockAnthropicCreate).toHaveBeenCalled();
+      const callArgs = mockAnthropicCreate.mock.calls[0][0];
+      expect(callArgs.messages[0].role).toEqual('user');
+    });
+
     it('should execute Claude tool loop and save persistent session', async () => {
       process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
       const validCenterId = new mongoose.Types.ObjectId().toString();
       Center.findOne.mockResolvedValue({ _id: validCenterId, name: 'She GLAM Salon', isActive: true });
+      AiSession.aggregate.mockResolvedValue([{ totalTurns: 2 }]);
 
       const mockSession = {
         sessionId: 'test-session-abc',

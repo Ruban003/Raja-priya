@@ -20,13 +20,21 @@ function maskPhone(phone) {
   return phone.replace(/(\d{2,3})\d+(\d{4})/, '$1****$2');
 }
 
-// Standard salon operating hours (30-min intervals)
+// Standard salon operating hours (30-min intervals) including 01:30 PM
 const STANDARD_SALON_SLOTS = [
   '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-  '12:00 PM', '12:30 PM', '01:00 PM', '02:00 PM', '02:30 PM', '03:00 PM',
-  '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM',
-  '06:30 PM', '07:00 PM', '07:30 PM'
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
+  '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM'
 ];
+
+// Helper: Calculate sequential 30-min slots occupied by a service given duration
+function getOccupiedSlots(startTime, durationMinutes = 30) {
+  const startIdx = STANDARD_SALON_SLOTS.indexOf(startTime);
+  if (startIdx === -1) return [];
+  const blocks = Math.max(1, Math.ceil(durationMinutes / 30));
+  return STANDARD_SALON_SLOTS.slice(startIdx, startIdx + blocks);
+}
 
 // Tool definitions for Anthropic Claude Function Calling
 const receptionistTools = [
@@ -45,13 +53,13 @@ const receptionistTools = [
   },
   {
     name: 'check_availability',
-    description: 'Checks available appointment time slots on a given date for a requested service.',
+    description: 'Checks available appointment time slots on a given date for a requested service, accounting for service duration.',
     input_schema: {
       type: 'object',
       properties: {
         date: {
           type: 'string',
-          description: 'Date in YYYY-MM-DD format (e.g. "2026-10-15")'
+          description: 'Date in YYYY-MM-DD format (must be today or a future date)'
         },
         serviceName: {
           type: 'string',
@@ -63,15 +71,15 @@ const receptionistTools = [
   },
   {
     name: 'create_appointment',
-    description: 'Books and reserves a confirmed appointment slot for the client in the salon calendar after validating slot availability.',
+    description: 'Books and reserves a confirmed appointment slot for the client in the salon calendar after validating slot availability and rejecting double-bookings.',
     input_schema: {
       type: 'object',
       properties: {
         clientName: { type: 'string', description: 'Full name of the client' },
         clientPhone: { type: 'string', description: 'Contact phone number of the client (10-15 digits)' },
         serviceName: { type: 'string', description: 'Name of the booked service' },
-        date: { type: 'string', description: 'Date in YYYY-MM-DD format' },
-        time: { type: 'string', description: 'Time of appointment (e.g. "10:30 AM", "02:00 PM")' },
+        date: { type: 'string', description: 'Date in YYYY-MM-DD format (must be today or in the future)' },
+        time: { type: 'string', description: 'Time of appointment (e.g. "10:30 AM", "01:30 PM", "02:00 PM")' },
         notes: { type: 'string', description: 'Special requests, allergies, or styling notes' }
       },
       required: ['clientName', 'clientPhone', 'serviceName', 'date', 'time']
@@ -79,19 +87,20 @@ const receptionistTools = [
   },
   {
     name: 'cancel_appointment',
-    description: 'Cancels an existing appointment. Explicit confirmation from the client is required to prevent accidental cancellation.',
+    description: 'Cancels an existing appointment. Explicit confirmation from the client and identity verification (phone + name matching active session) are required.',
     input_schema: {
       type: 'object',
       properties: {
         appointmentId: { type: 'string', description: 'Optional specific appointment ID' },
         clientPhone: { type: 'string', description: 'Client phone number to verify appointment ownership' },
+        clientName: { type: 'string', description: 'Full name of the client on the booking for identity verification' },
         confirmCancellation: {
           type: 'boolean',
           description: 'Must be explicitly true after the client has confirmed they want to cancel'
         },
         reason: { type: 'string', description: 'Reason for cancellation' }
       },
-      required: ['clientPhone', 'confirmCancellation']
+      required: ['clientPhone', 'clientName', 'confirmCancellation']
     }
   }
 ];
@@ -106,27 +115,73 @@ async function executeTool(name, input, centerId, session) {
         query.category = new RegExp(safeCategory, 'i');
       }
       const services = await Service.find(query).select('name category price duration description');
-      return { count: services.length, services };
+      return {
+        success: true,
+        count: services.length,
+        services
+      };
     }
 
     if (name === 'check_availability') {
-      // Validate date format YYYY-MM-DD
+      // 1. Validate date format YYYY-MM-DD
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!input.date || !dateRegex.test(input.date)) {
-        return { error: 'Invalid date format. Expected YYYY-MM-DD.' };
+        return { success: false, message: 'Invalid date format. Expected YYYY-MM-DD.' };
       }
 
+      // 2. Reject past dates
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (input.date < todayStr) {
+        return {
+          success: false,
+          message: `Cannot check availability for past date "${input.date}". Please request today (${todayStr}) or a future date.`
+        };
+      }
+
+      // 3. Resolve service duration if specified
+      let durationMinutes = 30;
+      if (input.serviceName && typeof input.serviceName === 'string') {
+        const safeServiceName = escapeRegex(input.serviceName.trim());
+        const svc = await Service.findOne({
+          centerId,
+          name: new RegExp(safeServiceName, 'i'),
+          isActive: true
+        });
+        if (svc && svc.duration) {
+          durationMinutes = svc.duration;
+        }
+      }
+
+      const blocksNeeded = Math.max(1, Math.ceil(durationMinutes / 30));
+
+      // 4. Retrieve existing bookings on that date
       const existing = await Appointment.find({
         centerId,
         date: input.date,
         status: { $in: ['pending', 'confirmed', 'in_progress'] }
-      }).select('time duration serviceName');
+      }).select('time duration');
 
-      const bookedTimes = new Set(existing.map(a => a.time));
-      const availableSlots = STANDARD_SALON_SLOTS.filter(t => !bookedTimes.has(t));
+      // Build set of all booked 30-min intervals
+      const bookedSlots = new Set();
+      for (const appt of existing) {
+        const slots = getOccupiedSlots(appt.time, appt.duration || 30);
+        slots.forEach(s => bookedSlots.add(s));
+      }
+
+      // A slot is available only if ALL required consecutive blocks are free
+      const availableSlots = [];
+      for (let i = 0; i <= STANDARD_SALON_SLOTS.length - blocksNeeded; i++) {
+        const potentialSlots = STANDARD_SALON_SLOTS.slice(i, i + blocksNeeded);
+        const isFree = potentialSlots.every(s => !bookedSlots.has(s));
+        if (isFree) {
+          availableSlots.push(STANDARD_SALON_SLOTS[i]);
+        }
+      }
 
       return {
+        success: true,
         date: input.date,
+        durationMinutes,
         availableSlots,
         totalBookedOnDate: existing.length
       };
@@ -139,35 +194,36 @@ async function executeTool(name, input, centerId, session) {
         return { success: false, message: 'Invalid date format. Expected YYYY-MM-DD.' };
       }
 
-      // 2. Validate client phone (10-15 digits)
+      // 2. Reject past dates
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (input.date < todayStr) {
+        return {
+          success: false,
+          message: `Cannot book an appointment for past date "${input.date}". Please select today or a future date.`
+        };
+      }
+
+      // 3. Validate time against standard salon slots
+      if (!STANDARD_SALON_SLOTS.includes(input.time)) {
+        return {
+          success: false,
+          message: `Invalid appointment time "${input.time}". Please select from standard salon hours: 9:00 AM to 7:30 PM in 30-minute intervals.`
+        };
+      }
+
+      // 4. Validate client phone (10-15 digits)
       const cleanPhone = (input.clientPhone || '').replace(/[\s-]/g, '');
       const phoneRegex = /^\+?[0-9]{10,15}$/;
       if (!phoneRegex.test(cleanPhone)) {
         return { success: false, message: 'Invalid client phone number. Please provide a 10 to 15 digit phone number.' };
       }
 
-      // 3. Validate client name
+      // 5. Validate client name
       if (!input.clientName || input.clientName.trim().length < 2) {
         return { success: false, message: 'Please provide a valid client name.' };
       }
 
-      // 4. Double-Booking Slot Recheck: verify no conflicting appointment exists
-      const conflictingAppt = await Appointment.findOne({
-        centerId,
-        date: input.date,
-        time: input.time,
-        status: { $in: ['pending', 'confirmed', 'in_progress'] }
-      });
-
-      if (conflictingAppt) {
-        return {
-          success: false,
-          conflict: true,
-          message: `The slot at ${input.time} on ${input.date} is already booked. Please ask the client to select another available slot.`
-        };
-      }
-
-      // 5. Look up service by safely escaped regex (exact match first, then substring)
+      // 6. Look up service by safely escaped regex
       const safeServiceName = escapeRegex(input.serviceName.trim());
       let service = await Service.findOne({
         centerId,
@@ -183,6 +239,41 @@ async function executeTool(name, input, centerId, session) {
         });
       }
 
+      const duration = service ? service.duration : 45;
+      const startIdx = STANDARD_SALON_SLOTS.indexOf(input.time);
+      const blocksNeeded = Math.max(1, Math.ceil(duration / 30));
+
+      if (startIdx + blocksNeeded > STANDARD_SALON_SLOTS.length) {
+        return {
+          success: false,
+          message: `This service requires ${duration} minutes and cannot be accommodated starting at ${input.time} before closing at 8:00 PM.`
+        };
+      }
+
+      const requestedSlots = STANDARD_SALON_SLOTS.slice(startIdx, startIdx + blocksNeeded);
+
+      // 7. Multi-slot Double-Booking Check: verify none of the requested blocks are occupied
+      const existing = await Appointment.find({
+        centerId,
+        date: input.date,
+        status: { $in: ['pending', 'confirmed', 'in_progress'] }
+      }).select('time duration');
+
+      const bookedSlots = new Set();
+      for (const appt of existing) {
+        const slots = getOccupiedSlots(appt.time, appt.duration || 30);
+        slots.forEach(s => bookedSlots.add(s));
+      }
+
+      const hasConflict = requestedSlots.some(s => bookedSlots.has(s));
+      if (hasConflict) {
+        return {
+          success: false,
+          conflict: true,
+          message: `The time slot around ${input.time} on ${input.date} is already occupied. Please ask the client to select another available time.`
+        };
+      }
+
       const newAppt = new Appointment({
         centerId,
         clientName: input.clientName.trim(),
@@ -192,15 +283,27 @@ async function executeTool(name, input, centerId, session) {
         price: service ? service.price : 0,
         date: input.date,
         time: input.time,
-        duration: service ? service.duration : 45,
+        duration,
         type: 'prebooked',
         status: 'confirmed',
         notes: `AI Receptionist booking: ${input.notes || 'Confirmed via Claude AI'}`
       });
 
-      await newAppt.save();
+      // Atomic save with MongoDB duplicate key conflict handling (unique partial index)
+      try {
+        await newAppt.save();
+      } catch (err) {
+        if (err.code === 11000) {
+          return {
+            success: false,
+            conflict: true,
+            message: `The slot at ${input.time} on ${input.date} was just reserved by another booking. Please choose another available slot.`
+          };
+        }
+        throw err;
+      }
 
-      // Update session with verified client phone
+      // Bind verified phone number and client name to session
       if (session) {
         session.clientPhone = cleanPhone;
         session.clientName = newAppt.clientName;
@@ -221,6 +324,7 @@ async function executeTool(name, input, centerId, session) {
         serviceName: newAppt.serviceName,
         date: newAppt.date,
         time: newAppt.time,
+        durationMinutes: duration,
         price: newAppt.price,
         status: 'confirmed'
       };
@@ -229,12 +333,20 @@ async function executeTool(name, input, centerId, session) {
     if (name === 'cancel_appointment') {
       const cleanPhone = (input.clientPhone || '').replace(/[\s-]/g, '');
 
-      // Verify cancellation confirmation flag
+      // 1. Verify cancellation confirmation flag
       if (input.confirmCancellation !== true) {
         return {
           success: false,
           requiresConfirmation: true,
           message: 'Cancellation requires explicit confirmation from the client. Please ask the client to confirm cancellation.'
+        };
+      }
+
+      // 2. Identity Verification: If session already has a verified phone, ensure it matches
+      if (session && session.clientPhone && session.clientPhone !== cleanPhone) {
+        return {
+          success: false,
+          message: 'Cancellation rejected: The provided phone number does not match the verified client phone for this active chat session.'
         };
       }
 
@@ -248,14 +360,7 @@ async function executeTool(name, input, centerId, session) {
         query._id = input.appointmentId;
       }
 
-      const appt = await Appointment.findOneAndUpdate(
-        query,
-        {
-          status: 'cancelled',
-          notes: `Cancelled via AI Receptionist: ${input.reason || 'Client requested'}`
-        },
-        { new: true }
-      );
+      const appt = await Appointment.findOne(query);
 
       if (!appt) {
         return {
@@ -263,6 +368,26 @@ async function executeTool(name, input, centerId, session) {
           message: 'No active upcoming appointment was found matching that phone number to cancel.'
         };
       }
+
+      // 3. Name Verification: If session phone wasn't set yet, require matching client name to prevent unauthorized cancellation
+      if (!session || !session.clientPhone) {
+        const inputName = (input.clientName || '').trim().toLowerCase();
+        const apptName = (appt.clientName || '').toLowerCase();
+        if (!inputName || !apptName.includes(inputName)) {
+          return {
+            success: false,
+            message: 'Client name verification failed for the booking under this phone number. Please provide the exact client name used during booking.'
+          };
+        }
+        if (session) {
+          session.clientPhone = cleanPhone;
+          session.clientName = appt.clientName;
+        }
+      }
+
+      appt.status = 'cancelled';
+      appt.notes = `Cancelled via AI Receptionist: ${input.reason || 'Client requested'}`;
+      await appt.save();
 
       logger.info('Appointment cancelled by Claude receptionist', {
         appointmentId: appt._id,
@@ -276,39 +401,66 @@ async function executeTool(name, input, centerId, session) {
       };
     }
 
-    return { error: `Unknown tool: ${name}` };
+    return { success: false, message: `Tool "${name}" is not recognized.` };
   } catch (err) {
     logger.error('Tool execution error', { tool: name, error: err.message });
-    return { error: 'An error occurred while executing the salon operation tool.' };
+    return {
+      success: false,
+      message: `Unable to complete ${name.replace('_', ' ')} at this moment. Please check your details and try again.`
+    };
   }
 }
 
 // POST /api/ai/receptionist
 router.post('/receptionist', async (req, res) => {
   try {
-    const { centerId, sessionId: reqSessionId, message } = req.body;
+    const { centerId, widgetKey, sessionId: reqSessionId, message } = req.body;
 
-    // Validate user message input
+    // 1. Validate user message input
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({ message: 'A valid message string is required.' });
     }
 
-    // Resolve and verify Center server-side; NEVER trust arbitrary body or use hardcoded fallbacks
-    if (!centerId || !mongoose.Types.ObjectId.isValid(centerId)) {
-      return res.status(400).json({ message: 'A valid centerId is required.' });
+    // 2. Resolve center server-side via widgetKey (public widget key) OR verified centerId
+    const resolvedWidgetKey = widgetKey || req.headers['x-widget-key'];
+    let center = null;
+
+    if (resolvedWidgetKey && typeof resolvedWidgetKey === 'string' && resolvedWidgetKey.trim().length > 0) {
+      center = await Center.findOne({ widgetKey: resolvedWidgetKey.trim(), isActive: { $ne: false } });
+    } else if (centerId && mongoose.Types.ObjectId.isValid(centerId)) {
+      center = await Center.findOne({ _id: centerId, isActive: { $ne: false } });
     }
 
-    const center = await Center.findOne({ _id: centerId, isActive: { $ne: false } });
     if (!center) {
-      return res.status(404).json({ message: 'Salon center not found or is currently inactive.' });
+      return res.status(400).json({
+        message: 'A valid, active salon centerId or widgetKey is required.'
+      });
     }
 
-    // Generate crypto UUID for session ID if not provided
+    // 3. Per-Center Daily Turn Cap to protect salon token budget from multiple sessions
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayTurns = await AiSession.aggregate([
+      { $match: { centerId: center._id, updatedAt: { $gte: todayStart } } },
+      { $group: { _id: null, totalTurns: { $sum: '$turnCount' } } }
+    ]);
+
+    const totalCenterTurnsToday = todayTurns.length > 0 ? todayTurns[0].totalTurns : 0;
+    const centerLimit = center.dailyAiTurnLimit || 500;
+
+    if (totalCenterTurnsToday >= centerLimit) {
+      return res.status(429).json({
+        message: 'Daily AI receptionist query capacity reached for this salon center. Please contact the front desk directly.'
+      });
+    }
+
+    // 4. Generate crypto UUID for session ID if not provided
     const sessionId = (reqSessionId && typeof reqSessionId === 'string' && reqSessionId.trim().length > 0)
       ? reqSessionId.trim()
       : crypto.randomUUID();
 
-    // Load or initialize persistent session in MongoDB (with automatic 24-hr TTL)
+    // 5. Load or initialize persistent session in MongoDB (with automatic 24-hr TTL)
     let session = await AiSession.findOne({ sessionId, centerId: center._id });
     if (!session) {
       session = new AiSession({
@@ -319,7 +471,7 @@ router.post('/receptionist', async (req, res) => {
       });
     }
 
-    // Per-session conversation turn cap to prevent infinite loops and runaway spend
+    // Per-session conversation turn cap
     if (session.turnCount >= 25) {
       return res.status(429).json({
         message: 'This chat session has reached its turn limit (max 25 turns). Please start a new session or contact the salon directly.',
@@ -327,7 +479,7 @@ router.post('/receptionist', async (req, res) => {
       });
     }
 
-    // Check if Claude API key is configured
+    // 6. Check if Claude API key is configured
     if (!process.env.ANTHROPIC_API_KEY) {
       logger.warn('Anthropic API key is not configured');
       return res.status(503).json({
@@ -341,15 +493,25 @@ router.post('/receptionist', async (req, res) => {
     session.turnCount += 1;
     session.lastActive = new Date();
 
-    // Prepare message history for Claude (last 10 turns for context efficiency)
-    const contextMessages = session.messages.slice(-10).map(m => ({
+    // 7. Prepare message history for Claude: last 10 messages, strictly guaranteed to start with role 'user'
+    let contextMessages = session.messages.slice(-10).map(m => ({
       role: m.role,
       content: m.content
     }));
 
-    // Initialize Anthropic Client
+    // Anthropic Messages API strictly requires messages[0] to be from 'user'
+    while (contextMessages.length > 0 && contextMessages[0].role !== 'user') {
+      contextMessages.shift();
+    }
+
+    // Fallback: Ensure at least the current user turn is present
+    if (contextMessages.length === 0) {
+      contextMessages.push({ role: 'user', content: message.trim() });
+    }
+
+    // 8. Initialize Anthropic Client with current model
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
+    const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 
     const systemPrompt = `You are Glam Pro AI, the intelligent, warm, and highly efficient receptionist for "${center.name}".
 Your job is to greet clients, answer questions about beauty, skin, and hair services, check real-time availability, and help clients book or reschedule appointments.

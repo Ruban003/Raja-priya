@@ -172,7 +172,7 @@ export default function LandingPage() {
               <div className="sim-avatar">✦</div>
               <div>
                 <div className="sim-agent-name">Glam Pro AI Assistant</div>
-                <div className="sim-agent-status">Simulating Claude 3.5 Sonnet • Interactive Preview</div>
+                <div className="sim-agent-status">Simulating Claude Sonnet 5.5 • Interactive Preview</div>
               </div>
             </div>
 
@@ -218,7 +218,7 @@ export default function LandingPage() {
             <p>
               Autonomous booking, cancellations, slot rescheduling, and answers to pricing inquiries via multi-turn function calling. Web receptionist live; WhatsApp integration in pilot development.
             </p>
-            <div className="feature-code-tag">model: claude-3-5-sonnet-20241022</div>
+            <div className="feature-code-tag">model: claude-sonnet-5-5</div>
           </div>
 
           <div className="feature-card">
@@ -302,7 +302,7 @@ export default function LandingPage() {
           <h2>Built by RVSMPS Technologies for Real-World Salons</h2>
           <p>
             Founded by Rubanraj V in 2024, RVSMPS Technologies develops enterprise-grade, AI-native software. 
-            Glam Pro AI is actively deployed in a commercial pilot at She GLAM Salon &amp; Academy to solve peak-hour scheduling contention and front-desk automation.
+            Glam Pro AI is currently in pilot testing with She GLAM Salon &amp; Academy to solve peak-hour scheduling contention and front-desk automation.
           </p>
         </div>
 
@@ -327,7 +327,7 @@ export default function LandingPage() {
               <strong>Scope:</strong> Multi-stylist scheduling, POS billing, automated GST invoicing, and Claude AI reception.<br />
               <strong>Live Deployment:</strong> <a href="https://sheglam.rvsmps.store" target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', textDecoration: 'underline' }}>sheglam.rvsmps.store</a>
             </p>
-            <div className="feature-code-tag">Active Commercial Pilot</div>
+            <div className="feature-code-tag">Pilot Deployment (In Progress)</div>
           </div>
 
           <div className="feature-card">
@@ -399,7 +399,6 @@ export default function LandingPage() {
             <h4>Company</h4>
             <span>RVSMPS Technologies</span>
             <span>Founded: 2024</span>
-            <span>Status: Verified Startup</span>
           </div>
         </div>
 

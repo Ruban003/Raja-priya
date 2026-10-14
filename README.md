@@ -1,9 +1,9 @@
 # RVSMPS - Glam Pro AI 💅🤖
 
-[![Anthropic Claude](https://img.shields.io/badge/AI-Anthropic%20Claude%203.5%20Sonnet-7c3aed?style=flat-square&logo=anthropic)](https://anthropic.com)
+[![Anthropic Claude](https://img.shields.io/badge/AI-Anthropic%20Claude%20Sonnet%205.5-7c3aed?style=flat-square&logo=anthropic)](https://anthropic.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Vercel%20%7C%20Cloudflare-black?style=flat-square)](https://rvsmps.store)
-[![Status](https://img.shields.io/badge/Status-Commercial%20Pilot%20Live-emerald?style=flat-square)](https://rvsmps.store)
+[![Status](https://img.shields.io/badge/Status-Pilot%20in%20Progress-blue?style=flat-square)](https://rvsmps.store)
 
 > **Next-generation autonomous salon, spa, and wellness operating system powered by the Anthropic Claude API.** RVSMPS Glam Pro automates multi-turn client bookings, double-booking prevention, GST POS billing, staff commissions, and multi-branch franchise operations.
 
@@ -12,7 +12,7 @@
 ## 🌐 Live Deployments
 
 - **Live Production Platform**: [https://rvsmps.store](https://rvsmps.store) (and [https://www.rvsmps.store](https://www.rvsmps.store))
-- **Commercial Pilot Deployment**: [https://sheglam.rvsmps.store](https://sheglam.rvsmps.store) *(She GLAM Salon & Academy)*
+- **Pilot Client Deployment**: [https://sheglam.rvsmps.store](https://sheglam.rvsmps.store) *(She GLAM Salon & Academy — Pilot in Progress)*
 - **Administrative Portal**: [https://rvsmps.store/login](https://rvsmps.store/login)
 - **Legal & Compliance**: [Privacy Policy](https://rvsmps.store/privacy) • [Terms of Service](https://rvsmps.store/terms)
 - **Official Inquiries**: `contact@rvsmps.store`
@@ -26,23 +26,23 @@
 | **Visual Appointment Matrix** | 🟢 **Live in Production** | Interactive calendar with real-time double-booking prevention and stylist chair allocation. |
 | **Instant POS & GST Invoicing** | 🟢 **Live in Production** | Sub-second billing with auto GST calculation (CGST+SGST), custom payments, and digital receipts. |
 | **Multi-Branch Operations & RBAC** | 🟢 **Live in Production** | Multi-tier permissions (`RV Owner`, `Center Admin`, `Manager`, `Receptionist`) with staff commission tracking. |
-| **Claude AI Receptionist API** | 🟢 **Live in Production** | REST API (`/api/ai/receptionist`) powered by Claude 3.5 Sonnet with multi-turn tool calling (up to 5 rounds), persistent MongoDB sessions, server-side center verification, and slot rechecking. |
+| **Claude AI Receptionist API** | 🟢 **Live in Production** | REST API (`/api/ai/receptionist`) powered by Claude Sonnet 5.5 with multi-turn tool calling (up to 5 rounds), persistent MongoDB sessions, server-side center verification, and multi-slot rechecking. |
 | **Interactive Showcase Demo** | 🟢 **Live on Website** | Illustrative multi-turn dialogue simulator showcasing Claude tool use and booking flows. |
 | **Meta WhatsApp Cloud API Relay** | 🟡 **In Development / Pilot Roadmap** | Webhook verification and HMAC-SHA256 signature verification implemented and tested. Bidirectional message relay awaiting Meta business verification. |
 | **Automated Outbound Retention Campaigns** | 🟡 **In Development / Pilot Roadmap** | Periodic service recall notifications and VIP re-engagement broadcasts. |
 
 ---
 
-## 💡 Why Anthropic Claude 3.5 Sonnet?
+## 💡 Why Anthropic Claude Sonnet 5.5?
 
 Salons and spas face intense booking contention during peak hours, while front-desk staff juggle walk-in clients, phone calls, and checkout queues.
 
-RVSMPS Glam Pro integrates **Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-20241022`)** as an autonomous front-desk receptionist:
+RVSMPS Glam Pro integrates **Anthropic Claude Sonnet 5.5 (`claude-sonnet-5-5`)** as an autonomous front-desk receptionist:
 
-1. **Multi-Turn Tool Calling**: Claude inspects live service menus (`list_services`), verifies available calendar slots (`check_availability`), reserves confirmed slots with zero double-booking (`create_appointment`), and manages confirmed cancellations (`cancel_appointment`).
-2. **Deterministic Center Tenancy**: All tool operations are cryptographically and server-side scoped to verified salon centers.
-3. **Session Continuity**: Multi-turn conversation history is persisted in MongoDB with automatic 24-hour TTL expiration and per-session turn capping (max 25 turns) to prevent token abuse.
-4. **Resilient Availability**: Built-in slot rechecking ensures race conditions between simultaneous bookings are caught and rejected gracefully.
+1. **Multi-Turn Tool Calling**: Claude inspects live service menus (`list_services`), verifies available calendar slots accounting for duration (`check_availability`), reserves confirmed slots with atomic double-booking prevention (`create_appointment`), and manages confirmed cancellations (`cancel_appointment`).
+2. **Deterministic Center Tenancy**: All tool operations are server-side scoped to verified salon centers via public widget keys or authenticated center IDs.
+3. **Session Continuity**: Multi-turn conversation history is persisted in MongoDB with automatic 24-hour TTL expiration, history slicing guarantees, and per-session turn capping (max 25 turns) to prevent token abuse.
+4. **Resilient Availability**: Built-in slot rechecking and MongoDB unique partial indexing ensure concurrent race conditions are caught and rejected gracefully.
 
 ---
 
@@ -62,7 +62,7 @@ RVSMPS Glam Pro integrates **Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-202
 │                                                                        │
 │   ┌────────────────────────┐         ┌─────────────────────────────┐   │
 │   │  Anthropic Claude API  │ ◄─────► │  Node.js / Express Gateway  │   │
-│   │  (Claude 3.5 Sonnet)   │         │  • Trust Proxy & Rate Limit │   │
+│   │  (Claude Sonnet 5.5)   │         │  • Trust Proxy & Rate Limit │   │
 │   │  • Multi-Turn Tool Use │         │  • Server-Side Center Auth  │   │
 │   │  • Up to 5 Rounds Loop │         │  • Double-Booking Engine    │   │
 │   │  • Structured Outputs  │         │  • GST Invoicing & POS      │   │
