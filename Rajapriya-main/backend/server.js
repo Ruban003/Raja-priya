@@ -1,11 +1,34 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const logger = require('./utils/logger');
 
 const app = express();
-const allowedOrigins = (process.env.CORS_ORIGINS || 'https://raja-priya.vercel.app,http://localhost:5173')
+
+// Security headers
+app.use(helmet());
+
+// Global API rate limiter
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // Limit each IP to 200 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests from this IP, please try again later.' }
+});
+app.use('/api/', apiLimiter);
+
+// Strict rate limiter for authentication
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // 20 login attempts per 15 mins
+  message: { message: 'Too many login attempts, please try again in 15 minutes.' }
+});
+
+const allowedOrigins = (process.env.CORS_ORIGINS || 'https://rvsmps.store,https://www.rvsmps.store,https://sheglam.rvsmps.store,https://raja-priya.vercel.app,http://localhost:5173')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
@@ -26,7 +49,9 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => logger.info('MongoDB connected'))
   .catch(err => logger.error('MongoDB connection failed', { error: err.message }));
 
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/ai', require('./routes/ai'));
+app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use('/api/centers', require('./routes/centers'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/services', require('./routes/services'));

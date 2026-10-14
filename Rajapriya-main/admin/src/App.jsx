@@ -12,6 +12,8 @@ import Staff from './pages/Staff';
 import Campaigns from './pages/Campaigns';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 const Protected = ({ children }) => {
   const { user, loading } = useAuth();
@@ -26,6 +28,10 @@ export default function App() {
         <Routes>
           {/* Public AI Startup Landing Page (Anthropic Reviewer & Visitors) */}
           <Route path="/" element={<LandingPage />} />
+          
+          {/* Legal Pages */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           
           {/* Employee & Center Login */}
           <Route path="/login" element={<Login />} />

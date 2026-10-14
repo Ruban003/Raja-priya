@@ -26,7 +26,8 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Auth login error:', err.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -36,4 +37,3 @@ router.get('/me', auth, async (req, res) => {
 });
 
 module.exports = router;
-// placeholder

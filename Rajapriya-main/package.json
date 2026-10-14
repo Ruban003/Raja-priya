@@ -1,7 +1,7 @@
 {
-  "name": "elegance-beauty-website",
-  "version": "1.0.0",
-  "description": "Custom website for makeup artist services and classes",
+  "name": "rvsmps-glam-pro",
+  "version": "2.0.0",
+  "description": "RVSMPS Glam Pro AI — Autonomous Salon & Spa Operating System",
   "main": "backend/server.js",
   "scripts": {
     "dev": "node backend/server.js",

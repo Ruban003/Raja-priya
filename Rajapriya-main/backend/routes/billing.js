@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Bill = require('../models/Bill');
 const Customer = require('../models/Customer');
 const Counter = require('../models/Counter');
+const Center = require('../models/Center');
 const { auth, getAuthorizedCenterId, ensureRecordCenterAccess, handleAuthzError } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
@@ -80,9 +81,12 @@ router.post('/', auth, async (req, res) => {
 
     const subtotal = items.reduce((s, i) => s + (i.discountedPrice || i.originalPrice || 0), 0);
     const totalDiscount = items.reduce((s, i) => s + ((i.originalPrice || 0) - (i.discountedPrice || i.originalPrice || 0)), 0);
-    const gstRate = parseFloat(req.body.gstRate) || 0;
-    const gstAmount = subtotal * gstRate / 100;
-    const grandTotal = subtotal + gstAmount;
+
+    // Compute GST rate server-side from center config (prevents client-side manipulation)
+    const centerRecord = await Center.findById(centerId).select('gstRate');
+    const gstRate = (centerRecord && typeof centerRecord.gstRate === 'number') ? centerRecord.gstRate : 18;
+    const gstAmount = parseFloat(((subtotal * gstRate) / 100).toFixed(2));
+    const grandTotal = parseFloat((subtotal + gstAmount).toFixed(2));
 
     // Prevent mass assignment by picking specific fields
     const billData = {

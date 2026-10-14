@@ -78,7 +78,7 @@ export default function LandingPage() {
         <div className="landing-hero-content">
           <div className="anthropic-badge">
             <span className="anthropic-sparkle">✦</span>
-            <span>BUILT WITH ANTHROPIC CLAUDE 3.5 SONNET & CLAUDE API</span>
+            <span>POWERED BY ANTHROPIC CLAUDE API • IN PILOT AT SHE GLAM SALON &amp; ACADEMY</span>
           </div>
 
           <h1 className="hero-headline">
@@ -216,7 +216,7 @@ export default function LandingPage() {
             <p>
               Autonomous 24/7 client booking, cancellations, slot rescheduling, and answers to pricing inquiries without requiring front-desk staff.
             </p>
-            <div className="feature-code-tag">model: claude-3-5-sonnet-20241022</div>
+            <div className="feature-code-tag">model: claude-3-5-sonnet-latest</div>
           </div>
 
           <div className="feature-card">
@@ -355,7 +355,9 @@ export default function LandingPage() {
         <div className="footer-bottom-bar">
           <p>© 2026 RVSMPS Technologies. All rights reserved. Powered by Anthropic Claude.</p>
           <div className="footer-bottom-links">
-            <a href="https://github.com/Ruban003/Raja-priya" target="_blank" rel="noopener noreferrer">Open Source License</a>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/terms">Terms of Service</Link>
+            <a href="https://github.com/Ruban003/Raja-priya" target="_blank" rel="noopener noreferrer">Open Source License (MIT)</a>
             <Link to="/login">Employee Sign In</Link>
           </div>
         </div>

@@ -3,7 +3,7 @@
 [![Anthropic Claude](https://img.shields.io/badge/AI-Anthropic%20Claude%203.5%20Sonnet-7c3aed?style=flat-square&logo=anthropic)](https://anthropic.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Vercel%20%7C%20Cloudflare-black?style=flat-square)](https://rvsmps.store)
-[![Status](https://img.shields.io/badge/Status-Production%20Live-emerald?style=flat-square)](https://rvsmps.store)
+[![Status](https://img.shields.io/badge/Status-Commercial%20Pilot%20Live-emerald?style=flat-square)](https://rvsmps.store)
 
 > **Next-generation autonomous salon, spa, and wellness operating system powered by the Anthropic Claude API.** RVSMPS Glam Pro automates multi-turn client bookings, 24/7 WhatsApp AI front-desk receptionist dialogues, predictive client retention, and multi-branch franchise operations.
 
@@ -22,7 +22,7 @@
 
 Modern beauty salons and wellness chains lose up to 35% of inbound booking inquiries due to busy front desks during peak hours and unassisted queries after closing. 
 
-RVSMPS Glam Pro leverages **Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-20241022`)** to power an end-to-end autonomous business copilot:
+RVSMPS Glam Pro leverages **Anthropic Claude 3.5 Sonnet (`claude-3-5-sonnet-latest`)** to power an end-to-end autonomous business copilot:
 
 1. **Autonomous WhatsApp Receptionist**: Claude handles natural-language booking dialogues, reschedules appointments, answers service pricing questions, and checks stylist availability via function calling in real time.
 2. **Predictive Client Retention Engine**: Analyzes historical visit cycles (hair spa, coloring, facials) and synthesizes hyper-personalized re-engagement messages via Claude to boost repeat client visits by 3.8x.
