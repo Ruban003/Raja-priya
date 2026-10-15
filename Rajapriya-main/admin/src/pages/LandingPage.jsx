@@ -412,7 +412,7 @@ export default function LandingPage() {
           <span className="section-eyebrow">ABOUT &amp; PILOT PROGRAM</span>
           <h2>Built by RVSMPS Technologies for Real-World Salons</h2>
           <p>
-            Founded by Rubanraj V in 2024, RVSMPS Technologies develops enterprise-grade, AI-native software. 
+            Founded by Rubanraj V in 2025, RVSMPS Technologies develops enterprise-grade, AI-native software. 
             Glam Pro AI is currently in pilot testing with She GLAM Salon &amp; Academy to solve peak-hour scheduling contention and front-desk automation.
           </p>
         </div>
@@ -515,7 +515,7 @@ export default function LandingPage() {
           <div className="footer-col-links">
             <h4>Company</h4>
             <span>RVSMPS Technologies</span>
-            <span>Founded: 2024</span>
+            <span>Founded: 2025</span>
           </div>
         </div>
 
