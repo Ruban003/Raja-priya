@@ -2,21 +2,115 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+// Clean, minimal SVG vector icons (anti-emoji)
+const IconChat = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+  </svg>
+);
+
+const IconBrain = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+    <rect x="9" y="9" width="6" height="6"></rect>
+    <line x1="9" y1="1" x2="9" y2="4"></line>
+    <line x1="15" y1="1" x2="15" y2="4"></line>
+    <line x1="9" y1="20" x2="9" y2="23"></line>
+    <line x1="15" y1="20" x2="15" y2="23"></line>
+    <line x1="20" y1="9" x2="23" y2="9"></line>
+    <line x1="20" y1="14" x2="23" y2="14"></line>
+    <line x1="1" y1="9" x2="4" y2="9"></line>
+    <line x1="1" y1="14" x2="4" y2="14"></line>
+  </svg>
+);
+
+const IconCalendar = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+    <line x1="16" y1="2" x2="16" y2="6"></line>
+    <line x1="8" y1="2" x2="8" y2="6"></line>
+    <line x1="3" y1="10" x2="21" y2="10"></line>
+  </svg>
+);
+
+const IconReceipt = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"></path>
+    <line x1="8" y1="8" x2="16" y2="8"></line>
+    <line x1="8" y1="12" x2="16" y2="12"></line>
+    <line x1="8" y1="16" x2="12" y2="16"></line>
+  </svg>
+);
+
+const IconUsers = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+    <circle cx="9" cy="7" r="4"></circle>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+  </svg>
+);
+
+const IconChart = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <line x1="18" y1="20" x2="18" y2="10"></line>
+    <line x1="12" y1="20" x2="12" y2="4"></line>
+    <line x1="6" y1="20" x2="6" y2="14"></line>
+    <line x1="2" y1="20" x2="22" y2="20"></line>
+  </svg>
+);
+
+const IconBuilding = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path>
+    <path d="M6 12H4a2 2 0 0 0-2 2v8h4"></path>
+    <path d="M18 9h2a2 2 0 0 1 2 2v11h-4"></path>
+    <path d="M10 6h4"></path>
+    <path d="M10 10h4"></path>
+    <path d="M10 14h4"></path>
+    <path d="M10 18h4"></path>
+  </svg>
+);
+
+const IconScissors = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <circle cx="6" cy="6" r="3"></circle>
+    <circle cx="6" cy="18" r="3"></circle>
+    <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+    <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+    <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+  </svg>
+);
+
+const IconMail = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+  </svg>
+);
+
+const IconTerminal = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#38bdf8' }}>
+    <polyline points="4 17 10 11 4 5"></polyline>
+    <line x1="12" y1="19" x2="20" y2="19"></line>
+  </svg>
+);
+
 export default function LandingPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('receptionist');
 
   const simulatedChats = {
     receptionist: [
-      { sender: 'user', text: 'Hi! Do you have an open slot for a Hair Botox treatment this Saturday afternoon?' },
-      { sender: 'ai', text: 'Hello Priya! ✨ We have an opening at 2:30 PM this Saturday with Master Stylist Anita at our main salon. The session takes ~90 mins. Would you like me to book this for you?' },
-      { sender: 'user', text: 'Yes please, book that slot for me!' },
-      { sender: 'ai', text: 'Done! Your appointment is reserved for Saturday at 2:30 PM. A calendar invite and prep guide have been sent. See you then! 💇‍♀️' }
+      { sender: 'user', text: 'Hi, do you have an open slot for a Hair Botox treatment this Saturday afternoon?' },
+      { sender: 'ai', text: 'Hello Priya. We have an opening at 2:30 PM this Saturday with Master Stylist Anita at our main salon. The session takes approximately 90 minutes. Would you like me to book this for you?' },
+      { sender: 'user', text: 'Yes please, book that slot for me.' },
+      { sender: 'ai', text: 'Confirmed. Your appointment is reserved for Saturday at 2:30 PM. A calendar invite and prep guide have been sent. See you then.' }
     ],
     retention: [
-      { sender: 'ai', text: 'Hi Anitha! It has been 5 weeks since your Keratin Silk treatment. Our AI health tracker recommends a nourishing scalp spa this week to maintain shine. We have a 15% VIP offer for you!' },
-      { sender: 'user', text: 'Oh wow, that is thoughtful timing! Can I come tomorrow at 5 PM?' },
-      { sender: 'ai', text: 'You are all set for tomorrow at 5:00 PM with your 15% VIP loyalty discount applied. Looking forward to pampering you!' }
+      { sender: 'ai', text: 'Hi Anitha. It has been 5 weeks since your Keratin Silk treatment. Our AI health tracker recommends a nourishing scalp spa this week to maintain shine. We have a 15% VIP offer for you.' },
+      { sender: 'user', text: 'That is thoughtful timing. Can I come tomorrow at 5 PM?' },
+      { sender: 'ai', text: 'You are all set for tomorrow at 5:00 PM with your 15% VIP loyalty discount applied. Looking forward to your visit.' }
     ],
     consultation: [
       { sender: 'user', text: 'I have dry, chemically treated hair and sensitive skin. Which facial and hair combo is safe for me?' },
@@ -78,17 +172,16 @@ export default function LandingPage() {
       <section className="landing-hero">
         <div className="landing-hero-content">
           <div className="anthropic-badge">
-            <span className="anthropic-sparkle">✦</span>
-            <span>POWERED BY ANTHROPIC CLAUDE API • IN PILOT AT SHE GLAM SALON &amp; ACADEMY</span>
+            <span>POWERED BY ANTHROPIC CLAUDE API - IN PILOT AT SHE GLAM SALON &amp; ACADEMY</span>
           </div>
 
           <h1 className="hero-headline">
-            The Autonomous AI Operating System for <span className="gradient-text">Salons, Spas & Wellness Chains</span>
+            The Autonomous AI Operating System for <span className="gradient-text">Salons, Spas &amp; Wellness Chains</span>
           </h1>
 
           <p className="hero-subhead">
             RVSMPS Glam Pro streamlines salon and spa operations with intelligent appointment booking, 
-            real-time double-booking prevention, GST POS billing, and multi-branch franchise sync — with 
+            real-time double-booking prevention, GST POS billing, and multi-branch franchise sync, with 
             conversational AI reception powered by Anthropic Claude.
           </p>
 
@@ -151,35 +244,41 @@ export default function LandingPage() {
               className={`sim-tab ${activeTab === 'receptionist' ? 'active' : ''}`}
               onClick={() => setActiveTab('receptionist')}
             >
-              <span>🤖 AI Receptionist</span>
+              <span>AI Receptionist</span>
             </button>
             <button 
               className={`sim-tab ${activeTab === 'retention' ? 'active' : ''}`}
               onClick={() => setActiveTab('retention')}
             >
-              <span>📈 Retention Follow-Up (Preview)</span>
+              <span>Retention Follow-Up (Preview)</span>
             </button>
             <button 
               className={`sim-tab ${activeTab === 'consultation' ? 'active' : ''}`}
               onClick={() => setActiveTab('consultation')}
             >
-              <span>✨ AI Stylist Consultation</span>
+              <span>AI Stylist Consultation</span>
             </button>
           </div>
 
           <div className="simulator-window">
             <div className="sim-window-header">
-              <div className="sim-avatar">✦</div>
+              <div className="sim-avatar">
+                <IconTerminal />
+              </div>
               <div>
                 <div className="sim-agent-name">Glam Pro AI Assistant</div>
-                <div className="sim-agent-status">Simulating Claude Sonnet 5.5 • Interactive Preview</div>
+                <div className="sim-agent-status">Simulating Claude Sonnet 5.5 - Interactive Preview</div>
               </div>
             </div>
 
             <div className="sim-chat-body">
               {simulatedChats[activeTab].map((msg, idx) => (
                 <div key={idx} className={`chat-bubble-row ${msg.sender === 'user' ? 'user-row' : 'ai-row'}`}>
-                  {msg.sender === 'ai' && <div className="chat-avatar-ai">✦</div>}
+                  {msg.sender === 'ai' && (
+                    <div className="chat-avatar-ai">
+                      <IconTerminal />
+                    </div>
+                  )}
                   <div className={`chat-bubble ${msg.sender === 'user' ? 'bubble-user' : 'bubble-ai'}`}>
                     {msg.text}
                   </div>
@@ -213,7 +312,9 @@ export default function LandingPage() {
 
         <div className="features-grid">
           <div className="feature-card">
-            <div className="feature-icon-box">💬</div>
+            <div className="feature-icon-box">
+              <IconChat />
+            </div>
             <h3>Claude AI Receptionist</h3>
             <p>
               Autonomous booking, cancellations, slot rescheduling, and answers to pricing inquiries via multi-turn function calling. Web receptionist live; WhatsApp integration in pilot development.
@@ -222,7 +323,9 @@ export default function LandingPage() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">🧠</div>
+            <div className="feature-icon-box">
+              <IconBrain />
+            </div>
             <h3>Predictive Retention Engine</h3>
             <p>
               Calculates service intervals to generate personalized VIP recall reminders when roots or treatments need refresh. Live pilot testing at She GLAM Salon.
@@ -231,8 +334,10 @@ export default function LandingPage() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">📅</div>
-            <h3>Smart Calendar & Overlap Dispatch</h3>
+            <div className="feature-icon-box">
+              <IconCalendar />
+            </div>
+            <h3>Smart Calendar &amp; Overlap Dispatch</h3>
             <p>
               Dynamic visual calendar with automatic double-booking prevention, stylist chair allocation, and real-time appointment status tracking.
             </p>
@@ -240,8 +345,10 @@ export default function LandingPage() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">🧾</div>
-            <h3>Instant GST Invoicing & Billing</h3>
+            <div className="feature-icon-box">
+              <IconReceipt />
+            </div>
+            <h3>Instant GST Invoicing &amp; Billing</h3>
             <p>
               Split-second billing with automated GST calculation, digital receipts, custom payment methods, and automated WhatsApp delivery.
             </p>
@@ -249,8 +356,10 @@ export default function LandingPage() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">👥</div>
-            <h3>Staff Commissions & Role Governance</h3>
+            <div className="feature-icon-box">
+              <IconUsers />
+            </div>
+            <h3>Staff Commissions &amp; Role Governance</h3>
             <p>
               Granular role-based access control (RBAC) across RV Owner, Center Admin, and Managers with real-time staff commission calculations.
             </p>
@@ -258,7 +367,9 @@ export default function LandingPage() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">📊</div>
+            <div className="feature-icon-box">
+              <IconChart />
+            </div>
             <h3>Multi-Center Franchise Analytics</h3>
             <p>
               Consolidated real-time reports on daily revenue, top-performing stylists, popular beauty services, and churn analytics.
@@ -272,13 +383,13 @@ export default function LandingPage() {
       <section className="landing-tech-section" id="architecture">
         <div className="landing-section-header">
           <span className="section-eyebrow">SYSTEM ARCHITECTURE</span>
-          <h2>Built for Scalability & Extreme Reliability</h2>
+          <h2>Built for Scalability &amp; Extreme Reliability</h2>
           <p>Engineered with modern cloud infrastructure, edge acceleration, and Anthropic's developer ecosystem.</p>
         </div>
 
         <div className="architecture-grid">
           <div className="arch-card">
-            <div className="arch-title">AI & Intelligence Layer</div>
+            <div className="arch-title">AI &amp; Intelligence Layer</div>
             <p>Anthropic Claude API (Claude 3.5 Sonnet) for high-precision natural language understanding and multi-turn agentic workflows.</p>
             <div className="arch-pill">Anthropic SDK</div>
           </div>
@@ -288,7 +399,7 @@ export default function LandingPage() {
             <div className="arch-pill">React 18 / Node.js</div>
           </div>
           <div className="arch-card">
-            <div className="arch-title">Global Edge & DNS</div>
+            <div className="arch-title">Global Edge &amp; DNS</div>
             <p>Cloudflare Anycast DNS with automated SSL/TLS termination, DDoS protection, and Vercel edge deployment.</p>
             <div className="arch-pill">Cloudflare / Vercel</div>
           </div>
@@ -308,7 +419,9 @@ export default function LandingPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '32px' }}>
           <div className="feature-card">
-            <div className="feature-icon-box">🏢</div>
+            <div className="feature-icon-box">
+              <IconBuilding />
+            </div>
             <h3>Company Overview</h3>
             <p>
               <strong>Legal Entity:</strong> RVSMPS Technologies<br />
@@ -320,7 +433,9 @@ export default function LandingPage() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">💇‍♀️</div>
+            <div className="feature-icon-box">
+              <IconScissors />
+            </div>
             <h3>Flagship Pilot Partner</h3>
             <p>
               <strong>Partner:</strong> She GLAM Salon &amp; Academy<br />
@@ -331,7 +446,9 @@ export default function LandingPage() {
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon-box">📬</div>
+            <div className="feature-icon-box">
+              <IconMail />
+            </div>
             <h3>Direct Contact &amp; Inquiries</h3>
             <p>
               <strong>Official Email:</strong> <a href="mailto:contact@rvsmps.store" style={{ color: '#60a5fa', textDecoration: 'underline' }}>contact@rvsmps.store</a><br />

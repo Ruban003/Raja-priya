@@ -135,7 +135,7 @@ body::after {
 /* TOPBAR */
 .topbar { height: var(--topbar-h); background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shadow); position: sticky; top: 0; z-index: 90; }
 .topbar-left { display: flex; align-items: center; }
-.center-badge { background: color-mix(in srgb, var(--primary) 20%, transparent); color: var(--primary); border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
+.center-badge { background: color-mix(in srgb, var(--primary) 20%, transparent); color: var(--primary); border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
 .topbar-user { display: flex; align-items: center; gap: 8px; }
 .topbar-avatar { width: 28px; height: 28px; background: var(--primary); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; }
 
@@ -539,14 +539,14 @@ td.discount { color: var(--green); font-weight: 500; }
 .glow-1 {
   width: 550px;
   height: 550px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, rgba(139, 92, 246, 0.05) 70%, transparent 100%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(56, 189, 248, 0.04) 70%, transparent 100%);
   top: -120px;
   left: 10%;
 }
 .glow-2 {
   width: 480px;
   height: 480px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.16) 0%, rgba(56, 189, 248, 0.04) 70%, transparent 100%);
+  background: radial-gradient(circle, rgba(30, 64, 175, 0.10) 0%, rgba(56, 189, 248, 0.03) 70%, transparent 100%);
   top: 600px;
   right: 5%;
 }
@@ -631,7 +631,7 @@ td.discount { color: var(--green); font-weight: 500; }
 .github-nav-link {
   background: rgba(255, 255, 255, 0.06);
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 6px;
   border: 1px solid var(--border);
 }
 .gh-badge {
@@ -639,7 +639,7 @@ td.discount { color: var(--green); font-weight: 500; }
   background: rgba(56, 189, 248, 0.2);
   color: var(--primary);
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: 4px;
   font-weight: 700;
 }
 
@@ -703,18 +703,18 @@ td.discount { color: var(--green); font-weight: 500; }
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  border-radius: 30px;
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 6px;
+  background: rgba(30, 64, 175, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #c4b5fd;
+  color: #93c5fd;
   margin-bottom: 24px;
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.15);
 }
 .anthropic-sparkle {
-  color: #a78bfa;
+  color: #60a5fa;
 }
 .hero-headline {
   font-size: clamp(34px, 5.5vw, 58px);
@@ -725,7 +725,7 @@ td.discount { color: var(--green); font-weight: 500; }
   margin-bottom: 20px;
 }
 .gradient-text {
-  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+  background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
