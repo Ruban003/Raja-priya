@@ -46,7 +46,7 @@ export default function Dashboard() {
   const cards = [
     { label: "Today's Revenue", value: `Rs.${stats?.todayRevenue?.toLocaleString() || 0}`, icon: 'Rs', color: 'green' },
     { label: "Today's Bills", value: stats?.todayBills || 0, icon: '#', color: 'blue' },
-    { label: 'Appointments', value: stats?.todayAppointments || 0, icon: 'Ap', color: 'purple' },
+    { label: 'Appointments', value: stats?.todayAppointments || 0, icon: 'Ap', color: 'cyan' },
     { label: 'Month Revenue', value: `Rs.${stats?.monthRevenue?.toLocaleString() || 0}`, icon: 'Mo', color: 'amber' },
   ];
 
