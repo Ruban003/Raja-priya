@@ -2,13 +2,19 @@ const mongoose = require('mongoose');
 
 const appointmentSchema = new mongoose.Schema({
   centerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Center', required: true },
-  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', default: null },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', default: null, set: v => (v === '' ? null : v) },
   clientName: { type: String, required: true },
   clientPhone: String,
   clientGender: String,
-  staffId: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', default: null },
+  staffId: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', default: null, set: v => (v === '' ? null : v) },
   staffName: { type: String, default: 'Unassigned' },
-  serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', default: null },
+  serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', default: null, set: v => (v === '' ? null : v) },
+  services: [{
+    serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', set: v => (v === '' ? null : v) },
+    serviceName: String,
+    price: Number,
+    duration: Number
+  }],
   serviceName: String,
   price: Number,
   date: String,

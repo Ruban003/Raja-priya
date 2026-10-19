@@ -3,19 +3,19 @@ const mongoose = require('mongoose');
 const billSchema = new mongoose.Schema({
   centerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Center', required: true },
   billNumber: { type: String, required: true, unique: true },
-  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', default: null },
+  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', default: null, set: v => (v === '' ? null : v) },
   clientName: { type: String, required: true },
   clientPhone: String,
   items: [{
-    serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' },
+    serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', set: v => (v === '' ? null : v) },
     serviceName: String,
-    staffId: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
+    staffId: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', set: v => (v === '' ? null : v) },
     staffName: String,
     originalPrice: Number,
     discountType: String,      // 'percentage', 'flat', or null
     discountValue: Number,
     discountedPrice: Number,
-    campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', default: null },
+    campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', default: null, set: v => (v === '' ? null : v) },
     campaignName: String
   }],
   subtotal: Number,

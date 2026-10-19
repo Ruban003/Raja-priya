@@ -18,11 +18,19 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const centerId = getAuthorizedCenterId(req);
-    const appointment = await new Appointment({ ...req.body, centerId }).save();
+    const payload = { ...req.body, centerId };
+    if (!payload.staffId) payload.staffId = null;
+    if (!payload.customerId) payload.customerId = null;
+    if (!payload.serviceId) payload.serviceId = null;
+
+    const appointment = await new Appointment(payload).save();
     res.status(201).json(appointment);
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({ message: 'This stylist or chair is already booked for the selected date and time slot.' });
+    }
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return res.status(400).json({ message: err.message });
     }
     handleAuthzError(res, err);
   }
@@ -35,11 +43,17 @@ router.put('/:id', auth, async (req, res) => {
 
     const updates = { ...req.body };
     delete updates.centerId;
+    if (updates.staffId === '') updates.staffId = null;
+    if (updates.customerId === '') updates.customerId = null;
+    if (updates.serviceId === '') updates.serviceId = null;
 
     res.json(await Appointment.findByIdAndUpdate(req.params.id, updates, { new: true }));
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({ message: 'This stylist or chair is already booked for the updated date and time slot.' });
+    }
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+      return res.status(400).json({ message: err.message });
     }
     handleAuthzError(res, err);
   }

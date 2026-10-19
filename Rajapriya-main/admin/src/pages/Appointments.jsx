@@ -179,16 +179,32 @@ export default function Appointments() {
         } catch (e) { console.error('Customer create error', e); }
       }
 
-      await api.post('/appointments', {
-        ...form, centerId, customerId,
+      const payload = {
+        ...form,
+        centerId,
+        customerId: customerId || null,
+        staffId: form.staffId || null,
+        serviceId: validServices[0]?.serviceId || null,
         services: validServices,
         serviceName: validServices.map(s => s.serviceName).join(', '),
-        price: totalPrice, duration: totalDuration,
+        price: totalPrice,
+        duration: totalDuration,
         staffName: staffMember?.name || 'Unassigned',
         color: staffMember?.color || '#3498db'
-      });
-      setShowModal(false); resetForm(); fetchData();
-    } catch (e) { alert('Error saving appointment'); }
+      };
+
+      if (editingId) {
+        await api.put(`/appointments/${editingId}`, payload);
+      } else {
+        await api.post('/appointments', payload);
+      }
+      setShowModal(false);
+      resetForm();
+      fetchData();
+    } catch (e) {
+      const msg = e.response?.data?.message || e.message || 'Error saving appointment';
+      alert(msg);
+    }
   };
 
   const resetForm = () => {
