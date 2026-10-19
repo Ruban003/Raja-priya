@@ -41,6 +41,8 @@ export default function Appointments() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef();
   const lastTapRef = useRef({});
+  const isDraggingRef = useRef(false);
+  const [dragOverStaffId, setDragOverStaffId] = useState(null);
   const [editingId, setEditingId] = useState(null);
 
   const [form, setForm] = useState({
@@ -103,52 +105,73 @@ export default function Appointments() {
   const openEdit = (appt) => {
     setViewAppt(null);
     setEditingId(appt._id);
+    setClientSearch(appt.clientName || '');
+    const serviceList = (appt.services && appt.services.length > 0)
+      ? appt.services
+      : (appt.serviceId || appt.serviceName)
+        ? [{ serviceId: appt.serviceId || '', serviceName: appt.serviceName || '', price: appt.price || 0, duration: appt.duration || 30 }]
+        : [{ serviceId: '', serviceName: '', price: 0, duration: 30 }];
     setForm({
-      clientName: appt.clientName,
+      clientName: appt.clientName || '',
       clientPhone: appt.clientPhone || '',
       clientGender: appt.clientGender || 'female',
       customerId: appt.customerId || '',
-      staffId: appt.staffId,
+      staffId: appt.staffId || '',
       date: appt.date?.split('T')[0] || selectedDate,
-      time: appt.time,
-      status: appt.status,
+      time: appt.time || '10:00',
+      status: appt.status || 'pending',
       type: appt.type || 'walkin',
       notes: appt.notes || '',
-      services: appt.services || []
+      services: serviceList
     });
     setShowModal(true);
   };
 
   const handleDrop = async (e, targetStaffId, targetStaffName) => {
     e.preventDefault();
-    const apptId = e.dataTransfer.getData('apptId');
+    setDragOverStaffId(null);
+    const apptId = e.dataTransfer.getData('apptId') || e.dataTransfer.getData('text/plain');
     if (!apptId) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const minutesFromStart = (x / 120) * 60; // SLOT_WIDTH = 120
+    const minutesFromStart = Math.max(0, (x / SLOT_WIDTH) * 60);
     const totalMinutes = (9 * 60) + minutesFromStart;
-    const roundedMinutes = Math.round(totalMinutes / 15) * 15;
+    const roundedMinutes = Math.min(Math.max(Math.round(totalMinutes / 15) * 15, 9 * 60), 21 * 60);
     const h = Math.floor(roundedMinutes / 60);
     const m = roundedMinutes % 60;
     
-    if (h < 9 || h > 21) return;
+    if (h < 9 || (h === 21 && m > 0) || h > 21) return;
     
-    const newTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    const newTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     const apptToUpdate = appointments.find(a => a._id === apptId);
     if (!apptToUpdate) return;
+    
+    const cleanTargetStaffId = targetStaffId || null;
+    if ((apptToUpdate.staffId || null) === cleanTargetStaffId && apptToUpdate.time === newTime) {
+      return;
+    }
+
     const staffMember = staff.find(s => s._id === targetStaffId);
 
     setAppointments(prev => prev.map(a => a._id === apptId ? { 
-      ...a, staffId: targetStaffId, staffName: targetStaffName, time: newTime, color: staffMember?.color || '#3498db'
+      ...a, 
+      staffId: cleanTargetStaffId, 
+      staffName: staffMember?.name || 'Unassigned', 
+      time: newTime, 
+      color: staffMember?.color || '#3498db'
     } : a));
 
     try {
       await api.put(`/appointments/${apptId}`, {
-        ...apptToUpdate, staffId: targetStaffId, staffName: targetStaffName, time: newTime, color: staffMember?.color || '#3498db'
+        staffId: cleanTargetStaffId,
+        staffName: staffMember?.name || 'Unassigned',
+        time: newTime,
+        color: staffMember?.color || '#3498db'
       });
+      fetchData(false);
     } catch (err) {
-      alert('Error updating via drag drop.');
+      alert(err.response?.data?.message || 'Error updating appointment via drag and drop.');
       fetchData(false);
     }
   };
@@ -231,9 +254,9 @@ export default function Appointments() {
 
   // Double-click or double-tap to open booking at that slot
   const openSlot = (staffId, hour) => {
+    resetForm();
     const time = `${String(hour).padStart(2, '0')}:00`;
     setForm(f => ({ ...f, staffId: staffId || '', time, date: selectedDate }));
-    setClientSearch('');
     setShowModal(true);
   };
 
@@ -399,7 +422,20 @@ export default function Appointments() {
 
               {/* STAFF ROWS */}
               {staffData.map(s => { const appts = s.appts; return (
-                  <div key={s._id} className="cal-row" style={{ width: totalWidth, height: `${s.tracks * 72}px` }}
+                  <div key={s._id} 
+                    className={`cal-row ${dragOverStaffId === s._id ? 'drag-over' : ''}`}
+                    style={{ width: totalWidth, height: `${s.tracks * 72}px` }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dragOverStaffId !== s._id) setDragOverStaffId(s._id);
+                    }}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget)) {
+                        setDragOverStaffId(null);
+                      }
+                    }}
+                    onDrop={(e) => handleDrop(e, s._id, s.name)}
                     onDoubleClick={(e) => {
                       if (e.target.closest('.cal-appt-block')) return;
                       const rect = e.currentTarget.getBoundingClientRect();
@@ -423,8 +459,23 @@ export default function Appointments() {
                       const width = Math.max((dur / 60) * SLOT_WIDTH - 4, 50);
                       return (
                         <div key={a._id} className="cal-appt-block"
-                          style={{ left, width, top: `${(a.track || 0) * 72 + 6}px`, height: "60px", backgroundColor: STATUS_COLORS[a.status] + 'dd', borderColor: STATUS_COLORS[a.status] }}
-                          onClick={e => { e.stopPropagation(); setViewAppt(a); }}>
+                          draggable={true}
+                          onDragStart={e => {
+                            isDraggingRef.current = true;
+                            e.dataTransfer.setData('text/plain', a._id);
+                            e.dataTransfer.setData('apptId', a._id);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          onDragEnd={() => {
+                            setTimeout(() => { isDraggingRef.current = false; }, 120);
+                          }}
+                          style={{ left, width, top: `${(a.track || 0) * 72 + 6}px`, height: "60px", backgroundColor: STATUS_COLORS[a.status] + 'dd', borderColor: STATUS_COLORS[a.status], cursor: 'grab' }}
+                          onClick={e => { 
+                            e.stopPropagation(); 
+                            if (isDraggingRef.current) return;
+                            setViewAppt(a); 
+                          }}
+                          title="Drag to reschedule or reassign stylist · Click for details">
                           <div className="cal-appt-client">{a.clientName}</div>
                           <div className="cal-appt-service">{a.serviceName}</div>
                           <div className="cal-appt-time">{a.time} · ₹{a.price?.toLocaleString()}</div>
@@ -437,7 +488,20 @@ export default function Appointments() {
 
               {/* UNASSIGNED */}
               {appointments.filter(a => !a.staffId || a.staffId === '').length > 0 && (
-                <div className="cal-row" style={{ width: totalWidth }}
+                <div 
+                  className={`cal-row ${dragOverStaffId === 'unassigned' ? 'drag-over' : ''}`}
+                  style={{ width: totalWidth }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragOverStaffId !== 'unassigned') setDragOverStaffId('unassigned');
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget)) {
+                      setDragOverStaffId(null);
+                    }
+                  }}
+                  onDrop={(e) => handleDrop(e, '', 'Unassigned')}
                   onDoubleClick={(e) => {
                     if (e.target.closest('.cal-appt-block')) return;
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -459,8 +523,23 @@ export default function Appointments() {
                     const width = Math.max(((a.duration || 30) / 60) * SLOT_WIDTH - 4, 50);
                     return (
                       <div key={a._id} className="cal-appt-block"
-                        style={{ left, width, top: `${(a.track || 0) * 72 + 6}px`, height: "60px", backgroundColor: '#64748bdd', borderColor: '#64748b' }}
-                        onClick={e => { e.stopPropagation(); setViewAppt(a); }}>
+                        draggable={true}
+                        onDragStart={e => {
+                          isDraggingRef.current = true;
+                          e.dataTransfer.setData('text/plain', a._id);
+                          e.dataTransfer.setData('apptId', a._id);
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragEnd={() => {
+                          setTimeout(() => { isDraggingRef.current = false; }, 120);
+                        }}
+                        style={{ left, width, top: `${(a.track || 0) * 72 + 6}px`, height: "60px", backgroundColor: '#64748bdd', borderColor: '#64748b', cursor: 'grab' }}
+                        onClick={e => { 
+                          e.stopPropagation(); 
+                          if (isDraggingRef.current) return;
+                          setViewAppt(a); 
+                        }}
+                        title="Drag to reschedule or reassign stylist · Click for details">
                         <div className="cal-appt-client">{a.clientName}</div>
                         <div className="cal-appt-service">{a.serviceName}</div>
                       </div>
@@ -470,7 +549,7 @@ export default function Appointments() {
               )}
             </div>
           </div>
-          <div className="cal-hint">Double-click or double-tap any slot to book · Click appointment to view details</div>
+          <div className="cal-hint">Double-click or double-tap any slot to book · Drag and drop appointments to reschedule or reassign stylist · Click to view details</div>
         </div>
       )}
 
@@ -500,6 +579,7 @@ export default function Appointments() {
               </div>
               <div className="appt-view-actions">
                 <button className="btn-secondary" onClick={() => setViewAppt(null)}>Close</button>
+                <button className="btn-secondary" onClick={() => openEdit(viewAppt)}>Edit / Reschedule</button>
                 <button className="btn-primary" onClick={() => { handleTakePayment(viewAppt); setViewAppt(null); }}>
                   Take Payment
                 </button>
@@ -514,7 +594,7 @@ export default function Appointments() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Book Appointment</h2>
+              <h2>{editingId ? 'Edit / Reschedule Appointment' : 'Book Appointment'}</h2>
               <button onClick={() => setShowModal(false)}>✕</button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
@@ -631,7 +711,7 @@ export default function Appointments() {
 
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Book Appointment</button>
+                <button type="submit" className="btn-primary">{editingId ? 'Save Changes' : 'Book Appointment'}</button>
               </div>
             </form>
           </div>
