@@ -172,7 +172,7 @@ export default function Layout() {
             {hasCenter ? (
               <div className="center-badge">{activeCenterName}</div>
             ) : isRVLevel() ? (
-              <div className="center-badge warning">⚠ Select a center from sidebar to add data</div>
+              <div className="center-badge warning">Select a center from sidebar to add data</div>
             ) : (
               <div className="center-badge">Glam</div>
             )}

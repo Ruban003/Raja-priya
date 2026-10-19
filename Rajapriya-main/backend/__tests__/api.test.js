@@ -378,7 +378,7 @@ describe('RVSMPS Glam Pro Comprehensive Test Suite', () => {
           content: [
             {
               type: 'text',
-              text: 'We offer Hair Spa (₹1,499) and Keratin Silk (₹3,999) ✨ Would you like to check available slots?'
+              text: 'We offer Hair Spa (₹1,499) and Keratin Silk (₹3,999). Would you like to check available slots?'
             }
           ],
           usage: { input_tokens: 60, output_tokens: 30 }

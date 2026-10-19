@@ -431,10 +431,10 @@ export default function Appointments() {
             </div>
             <div className="appt-view-body">
               {viewAppt.clientPhone && <div className="appt-view-row"><span>Phone</span><strong>{viewAppt.clientPhone}</strong></div>}
-              <div className="appt-view-row"><span>✦ Service</span><strong>{viewAppt.serviceName}</strong></div>
-              <div className="appt-view-row"><span>◎ Staff</span><strong>{viewAppt.staffName}</strong></div>
-              <div className="appt-view-row"><span>◷ Time</span><strong>{viewAppt.date} at {viewAppt.time}</strong></div>
-              <div className="appt-view-row"><span>₹ Price</span><strong>₹{viewAppt.price?.toLocaleString()}</strong></div>
+              <div className="appt-view-row"><span>Service</span><strong>{viewAppt.serviceName}</strong></div>
+              <div className="appt-view-row"><span>Staff</span><strong>{viewAppt.staffName}</strong></div>
+              <div className="appt-view-row"><span>Time</span><strong>{viewAppt.date} at {viewAppt.time}</strong></div>
+              <div className="appt-view-row"><span>Price</span><strong>₹{viewAppt.price?.toLocaleString()}</strong></div>
               <div className="appt-view-row"><span>Type</span><span className={`type-badge ${viewAppt.type}`}>{viewAppt.type}</span></div>
               {viewAppt.notes && <div className="appt-view-row"><span>Notes</span><span>{viewAppt.notes}</span></div>}
               <div className="appt-status-row">
@@ -550,7 +550,6 @@ export default function Appointments() {
                       {services.map(s => <option key={s._id} value={s._id}>{s.name} - ₹{s.price} ({s.duration}min)</option>)}
                     </select>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text2)' }}>⏱</span>
                       <input 
                         type="number" 
                         value={svc.duration || 30} 

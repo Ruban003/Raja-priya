@@ -134,7 +134,7 @@ export default function Customers() {
                   <td><span className="badge">{c.gender}</span></td>
                   <td>{c.totalVisits || 0}</td>
                   <td>₹{c.totalSpent?.toLocaleString() || 0}</td>
-                  <td>⭐ {c.loyaltyPoints || 0}</td>
+                  <td>{c.loyaltyPoints || 0} pts</td>
                   <td>
                     <button className="btn-edit sm" onClick={() => openEdit(c)}>Edit</button>
                   </td>
