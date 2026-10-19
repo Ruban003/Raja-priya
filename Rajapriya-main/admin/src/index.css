@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 :root {
-  /* High-Tech Midnight Blue base */
-  --bg: #0b1120;
-  /* Hyper-Realistic Liquid Glass: Glossy specular highlight over a dark refractive base */
-  --bg2: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0.2) 100%), rgba(10, 15, 30, 0.25);
+  /* Metallic Black & Obsidian Titanium base */
+  --bg: #06070a;
+  /* Brushed Metallic Titanium Surface: Specular top-lit highlight over dark obsidian */
+  --bg2: linear-gradient(180deg, rgba(20, 24, 34, 0.9) 0%, rgba(10, 12, 17, 0.97) 100%);
   /* Hover states - slightly brighter highlight */
   --bg3: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 40%, rgba(0, 0, 0, 0.1) 100%), rgba(56, 189, 248, 0.1); 
   
@@ -14,7 +14,7 @@
   --text3: #64748b;
   
   /* Borders - highly refractive sharp edge */
-  --border: rgba(255, 255, 255, 0.15);
+  --border: rgba(255, 255, 255, 0.09);
   
   /* Brand colors */
   --primary: #38bdf8;
@@ -34,10 +34,10 @@
   
   /* Extreme blur for liquid refraction */
   --glass-blur: blur(48px);
-  /* Intense 3D Bevel: Sharp top-left light, dark bottom-right shadow, plus outer drop shadow */
-  --glass-shadow: inset 1px 1px 0px rgba(255, 255, 255, 0.25), 
-                  inset -1px -1px 0px rgba(0, 0, 0, 0.4),
-                  0 20px 40px -10px rgba(0, 0, 0, 0.7);
+  /* Top-lit specular metallic reflection with deep shadow */
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 
+                  inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+                  0 20px 40px -10px rgba(0, 0, 0, 0.8);
   
   color-scheme: dark;
 }
@@ -45,7 +45,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { 
   font-family: 'DM Sans', sans-serif; 
-  background: radial-gradient(circle at top right, #0f172a 0%, #020617 100%);
+  background: radial-gradient(circle at 50% 0%, #11141c 0%, #0a0c11 40%, #050608 100%);
+  background-color: #050608;
   background-attachment: fixed;
   color: var(--text); 
   min-height: 100vh; 
@@ -67,7 +68,7 @@ body::before {
 }
 body::after {
   width: 400px; height: 400px;
-  background: rgba(139, 92, 246, 0.1); /* Deep Violet Glow */
+  background: rgba(37, 99, 235, 0.06); /* Royal Blue Glow */
   bottom: -100px; right: -50px;
 }
 
@@ -167,7 +168,7 @@ body::after {
 .stat-label { font-size: 12px; color: var(--text2); margin-top: 2px; }
 .stat-green .stat-icon { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.2); }
 .stat-blue .stat-icon { background: rgba(59, 130, 246, 0.15); color: var(--blue); border: 1px solid rgba(59, 130, 246, 0.2); }
-.stat-purple .stat-icon { background: rgba(139, 92, 246, 0.15); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.2); }
+.stat-purple .stat-icon { background: rgba(37, 99, 235, 0.15); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.2); }
 .stat-amber .stat-icon { background: rgba(245, 158, 11, 0.15); color: var(--amber); border: 1px solid rgba(245, 158, 11, 0.2); }
 
 /* CHARTS */
@@ -273,7 +274,7 @@ td.discount { color: var(--green); font-weight: 500; }
 
 /* FILTER */
 .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-.filter-tab { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+.filter-tab { background: var(--bg2); border: 1px solid var(--border); color: var(--text2); padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
 .filter-tab:hover { background: var(--bg3); color: var(--text); }
 .filter-tab.active { background: rgba(56, 189, 248, 0.15); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(56, 189, 248, 0.2); }
 
@@ -1490,7 +1491,7 @@ td.discount { color: var(--green); font-weight: 500; }
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1529,7 +1530,7 @@ td.discount { color: var(--green); font-weight: 500; }
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #8b5cf6;
+  background: #2563eb;
   color: #fff;
   display: flex;
   align-items: center;
@@ -1679,7 +1680,7 @@ td.discount { color: var(--green); font-weight: 500; }
   font-size: 11px;
   font-weight: 700;
   padding: 3px 8px;
-  background: rgba(139, 92, 246, 0.15);
+  background: rgba(37, 99, 235, 0.15);
   color: #c4b5fd;
   border-radius: 6px;
 }
@@ -1696,7 +1697,7 @@ td.discount { color: var(--green); font-weight: 500; }
   text-align: center;
   padding: 48px 32px;
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(139, 92, 246, 0.15) 100%), rgba(11, 17, 32, 0.9);
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
