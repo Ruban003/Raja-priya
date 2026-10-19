@@ -40,6 +40,7 @@ export default function Appointments() {
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef();
+  const lastTapRef = useRef({});
   const [editingId, setEditingId] = useState(null);
 
   const [form, setForm] = useState({
@@ -228,13 +229,24 @@ export default function Appointments() {
     navigate('/billing', { state: { prefill: appt } });
   };
 
-  // Double-click to open booking at that slot
-  const openSlot = (staffId, hour, isDouble = false) => {
-    if (!isDouble) return; // only on double click
+  // Double-click or double-tap to open booking at that slot
+  const openSlot = (staffId, hour) => {
     const time = `${String(hour).padStart(2, '0')}:00`;
-    setForm(f => ({ ...f, staffId, time, date: selectedDate }));
+    setForm(f => ({ ...f, staffId: staffId || '', time, date: selectedDate }));
     setClientSearch('');
     setShowModal(true);
+  };
+
+  const handleSlotTap = (staffId, hour) => {
+    const key = `${staffId || 'unassigned'}_${hour}`;
+    const now = Date.now();
+    const last = lastTapRef.current[key] || 0;
+    if (now - last < 450) {
+      openSlot(staffId, hour);
+      lastTapRef.current[key] = 0;
+    } else {
+      lastTapRef.current[key] = now;
+    }
   };
 
   // Single click shows time tooltip (handled inline)
@@ -387,11 +399,21 @@ export default function Appointments() {
 
               {/* STAFF ROWS */}
               {staffData.map(s => { const appts = s.appts; return (
-                  <div key={s._id} className="cal-row" style={{ width: totalWidth, height: `${s.tracks * 72}px` }}>
+                  <div key={s._id} className="cal-row" style={{ width: totalWidth, height: `${s.tracks * 72}px` }}
+                    onDoubleClick={(e) => {
+                      if (e.target.closest('.cal-appt-block')) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const hour = Math.min(Math.max(Math.floor(x / SLOT_WIDTH) + 9, 9), 21);
+                      openSlot(s._id, hour);
+                    }}
+                  >
                     {HOURS.map(h => (
-                      <div key={h} className="cal-hour-cell" style={{ width: SLOT_WIDTH }}
-                        onDoubleClick={() => openSlot(s._id, h, true)}
-                        title="Double-click to book"
+                      <div key={h} className="cal-hour-cell" 
+                        style={{ width: SLOT_WIDTH, left: (h - 9) * SLOT_WIDTH }}
+                        onClick={() => handleSlotTap(s._id, h)}
+                        onDoubleClick={(e) => { e.stopPropagation(); openSlot(s._id, h); }}
+                        title="Double-click or double-tap to book"
                       />
                     ))}
                     {appts.map(a => {
@@ -415,8 +437,23 @@ export default function Appointments() {
 
               {/* UNASSIGNED */}
               {appointments.filter(a => !a.staffId || a.staffId === '').length > 0 && (
-                <div className="cal-row" style={{ width: totalWidth }}>
-                  {HOURS.map(h => <div key={h} className="cal-hour-cell" style={{ width: SLOT_WIDTH }} />)}
+                <div className="cal-row" style={{ width: totalWidth }}
+                  onDoubleClick={(e) => {
+                    if (e.target.closest('.cal-appt-block')) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const hour = Math.min(Math.max(Math.floor(x / SLOT_WIDTH) + 9, 9), 21);
+                    openSlot('', hour);
+                  }}
+                >
+                  {HOURS.map(h => (
+                    <div key={h} className="cal-hour-cell" 
+                      style={{ width: SLOT_WIDTH, left: (h - 9) * SLOT_WIDTH }}
+                      onClick={() => handleSlotTap('', h)}
+                      onDoubleClick={(e) => { e.stopPropagation(); openSlot('', h); }}
+                      title="Double-click or double-tap to book"
+                    />
+                  ))}
                   {appointments.filter(a => !a.staffId).map(a => {
                     const left = minutesToLeft(timeToMinutes(a.time));
                     const width = Math.max(((a.duration || 30) / 60) * SLOT_WIDTH - 4, 50);
@@ -433,7 +470,7 @@ export default function Appointments() {
               )}
             </div>
           </div>
-          <div className="cal-hint">Double-click any slot to book · Click appointment to view details</div>
+          <div className="cal-hint">Double-click or double-tap any slot to book · Click appointment to view details</div>
         </div>
       )}
 

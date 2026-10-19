@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
 
 :root {
+  color-scheme: dark;
   /* Metallic Black & Obsidian Titanium base */
   --bg: #06070a;
   /* Brushed Metallic Titanium Surface: Specular top-lit highlight over dark obsidian */
@@ -302,8 +303,52 @@ td.discount { color: var(--green); font-weight: 500; }
 .checkbox-item:hover { background: rgba(255,255,255,0.05); }
 .checkbox-item input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; }
 
-/* SELECT */
-.select-input { background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 13px; }
+/* SELECT & DROPDOWN CONTROLS */
+select {
+  color-scheme: dark;
+  background-color: #0b0e14 !important;
+  color: #f8fafc !important;
+  cursor: pointer;
+}
+
+select option,
+select optgroup {
+  background-color: #0b0e14 !important;
+  color: #f8fafc !important;
+  padding: 8px 12px;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: #1e293b !important;
+  color: #38bdf8 !important;
+}
+
+.form-group select {
+  background-color: #0b0e14 !important;
+  color: #f8fafc !important;
+  border: 1px solid var(--border);
+}
+
+.form-group select option {
+  background-color: #0b0e14 !important;
+  color: #f8fafc !important;
+}
+
+.select-input { 
+  background-color: #0b0e14 !important; 
+  border: 1px solid var(--border); 
+  color: #f8fafc !important; 
+  padding: 8px 12px; 
+  border-radius: 8px; 
+  font-size: 13px; 
+}
+
+.select-input option {
+  background-color: #0b0e14 !important;
+  color: #f8fafc !important;
+}
 
 /* MODAL */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
@@ -462,12 +507,12 @@ td.discount { color: var(--green); font-weight: 500; }
 
 /* Staff rows */
 .cal-row { position: relative; height: 72px; border-bottom: 1px solid var(--border); }
-.cal-hour-cell { position: absolute; top: 0; bottom: 0; border-right: 1px solid color-mix(in srgb, var(--border) 50%, transparent); cursor: pointer; transition: background 0.1s; }
+.cal-hour-cell { position: absolute; top: 0; bottom: 0; border-right: 1px solid color-mix(in srgb, var(--border) 50%, transparent); cursor: pointer; transition: background 0.1s; z-index: 1; }
 .cal-hour-cell:hover { background: color-mix(in srgb, var(--primary) 08%, transparent); }
 
 /* Appointment blocks */
-.cal-appt-block { position: absolute; top: 6px; bottom: 6px; border-radius: 6px; border-left: 4px solid; padding: 6px 10px; cursor: pointer; overflow: hidden; transition: all 0.2s; min-width: 60px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; justify-content: center; }
-.cal-appt-block:hover { opacity: 0.95; filter: brightness(1.15); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.25); z-index: 10; }
+.cal-appt-block { position: absolute; top: 6px; bottom: 6px; border-radius: 6px; border-left: 4px solid; padding: 6px 10px; cursor: pointer; overflow: hidden; transition: all 0.2s; min-width: 60px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; justify-content: center; z-index: 5; }
+.cal-appt-block:hover { opacity: 0.95; filter: brightness(1.15); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.25); z-index: 12; }
 .cal-appt-client { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 .cal-appt-service { font-size: 11px; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .cal-appt-time { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: auto; }
