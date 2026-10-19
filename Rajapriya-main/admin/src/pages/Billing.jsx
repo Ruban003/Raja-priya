@@ -195,14 +195,14 @@ export default function Billing() {
                 <div key={idx} className="bill-item-row">
                   <select value={item.serviceId} onChange={e => updateItem(idx, 'serviceId', e.target.value)}>
                     <option value="">Select service</option>
-                    {services.map(s => <option key={s._id} value={s._id}>{s.name} — ₹{s.price}</option>)}
+                    {services.map(s => <option key={s._id} value={s._id}>{s.name} - ₹{s.price}</option>)}
                   </select>
                   <select value={item.staffId} onChange={e => updateItem(idx, 'staffId', e.target.value)}>
                     <option value="">Any staff</option>
                     {staff.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                   </select>
                   <div className="item-pricing">
-                    {item.campaignName && <span className="campaign-tag">🏷 {item.campaignName}</span>}
+                    {item.campaignName && <span className="campaign-tag">{item.campaignName}</span>}
                     {item.originalPrice > 0 && item.originalPrice !== item.discountedPrice && (
                       <span className="original-price">₹{item.originalPrice}</span>
                     )}
@@ -250,7 +250,7 @@ export default function Billing() {
 
               <div className="modal-actions">
                 <button className="btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button className="btn-primary" onClick={handleBillSubmit}>Generate Bill — ₹{grandTotal.toFixed(2)}</button>
+                <button className="btn-primary" onClick={handleBillSubmit}>Generate Bill - ₹{grandTotal.toFixed(2)}</button>
               </div>
             </div>
           </div>
@@ -262,7 +262,7 @@ export default function Billing() {
         <div className="modal-overlay" onClick={() => setViewBill(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Bill — {viewBill.billNumber}</h2>
+              <h2>Bill #{viewBill.billNumber}</h2>
               <button onClick={() => setViewBill(null)}>✕</button>
             </div>
             <div className="bill-view" id="printable-receipt">
@@ -291,7 +291,7 @@ export default function Billing() {
                 <tbody>
                   {viewBill.items?.map((item, i) => (
                     <tr key={i}>
-                      <td>{item.serviceName}{item.campaignName && <span className="campaign-tag">🏷 {item.campaignName}</span>}</td>
+                      <td>{item.serviceName}{item.campaignName && <span className="campaign-tag">{item.campaignName}</span>}</td>
                       <td>{item.staffName}</td>
                       <td>₹{item.originalPrice}</td>
                       <td className="discount">-₹{(item.originalPrice - item.discountedPrice).toFixed(0)}</td>
@@ -345,7 +345,7 @@ export default function Billing() {
               </div>
               
               <div className="modal-actions no-print" style={{ marginTop: '24px' }}>
-                <button className="btn-secondary" onClick={() => window.print()}>🖨 Print Receipt</button>
+                <button className="btn-secondary" onClick={() => window.print()}>Print Receipt</button>
               </div>
             </div>
           </div>

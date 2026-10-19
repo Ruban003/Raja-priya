@@ -91,13 +91,13 @@ export default function Campaigns() {
         <div className="cards-grid">
           {campaigns.map(c => (
             <div key={c._id} className={`campaign-card ${isActive(c) ? 'active' : ''}`}>
-              <div className="campaign-badge">{isActive(c) ? '🟢 Active' : '⚫ Inactive'}</div>
+              <div className="campaign-badge">{isActive(c) ? 'Active' : 'Inactive'}</div>
               <h3>{c.name}</h3>
               <div className="campaign-discount">
                 {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `₹${c.discountValue} OFF`}
               </div>
               <div className="campaign-dates">
-                <span>📅 {new Date(c.startDate).toLocaleDateString('en-IN')}</span>
+                <span>{new Date(c.startDate).toLocaleDateString('en-IN')}</span>
                 <span>→</span>
                 <span>{new Date(c.endDate).toLocaleDateString('en-IN')}</span>
               </div>
@@ -160,7 +160,7 @@ export default function Campaigns() {
                   {services.map(s => (
                     <label key={s._id} className="checkbox-item">
                       <input type="checkbox" checked={form.applicableServices.includes(s._id)} onChange={() => toggleService(s._id)} />
-                      <span>{s.name} — ₹{s.price}</span>
+                      <span>{s.name} - ₹{s.price}</span>
                     </label>
                   ))}
                   {services.length === 0 && <p style={{ color: 'var(--text2)', fontSize: 12 }}>No services added yet</p>}

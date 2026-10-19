@@ -60,7 +60,7 @@ export default function Settings() {
     } catch(e) { alert('Error removing role'); }
   };
 
-  const roleColors = { rv_owner: '#8b5cf6', rv_admin: '#6366f1', center_owner: '#38bdf8', center_admin: '#3b82f6', manager: '#10b981' };
+  const roleColors = { rv_owner: '#2563eb', rv_admin: '#6366f1', center_owner: '#38bdf8', center_admin: '#3b82f6', manager: '#10b981' };
 
   return (
     <div className="page">
@@ -106,11 +106,11 @@ export default function Settings() {
                   <h3 style={{ margin: 0 }}>{c.name}</h3>
                   <span className="badge" style={{ backgroundColor: '#10b98120', color: '#10b981' }}>Active</span>
                 </div>
-                {c.address && <p style={{ margin: '4px 0', color: '#94a3b8' }}>📍 {c.address}</p>}
+                {c.address && <p style={{ margin: '4px 0', color: '#94a3b8' }}>{c.address}</p>}
                 {c.gstNumber && <p style={{ margin: '2px 0' }}>GST: {c.gstNumber} ({c.gstRate || 18}%)</p>}
                 <div style={{ marginTop: '8px', padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#38bdf8', fontWeight: 600, marginBottom: '4px' }}>
-                    🤖 Claude AI Widget Key (Public)
+                    Claude AI Widget Key (Public)
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <code style={{ fontSize: '12px', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>

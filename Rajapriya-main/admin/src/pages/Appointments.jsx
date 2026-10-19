@@ -7,7 +7,7 @@ const HOURS = Array.from({ length: 13 }, (_, i) => i + 9);
 const SLOT_WIDTH = 120;
 const STATUS_COLORS = {
   pending: '#f59e0b', confirmed: '#3b82f6',
-  in_progress: '#8b5cf6', completed: '#10b981', cancelled: '#ef4444'
+  in_progress: '#2563eb', completed: '#10b981', cancelled: '#ef4444'
 };
 
 function timeToMinutes(t) {
@@ -322,7 +322,7 @@ export default function Appointments() {
       <div className="appt-stats-bar">
         <span>Total <strong>{appointments.length}</strong></span>
         <span>Pending <strong style={{color:'#f59e0b'}}>{appointments.filter(a=>a.status==='pending').length}</strong></span>
-        <span>In Progress <strong style={{color:'#8b5cf6'}}>{appointments.filter(a=>a.status==='in_progress').length}</strong></span>
+        <span>In Progress <strong style={{color:'#38bdf8'}}>{appointments.filter(a=>a.status==='in_progress').length}</strong></span>
         <span>Completed <strong style={{color:'#10b981'}}>{appointments.filter(a=>a.status==='completed').length}</strong></span>
         <span>Value <strong>₹{appointments.reduce((s,a)=>s+(a.price||0),0).toLocaleString()}</strong></span>
         {!isToday && <span style={{color:'var(--text3)',fontSize:11}}>Auto-refresh active</span>}
@@ -360,7 +360,7 @@ export default function Appointments() {
                 ))}
               </div>
 
-              {/* NOW LINE — moves every minute */}
+              {/* NOW LINE - moves every minute */}
               {isToday && nowLeft > 0 && nowLeft < totalWidth && (
                 <div className="cal-now-line" style={{ left: nowLeft }}>
                   <span className="cal-now-label">
@@ -417,7 +417,7 @@ export default function Appointments() {
               )}
             </div>
           </div>
-          <div className="cal-hint">💡 Double-click any slot to book · Click appointment to view details</div>
+          <div className="cal-hint">Double-click any slot to book · Click appointment to view details</div>
         </div>
       )}
 
@@ -430,7 +430,7 @@ export default function Appointments() {
               <button onClick={() => setViewAppt(null)}>✕</button>
             </div>
             <div className="appt-view-body">
-              {viewAppt.clientPhone && <div className="appt-view-row"><span>📞 Phone</span><strong>{viewAppt.clientPhone}</strong></div>}
+              {viewAppt.clientPhone && <div className="appt-view-row"><span>Phone</span><strong>{viewAppt.clientPhone}</strong></div>}
               <div className="appt-view-row"><span>✦ Service</span><strong>{viewAppt.serviceName}</strong></div>
               <div className="appt-view-row"><span>◎ Staff</span><strong>{viewAppt.staffName}</strong></div>
               <div className="appt-view-row"><span>◷ Time</span><strong>{viewAppt.date} at {viewAppt.time}</strong></div>
@@ -448,7 +448,7 @@ export default function Appointments() {
               <div className="appt-view-actions">
                 <button className="btn-secondary" onClick={() => setViewAppt(null)}>Close</button>
                 <button className="btn-primary" onClick={() => { handleTakePayment(viewAppt); setViewAppt(null); }}>
-                  💳 Take Payment
+                  Take Payment
                 </button>
               </div>
             </div>
@@ -515,7 +515,7 @@ export default function Appointments() {
                   <label>Staff</label>
                   <select value={form.staffId} onChange={e => setForm({ ...form, staffId: e.target.value })}>
                     <option value="">Any / Unassigned</option>
-                    {allowedStaff.map(s => <option key={s._id} value={s._id}>{s.name} — {s.role}</option>)}
+                    {allowedStaff.map(s => <option key={s._id} value={s._id}>{s.name} - {s.role}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
@@ -547,7 +547,7 @@ export default function Appointments() {
                   <div key={idx} className="service-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
                     <select style={{ flex: 1 }} value={svc.serviceId} onChange={e => updateService(idx, 'serviceId', e.target.value)}>
                       <option value="">Select service</option>
-                      {services.map(s => <option key={s._id} value={s._id}>{s.name} — ₹{s.price} ({s.duration}min)</option>)}
+                      {services.map(s => <option key={s._id} value={s._id}>{s.name} - ₹{s.price} ({s.duration}min)</option>)}
                     </select>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span style={{ fontSize: '12px', color: 'var(--text2)' }}>⏱</span>

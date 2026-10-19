@@ -91,7 +91,7 @@ export default function Layout() {
           </div>
         )}
 
-        {/* CENTER SELECTOR — only for RV level */}
+        {/* CENTER SELECTOR - only for RV level */}
         {!collapsed && isRVLevel() && (
           <div className="center-selector-wrap">
             <button
@@ -111,7 +111,7 @@ export default function Layout() {
                   className={`center-option ${!selectedCenter ? 'selected' : ''}`}
                   onClick={() => handleCenterClick(null)}
                 >
-                  🌐 All Centers
+                  All Centers
                 </div>
                 {centers.map(c => (
                   <div
@@ -119,7 +119,7 @@ export default function Layout() {
                     className={`center-option ${selectedCenter?._id === c._id ? 'selected' : ''}`}
                     onClick={() => handleCenterClick(c)}
                   >
-                    <div style={{ fontWeight: 500 }}>🏪 {c.name}</div>
+                    <div style={{ fontWeight: 500 }}>{c.name}</div>
                     <div style={{ fontSize: '10px', color: 'var(--text2)', marginLeft: '22px', marginTop: '2px' }}>
                       {c.address}
                     </div>
@@ -170,11 +170,11 @@ export default function Layout() {
               ☰
             </button>
             {hasCenter ? (
-              <div className="center-badge">📍 {activeCenterName}</div>
+              <div className="center-badge">{activeCenterName}</div>
             ) : isRVLevel() ? (
               <div className="center-badge warning">⚠ Select a center from sidebar to add data</div>
             ) : (
-              <div className="center-badge">📍 Glam</div>
+              <div className="center-badge">Glam</div>
             )}
           </div>
           <div className="topbar-right">

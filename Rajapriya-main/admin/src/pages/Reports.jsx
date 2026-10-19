@@ -69,7 +69,7 @@ export default function Reports() {
           </div>
 
           <div className="chart-card full">
-            <h3>Daily Revenue — {months[month-1]} {year}</h3>
+            <h3>Daily Revenue: {months[month-1]} {year}</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={monthly.dailyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />

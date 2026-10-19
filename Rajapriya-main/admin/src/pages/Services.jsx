@@ -132,7 +132,7 @@ export default function Services() {
             <div key={s._id} className={`service-card ${s.isPackage ? 'package-card' : ''}`}>
               <div className="service-category-row">
                 <span className="service-category">{s.category}</span>
-                {s.isPackage && <span className="package-badge">📦 Package</span>}
+                {s.isPackage && <span className="package-badge">Package</span>}
               </div>
               <h3>{s.name}</h3>
               <div className="service-meta">
@@ -211,7 +211,7 @@ export default function Services() {
                   ))}
                   {form.packageItems.length > 0 && (
                     <div className="package-total-hint">
-                      Original total: ₹{form.packageItems.reduce((t, p) => t + (+p.originalPrice || 0), 0)} — Set package price below (can be lower!)
+                      Original total: ₹{form.packageItems.reduce((t, p) => t + (+p.originalPrice || 0), 0)} - Set package price below (can be lower!)
                     </div>
                   )}
                 </div>
