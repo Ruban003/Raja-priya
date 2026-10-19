@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import HeroCapacityVisualizer from '../components/HeroCapacityVisualizer';
 
 // Clean, minimal SVG vector icons (anti-emoji)
 const IconChat = () => (
@@ -228,6 +229,9 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+
+        {/* Live Salon Floor Capacity & AI Dispatch Visualizer */}
+        <HeroCapacityVisualizer />
       </section>
 
       {/* Live AI Agent Interactive Simulator */}
